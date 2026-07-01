@@ -17,7 +17,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: { enabled: false },
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['favicon.png', 'favicon.ico', 'icons/*.png'],
       manifest: {
         name: 'artGRANIT — Plan Instruire Inginer Proiectant',
         short_name: 'artGRANIT',
