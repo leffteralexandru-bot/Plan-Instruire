@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased scroll-smooth;
+  }
+
+  body {
+    @apply bg-corporate-surface text-corporate-black min-h-screen;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  #root {
+    @apply min-h-screen flex flex-col;
+  }
+
+  ::selection {
+    @apply bg-corporate-gold/30 text-corporate-black;
+  }
+
+  html.field-mode {
+    font-size: 18px;
+  }
+
+  html.field-mode button,
+  html.field-mode .neural-card {
+    @apply text-base;
+  }
+
+  html.field-mode main input,
+  html.field-mode main textarea,
+  html.field-mode main select {
+    @apply text-base min-h-[48px];
+  }
+}
+
+@layer components {
+  .neural-card {
+    @apply bg-white rounded-2xl shadow-neural border border-corporate-border transition-shadow duration-200;
+  }
+
+  .neural-card:hover {
+    @apply shadow-neural-lg;
+  }
+
+  .brand-link {
+    @apply text-corporate-gold hover:text-corporate-gold-hover underline-offset-2 hover:underline transition-colors;
+  }
+
+  .login-hero {
+    background: linear-gradient(165deg, #0c0c0c 0%, #1e1e1e 45%, #0c0c0c 100%);
+  }
+
+  .login-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(179, 143, 85, 0.12), transparent);
+    pointer-events: none;
+  }
+}

@@ -1,0 +1,95 @@
+export const THEORETICAL_TEST = {
+  dayId: 'day-10',
+  passPercent: 80,
+  maxAttempts: 3,
+  autoTaskId: 'd10-t1',
+  questions: [
+    {
+      id: 'q1',
+      question: 'Care este grosimea standard recomandată pentru un blat de bucătărie din granit?',
+      options: ['1 cm', '2 cm', '3 cm', '5 cm'],
+      correctIndex: 1,
+      explanation: 'Grosimea standard pentru blaturi interioare este 2 cm (20 mm).',
+    },
+    {
+      id: 'q2',
+      question: 'Quartz-ul este recomandat pentru blaturi expuse direct la soare exterior?',
+      options: ['Da, întotdeauna', 'Nu, UV poate afecta legantul', 'Doar dacă e sub 1 cm', 'Doar cu tratament special'],
+      correctIndex: 1,
+      explanation: 'Quartz-ul poate fi afectat de UV în exterior; granitul natural e mai potrivit.',
+    },
+    {
+      id: 'q3',
+      question: 'Ce face echipamentul Proliner în fluxul artGRANIT?',
+      options: [
+        'Taie plăcile de granit',
+        'Măsoară digital spațiul și exportă conturul',
+        'Generează oferta de preț',
+        'Montează blatul pe șantier',
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: 'q4',
+      question: 'În Bitrix24, unde se atașează documentele unui proiect?',
+      options: ['În calendar', 'În modulul de proiecte / task-uri', 'În chat general', 'În CRM leads'],
+      correctIndex: 1,
+    },
+    {
+      id: 'q5',
+      question: 'Ce înseamnă măsurarea „în oglindă"?',
+      options: [
+        'Măsurare cu oglindă fizică pe perete',
+        'Măsurare simetrică folosind axa de simetrie',
+        'Măsurare nocturnă',
+        'Măsurare dublă pentru verificare',
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: 'q6',
+      question: 'Care decupaj necesită de obicei toleranță mai strictă?',
+      options: ['Decupaj chiuvetă top-mount', 'Decupaj plită încorporată (flush)', 'Decupaj colț rotunjit', 'Niciunul'],
+      correctIndex: 1,
+    },
+    {
+      id: 'q7',
+      question: 'La vizita de măsurători, primul pas este:',
+      options: [
+        'Exportul fișierului CAD',
+        'Pregătirea echipamentului și checklist vizită',
+        'Comanda materialului',
+        'Montajul pe șantier',
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: 'q8',
+      question: 'Unghiurile atipice necesită:',
+      options: [
+        'Ignorare — se taie drept',
+        'Documentare și soluție în fișa tehnică',
+        'Doar aprobare client verbală',
+        'Refuz proiect',
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: 'q9',
+      question: 'Actul de constatare se completează când:',
+      options: [
+        'La fiecare vizită de măsurători',
+        'La identificarea erorilor/abateri ce necesită documentare',
+        'La finalul instruirii',
+        'Niciodată',
+      ],
+      correctIndex: 1,
+    },
+    {
+      id: 'q10',
+      question: 'Cine validează Ziua 10 — Test Teoretic?',
+      options: ['Stagiarul singur', 'Mentorul / Șeful Proiectare', 'Clientul', 'HR'],
+      correctIndex: 1,
+    },
+  ],
+};
