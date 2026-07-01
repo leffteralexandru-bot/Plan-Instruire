@@ -2,6 +2,7 @@ import { storage } from '@/store/storage';
 import { isSupabaseConfigured } from '@/store/storage';
 import { pullProgressFromCloud, pushProgressToCloud, getSupabase } from '@/lib/supabase';
 import { syncProgressToCloud } from '@/lib/sync';
+import { syncHrPerformanceWithCloud } from '@/lib/hrPerformanceSync';
 
 export function isSupabaseAuthEnabled(): boolean {
   return isSupabaseConfigured() && import.meta.env.VITE_USE_SUPABASE_AUTH === 'true';
@@ -25,6 +26,8 @@ export async function migrateProgressOnLogin(userId: string): Promise<void> {
   } else if (local.auditLog.length > 0 || Object.keys(local.days).length > 0) {
     await pushProgressToCloud(local);
   }
+
+  await syncHrPerformanceWithCloud();
 }
 
 export async function signInWithSupabaseAuth(email: string, password: string): Promise<boolean> {

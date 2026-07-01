@@ -4,22 +4,23 @@ import { computeHrAlerts } from '@/lib/hrAlerts';
 
 const PUSH_DISMISS_KEY = 'artgranit_push_asked';
 
-/** Notificări browser pentru mentor și admin HR */
+/** Notificări browser pentru mentor, HR și admin */
 export function useHrNotifications() {
-  const { isMentor, isAdmin } = useAuth();
+  const { canAccessAdmin, canAccessMentor } = useAuth();
+  const canNotify = canAccessAdmin || canAccessMentor;
   const asked = useRef(false);
 
   useEffect(() => {
-    if ((!isMentor && !isAdmin) || asked.current || !('Notification' in window)) return;
+    if (!canNotify || asked.current || !('Notification' in window)) return;
     if (Notification.permission === 'default' && !sessionStorage.getItem(PUSH_DISMISS_KEY)) {
       Notification.requestPermission();
       sessionStorage.setItem(PUSH_DISMISS_KEY, '1');
       asked.current = true;
     }
-  }, [isMentor, isAdmin]);
+  }, [canNotify]);
 
   useEffect(() => {
-    if ((!isMentor && !isAdmin) || Notification.permission !== 'granted') return;
+    if (!canNotify || Notification.permission !== 'granted') return;
 
     const critical = computeHrAlerts().filter((a) => a.severity === 'critical');
     if (!critical.length) return;
@@ -32,5 +33,5 @@ export function useHrNotifications() {
       body: critical.map((a) => a.title).join(' · '),
       icon: '/icons/icon-192.png',
     });
-  }, [isMentor, isAdmin]);
+  }, [canNotify]);
 }

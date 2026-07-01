@@ -1,7 +1,7 @@
 import { ALL_DAYS } from '@/data/trainingPlan';
 import { COMPETENCIES, scoreFromFeedback } from '@/data/competencies';
 import { THEORETICAL_TEST } from '@/data/theoreticalTest';
-import type { AppProgress, DayProgress, User } from '@/types';
+import type { AppProgress, DayProgress, TraineeProfile } from '@/types';
 import { isDayComplete } from '@/lib/progressLogic';
 
 /** Zile cu validare mentor obligatorie — din planul artGRANIT */
@@ -100,7 +100,7 @@ function getLastActivityAt(progress: AppProgress): string | null {
   return timestamps.sort().at(-1) ?? null;
 }
 
-export function buildTraineeHrReport(trainee: User, progress: AppProgress): TraineeHrReport {
+export function buildTraineeHrReport(trainee: TraineeProfile, progress: AppProgress): TraineeHrReport {
   const completedDays = countCompletedDays(progress);
   const totalDays = ALL_DAYS.length;
   const scores = scoreFromFeedback(progress.feedbacks);
@@ -112,7 +112,7 @@ export function buildTraineeHrReport(trainee: User, progress: AppProgress): Trai
     userId: trainee.id,
     name: trainee.name,
     email: trainee.email,
-    programStart: trainee.programStart ?? '—',
+    programStart: trainee.programStart,
     completedDays,
     totalDays,
     progressPercent: totalDays ? Math.round((completedDays / totalDays) * 100) : 0,
@@ -128,7 +128,7 @@ export function buildTraineeHrReport(trainee: User, progress: AppProgress): Trai
 }
 
 export function buildHrAggregateReport(
-  trainees: User[],
+  trainees: TraineeProfile[],
   getProgress: (userId: string) => AppProgress,
   programVersion: string,
 ): HrAggregateReport {

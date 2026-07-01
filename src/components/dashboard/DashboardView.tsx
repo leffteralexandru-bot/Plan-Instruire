@@ -1,8 +1,8 @@
 import { TRAINING_PLAN } from '@/data/trainingPlan';
 import { useProgress } from '@/hooks/useProgress';
 import { WeekProgressOverview } from './ProgressBar';
-import { WeekCard } from './WeekCard';
 import { ResumeCard } from './ResumeCard';
+import { TrainingPlanTree } from '@/components/training/TrainingPlanTree';
 
 export function DashboardView() {
   const { stats, isDayComplete, isDayUnlocked, getDayProgress, getResumeDay } = useProgress();
@@ -30,16 +30,12 @@ export function DashboardView() {
       <WeekProgressOverview weekProgress={stats.weekProgress} overallPercent={stats.overallPercent} />
 
       <div className="space-y-5">
-        <h2 className="text-lg font-semibold text-corporate-dark">Module pe Săptămâni</h2>
-        {TRAINING_PLAN.map((week) => (
-          <WeekCard
-            key={week.id}
-            week={week}
-            isDayComplete={isDayComplete}
-            isDayUnlocked={isDayUnlocked}
-            getDayProgress={getDayProgress}
-          />
-        ))}
+        <h2 className="text-lg font-semibold text-corporate-dark">Structură modulară — săptămâni & zile</h2>
+        <TrainingPlanTree
+          plan={TRAINING_PLAN}
+          isDayComplete={isDayComplete}
+          isDayUnlocked={isDayUnlocked}
+        />
       </div>
     </div>
   );

@@ -4,13 +4,14 @@ import { FieldModeProvider } from '@/context/FieldModeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useStagiarId } from '@/hooks/useStagiarId';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useAccessControl } from '@/hooks/useAccessControl';
 import { HrAlertsBanner } from '@/components/shared/HrAlertsBanner';
 import { useHrNotifications } from '@/hooks/useHrNotifications';
 import { Header } from './Header';
 import { Outlet, useLocation } from 'react-router-dom';
 import { getSyncStatus } from '@/lib/sync';
 import { isSupabaseConfigured } from '@/store/storage';
-import { isDepartmentPlanRoute } from '@/data/departments';
+import { isTrainingProgressRoute } from '@/data/departments';
 
 function LoadingScreen() {
   return (
@@ -41,14 +42,30 @@ function SyncStatusBar() {
 }
 
 function ProgressGate({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth();
+  const { loading, user, isInTraining } = useAuth();
+  const { canOpenMentorPanel } = useAccessControl();
   const userId = useStagiarId();
 
   if (loading) return <LoadingScreen />;
-  if (!userId) return <LoadingScreen />;
+
+  const effectiveUserId = userId || (isInTraining ? user?.id : undefined);
+
+  if (!effectiveUserId) {
+    if (canOpenMentorPanel) {
+      return (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-sm text-amber-900">
+          <p className="font-medium">Niciun angajat în instruire de afișat.</p>
+          <p className="mt-1 text-amber-800">
+            Creați înscrieri din Panoul HR sau selectați un angajat din lista mentor.
+          </p>
+        </div>
+      );
+    }
+    return <LoadingScreen />;
+  }
 
   return (
-    <ProgressProvider userId={userId}>
+    <ProgressProvider userId={effectiveUserId}>
       <OfflineSyncRunner />
       <AlertsRunner />
       {isSupabaseConfigured() && <SyncStatusBar />}
@@ -69,7 +86,7 @@ function OfflineSyncRunner() {
 
 export function AppShell() {
   const location = useLocation();
-  const inPlan = isDepartmentPlanRoute(location.pathname);
+  const inPlan = isTrainingProgressRoute(location.pathname);
 
   return (
     <StagiarProvider>

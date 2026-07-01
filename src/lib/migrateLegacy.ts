@@ -1,4 +1,5 @@
 import type { AppProgress } from '@/types';
+import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 
 /** Mapare ID-uri vechi → ID-uri curente artGRANIT */
 const LEGACY_USER_ID_MAP: Record<string, string> = {
@@ -52,4 +53,6 @@ export function runStorageMigrations(): void {
     },
     (map) => localStorage.setItem('artgranit_progress', JSON.stringify(map)),
   );
+
+  hrPerformanceStore.ensureProfiles();
 }

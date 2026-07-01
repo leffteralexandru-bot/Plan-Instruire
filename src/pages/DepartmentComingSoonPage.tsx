@@ -1,15 +1,10 @@
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { getDepartmentById, type DepartmentId } from '@/data/departments';
 import { DEPARTMENT_PLAN_PREVIEWS } from '@/data/departmentPreviews';
+import { DepartmentGlyph } from '@/components/departments/DepartmentGlyph';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-
-const DEPT_ICONS: Record<string, string> = {
-  productie: '⚙️',
-  administratie: '📋',
-  management: '👔',
-};
 
 export function DepartmentComingSoonPage() {
   const { pathname } = useLocation();
@@ -23,7 +18,9 @@ export function DepartmentComingSoonPage() {
     department.id !== 'ingineri'
       ? DEPARTMENT_PLAN_PREVIEWS[department.id as keyof typeof DEPARTMENT_PLAN_PREVIEWS]
       : null;
-  const icon = DEPT_ICONS[department.id] ?? '📁';
+  const icon = (
+    <DepartmentGlyph id={department.id} className="h-8 w-8 text-corporate-gold" />
+  );
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -32,7 +29,10 @@ export function DepartmentComingSoonPage() {
       </Link>
 
       <div className="text-center space-y-3">
-        <span className="text-4xl" aria-hidden>
+        <span
+          className="inline-flex h-16 w-16 items-center justify-center rounded-xl border border-corporate-gold/25 bg-corporate-gold-light/50"
+          aria-hidden
+        >
           {icon}
         </span>
         <Badge variant="default">Plan în pregătire</Badge>

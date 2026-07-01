@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccessControl } from '@/hooks/useAccessControl';
 import { useStagiarName } from '@/hooks/useStagiarId';
 import { useCanSelectStagiar } from '@/context/StagiarContext';
 import { DashboardView } from '@/components/dashboard/DashboardView';
@@ -8,7 +9,8 @@ import { DepartmentPlanBanner } from '@/components/departments/DepartmentPlanBan
 import { ingineriPath } from '@/data/departments';
 
 export function DashboardPage() {
-  const { isMentor, isAdmin, loading, user } = useAuth();
+  const { loading, user } = useAuth();
+  const { canOpenMentorPanel } = useAccessControl();
   const stagiarName = useStagiarName();
   const canSelect = useCanSelectStagiar();
 
@@ -18,9 +20,9 @@ export function DashboardPage() {
     <div>
       <DepartmentPlanBanner />
       {canSelect && <TraineeSelector />}
-      {(isMentor || isAdmin) && (
+      {canOpenMentorPanel && (
         <div className="mb-6 rounded-xl border border-corporate-gold/30 bg-corporate-gold-light/50 px-4 py-3 text-sm text-corporate-stone">
-          Vizualizați progresul stagiarului <strong>{stagiarName}</strong>. Accesați{' '}
+          Vizualizați progresul angajatului <strong>{stagiarName}</strong>. Accesați{' '}
           <Link to={ingineriPath('/mentor')} className="font-medium underline">Panoul Mentor</Link> pentru validări.
         </div>
       )}

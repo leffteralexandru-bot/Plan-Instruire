@@ -1,5 +1,5 @@
 import { ERROR_LIBRARY } from '@/data/errorLibrary';
-import { STAGIARI } from '@/data/users';
+import { useUsers } from '@/context/UsersContext';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { storage } from '@/store/storage';
@@ -15,13 +15,14 @@ const FREQ_COLORS: Record<string, 'warning' | 'info' | 'default'> = {
 
 export function ErrorLibraryView() {
   const { progress } = useProgress();
-  const { isMentor, isAdmin } = useAuth();
+  const { visibleTrainees } = useUsers();
+  const { canAccessMentor } = useAuth();
   const acte = progress?.acteConstatare ?? [];
 
   const personalHeatmap = buildErrorHeatmap(acte);
   const cohortHeatmap =
-    isMentor || isAdmin
-      ? aggregateCohortErrorHeatmap(STAGIARI.map((s) => storage.getProgress(s.id).acteConstatare))
+    canAccessMentor
+      ? aggregateCohortErrorHeatmap(visibleTrainees.map((s) => storage.getProgress(s.id).acteConstatare))
       : null;
 
   const maxCount = Math.max(...personalHeatmap.map((h) => h.count), 1);

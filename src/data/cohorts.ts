@@ -33,5 +33,5 @@ export function getActiveCohort(): Cohort {
 }
 
 export function getStagiariForCohort(cohortId: string, users: { cohortId?: string; role: string }[]) {
-  return users.filter((u) => u.role === 'stagiar' && u.cohortId === cohortId);
+  return users.filter((u) => (u.role === 'angajat' || u.role === 'stagiar') && u.cohortId === cohortId);
 }

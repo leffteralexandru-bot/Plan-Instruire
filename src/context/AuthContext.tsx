@@ -1,7 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { User } from '@/types';
-import { DEMO_USERS } from '@/data/users';
+import { listDemoUsers } from '@/data/users';
 import { storage } from '@/store/storage';
+import { userStore } from '@/lib/userStore';
+import {
+  canAccessAdminPanel,
+  canAccessMentorPanel,
+  canManageSystemSettings,
+  canManageUsers,
+  isAngajatUser,
+  isMentorUser,
+  hasRole,
+} from '@/lib/roles';
 import {
   isSupabaseAuthEnabled,
   migrateProgressOnLogin,
@@ -14,12 +24,22 @@ interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   isMentor: boolean;
+  isAngajat: boolean;
+  /** @deprecated Folosiți isAngajat */
   isStagiar: boolean;
+  /** Are înscriere activă la un program de instruire */
+  isInTraining: boolean;
   isAdmin: boolean;
+  isHr: boolean;
+  canManageUsers: boolean;
+  canAccessAdmin: boolean;
+  canAccessMentor: boolean;
+  canManageSettings: boolean;
   supabaseAuth: boolean;
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  demoUsers: typeof DEMO_USERS;
+  demoUsers: User[];
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,21 +47,52 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [demoUsers, setDemoUsers] = useState<User[]>([]);
+
+  const refreshUser = useCallback(() => {
+    setDemoUsers(listDemoUsers());
+    const auth = storage.getAuth();
+    if (auth.user) {
+      const fresh = userStore.getUserById(auth.user.id);
+      if (fresh?.active) {
+        setUser(fresh);
+        storage.setAuth(fresh);
+      } else {
+        storage.clearAuth();
+        setUser(null);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const auth = storage.getAuth();
-    setUser(auth.user);
+    if (auth.user) {
+      const fresh = userStore.getUserById(auth.user.id);
+      if (fresh?.active) {
+        setUser(fresh);
+        storage.setAuth(fresh);
+      } else {
+        storage.clearAuth();
+        setUser(null);
+      }
+    }
+    setDemoUsers(listDemoUsers());
     setLoading(false);
   }, []);
 
   const login = useCallback(async (email: string, password?: string) => {
-    const found = DEMO_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase().trim());
-    if (!found) return false;
+    if (!password?.trim()) return false;
 
-    if (isSupabaseAuthEnabled() && password) {
+    if (isSupabaseAuthEnabled()) {
       const ok = await signInWithSupabaseAuth(email, password);
       if (!ok) return false;
     }
+
+    const found = isSupabaseAuthEnabled()
+      ? userStore.getUserByEmail(email)
+      : userStore.verifyPassword(email, password);
+
+    if (!found) return false;
 
     storage.setAuth(found);
     setUser(found);
@@ -55,20 +106,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const isInTraining = !!user && !!userStore.getActiveEnrollmentForAngajat(user.id);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       loading,
       isAuthenticated: !!user,
-      isMentor: user?.role === 'mentor',
-      isStagiar: user?.role === 'stagiar',
-      isAdmin: user?.role === 'admin',
+      isMentor: isMentorUser(user),
+      isAngajat: isAngajatUser(user),
+      isStagiar: isAngajatUser(user),
+      isInTraining,
+      isAdmin: hasRole(user, 'admin'),
+      isHr: hasRole(user, 'hr'),
+      canManageUsers: canManageUsers(user),
+      canAccessAdmin: canAccessAdminPanel(user),
+      canAccessMentor: canAccessMentorPanel(user),
+      canManageSettings: canManageSystemSettings(user),
       supabaseAuth: isSupabaseAuthEnabled(),
       login,
       logout,
-      demoUsers: DEMO_USERS,
+      demoUsers,
+      refreshUser,
     }),
-    [user, loading, login, logout],
+    [user, loading, isInTraining, login, logout, demoUsers, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

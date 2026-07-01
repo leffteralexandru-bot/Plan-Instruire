@@ -1,66 +1,31 @@
-import type { User } from '@/types';
 import { getActiveCohort } from '@/data/cohorts';
+import { userStore, getLoginUsers, getTrainees } from '@/lib/userStore';
+import type { TraineeProfile, User } from '@/types';
 
-const activeCohort = getActiveCohort();
+export { getLoginUsers, getTrainees, getTraineesForMentor, getTraineesForCohort } from '@/lib/userStore';
 
-export const DEMO_USERS: User[] = [
-  {
-    id: 'u-stagiar-1',
-    name: 'Alexandru Popescu',
-    role: 'stagiar',
-    email: 'a.popescu@artgranit.ro',
-    mentorId: 'u-mentor',
-    programStart: '2026-06-01',
-    cohortId: 'cohort-2026-i',
-    departmentId: 'ingineri',
-  },
-  {
-    id: 'u-stagiar-2',
-    name: 'Andrei Dumitrescu',
-    role: 'stagiar',
-    email: 'a.dumitrescu@artgranit.ro',
-    mentorId: 'u-mentor',
-    programStart: '2026-06-15',
-    cohortId: 'cohort-2026-i',
-    departmentId: 'ingineri',
-  },
-  {
-    id: 'u-stagiar-3',
-    name: 'Cristina Marin',
-    role: 'stagiar',
-    email: 'c.marin@artgranit.ro',
-    mentorId: 'u-mentor',
-    programStart: '2026-05-20',
-    cohortId: 'cohort-2026-i',
-    departmentId: 'ingineri',
-  },
-  {
-    id: 'u-mentor',
-    name: 'Ing. Maria Ionescu',
-    role: 'mentor',
-    email: 'm.ionescu@artgranit.ro',
-  },
-  {
-    id: 'u-admin',
-    name: 'Elena Vasilescu (HR)',
-    role: 'admin',
-    email: 'e.vasilescu@artgranit.ro',
-  },
-];
-
-export const STAGIARI = DEMO_USERS.filter((u) => u.role === 'stagiar');
-
-export function getUserById(id: string) {
-  return DEMO_USERS.find((u) => u.id === id);
+export function getUserById(id: string): User | undefined {
+  return userStore.getUserById(id);
 }
 
-export function getStagiariForMentor(mentorId: string) {
-  return STAGIARI.filter((s) => s.mentorId === mentorId);
+export function getStagiariForMentor(mentorId: string): TraineeProfile[] {
+  return userStore.getTraineeProfiles({ mentorId });
 }
 
-export function getStagiariForActiveCohort(): User[] {
-  const cohortId = activeCohort.id;
-  return STAGIARI.filter((s) => s.cohortId === cohortId);
+export function getStagiariForActiveCohort(): TraineeProfile[] {
+  return userStore.getTraineeProfiles({ cohortId: getActiveCohort().id });
 }
 
-export { activeCohort as ACTIVE_COHORT };
+export function getTraineeProfileById(id: string): TraineeProfile | undefined {
+  return userStore.getTraineeProfiles().find((t) => t.id === id);
+}
+
+/** Lista utilizatori activi — pentru login */
+export function listDemoUsers(): User[] {
+  return getLoginUsers();
+}
+
+/** Angajați cu înscriere activă */
+export function listTrainees(): TraineeProfile[] {
+  return getTrainees();
+}

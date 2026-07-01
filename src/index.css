@@ -60,4 +60,9 @@
     background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(179, 143, 85, 0.12), transparent);
     pointer-events: none;
   }
+
+  .dept-bar {
+    background: linear-gradient(180deg, #121212 0%, #0c0c0c 100%);
+    border-top: 1px solid rgba(179, 143, 85, 0.15);
+  }
 }

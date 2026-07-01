@@ -5,18 +5,23 @@ test.describe('artGRANIT login', () => {
     await page.goto('/login');
     await expect(page.getByAltText('artGRANIT')).toBeVisible();
     await expect(page.getByText('Plan de Instruire')).toBeVisible();
+    await expect(page.getByText('Profile organizaționale')).toBeVisible();
   });
 
-  test('login stagiar → redirect automat plan ingineri', async ({ page }) => {
+  test('login angajat → redirect automat plan ingineri', async ({ page }) => {
     await page.goto('/login');
-    await page.getByText('Alexandru Popescu').click();
+    await page.getByLabel('Profil (email artGRANIT)').fill('a.popescu@artgranit.ro');
+    await page.getByLabel('Parolă').fill('artgranit2026');
+    await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL('/ingineri');
     await expect(page.getByRole('heading', { name: 'Module pe Săptămâni' })).toBeVisible({ timeout: 10000 });
   });
 
-  test('login admin → hub departamente și plan în curând producție', async ({ page }) => {
+  test('login HR → hub departamente și plan în curând producție', async ({ page }) => {
     await page.goto('/login');
-    await page.getByText('Elena Vasilescu').click();
+    await page.getByLabel('Profil (email artGRANIT)').fill('e.vasilescu@artgranit.ro');
+    await page.getByLabel('Parolă').fill('artgranit2026');
+    await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: /Plan Instruire/i })).toBeVisible();
     await page.getByRole('heading', { name: 'Producție' }).click();
@@ -24,9 +29,11 @@ test.describe('artGRANIT login', () => {
     await expect(page.getByText('Plan în pregătire')).toBeVisible();
   });
 
-  test('login admin → panou HR ingineri', async ({ page }) => {
+  test('login HR → panou HR ingineri', async ({ page }) => {
     await page.goto('/login');
-    await page.getByText('Elena Vasilescu').click();
+    await page.getByLabel('Profil (email artGRANIT)').fill('e.vasilescu@artgranit.ro');
+    await page.getByLabel('Parolă').fill('artgranit2026');
+    await page.getByRole('button', { name: 'Conectare' }).click();
     await page.goto('/ingineri/admin');
     await expect(page.getByRole('heading', { name: /Panou Admin/i })).toBeVisible();
   });

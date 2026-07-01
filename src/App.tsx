@@ -13,6 +13,13 @@ import { CompetencyPage } from '@/pages/CompetencyPage';
 import { DepartmentComingSoonPage } from '@/pages/DepartmentComingSoonPage';
 import { ingineriPath, DEPARTMENTS } from '@/data/departments';
 
+import { UsersProvider } from '@/context/UsersContext';
+import { HrPerformanceProvider } from '@/hooks/useHrPerformance';
+import { EmployeeDetailPage, LegacyAdminEmployeeRedirect } from '@/pages/EmployeeDetailPage';
+import { AngajatPanelPage } from '@/pages/AngajatPanelPage';
+import { MyAccountPage } from '@/pages/MyAccountPage';
+import { DocumentatieBazaPage } from '@/pages/DocumentatieBazaPage';
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
 
@@ -56,11 +63,17 @@ function AppRoutes() {
         ))}
 
         <Route path="ingineri">
-          <Route index element={<DashboardPage />} />
+          <Route index element={<IngineriIndexPage />} />
+          <Route path="plan-instruire" element={<DashboardPage />} />
           <Route path="zi/:dayId" element={<DayPage />} />
           <Route path="mentor" element={<MentorPage />} />
           <Route path="evaluari" element={<EvaluationsPage />} />
           <Route path="admin" element={<AdminPage />} />
+          <Route path="admin/angajat/:angajatId" element={<LegacyAdminEmployeeRedirect />} />
+          <Route path="angajat/:angajatId" element={<EmployeeDetailPage />} />
+          <Route path="panou-angajat" element={<AngajatPanelPage />} />
+          <Route path="documentatie-baza" element={<DocumentatieBazaPage />} />
+          <Route path="contul-meu" element={<MyAccountPage />} />
           <Route path="erori" element={<ErrorLibraryPage />} />
           <Route path="competente" element={<CompetencyPage />} />
         </Route>
@@ -80,9 +93,13 @@ function AppRoutes() {
 export function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <UsersProvider>
+        <HrPerformanceProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </HrPerformanceProvider>
+      </UsersProvider>
     </AuthProvider>
   );
 }

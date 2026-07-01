@@ -6,6 +6,8 @@ import { ValidationList } from './ValidationList';
 import { MentorFeedbackForm } from './FeedbackForm';
 import { TraineeSelector } from './TraineeSelector';
 import { MentorCohortDashboard } from './MentorCohortDashboard';
+import { MentorSubordinatesPanel } from './MentorSubordinatesPanel';
+import { MentorAlertsDashboard } from './MentorAlertsDashboard';
 import { useStagiarSelection } from '@/context/StagiarContext';
 import { WeekProgressOverview } from '@/components/dashboard/ProgressBar';
 import { Card } from '@/components/ui/Card';
@@ -44,6 +46,10 @@ export function MentorPanel() {
       </div>
 
       <TraineeSelector />
+
+      <MentorAlertsDashboard />
+
+      <MentorSubordinatesPanel />
 
       <MentorCohortDashboard onSelectTrainee={setSelectedStagiarId} />
 

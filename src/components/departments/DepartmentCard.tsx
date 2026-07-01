@@ -1,21 +1,14 @@
 import { Link } from 'react-router-dom';
 import type { Department } from '@/data/departments';
+import { DepartmentGlyph } from '@/components/departments/DepartmentGlyph';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-
-const DEPT_ICONS: Record<string, string> = {
-  ingineri: '📐',
-  productie: '⚙️',
-  administratie: '📋',
-  management: '👔',
-};
 
 interface DepartmentCardProps {
   department: Department;
 }
 
 export function DepartmentCard({ department }: DepartmentCardProps) {
-  const icon = DEPT_ICONS[department.id] ?? '📁';
   const available = department.planAvailable;
   const targetTo = available ? department.route : `${department.route}/in-curand`;
 
@@ -31,8 +24,8 @@ export function DepartmentCard({ department }: DepartmentCardProps) {
     >
       <div className="flex flex-col h-full gap-3">
         <div className="flex items-start justify-between gap-2">
-          <span className="text-3xl" aria-hidden>
-            {icon}
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-corporate-gold/25 bg-corporate-gold-light text-corporate-gold">
+            <DepartmentGlyph id={department.id} className="h-5 w-5" />
           </span>
           {available ? (
             <Badge variant="success">Disponibil</Badge>

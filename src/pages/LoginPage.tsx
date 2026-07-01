@@ -1,24 +1,75 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { getPostLoginPath } from '@/lib/accessControl';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
-import { isSupabaseConfigured } from '@/store/storage';
+import { userStore } from '@/lib/userStore';
+import { credentials, DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
+import { ROLE_LABELS, formatUserRoles, isAngajatUser, isMentorUser } from '@/lib/roles';
+import type { User } from '@/types';
 
-const ROLE_LABELS: Record<string, { label: string; emoji: string }> = {
-  stagiar: { label: 'Inginer Stagiar', emoji: '🎓' },
-  mentor: { label: 'Mentor / Șef Proiectare', emoji: '👤' },
-  admin: { label: 'Admin HR', emoji: '📋' },
-};
+function OrgProfileCard({
+  emoji,
+  title,
+  subtitle,
+  name,
+  email,
+}: {
+  emoji: string;
+  title: string;
+  subtitle: string;
+  name: string;
+  email: string;
+}) {
+  return (
+    <div className="rounded-xl border border-corporate-border bg-corporate-surface/50 p-3.5">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-lg shadow-sm">
+          {emoji}
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-corporate-gold">{title}</p>
+          <p className="text-sm font-medium text-corporate-dark mt-0.5">{name}</p>
+          <p className="text-xs text-corporate-muted">{subtitle}</p>
+          <p className="text-xs text-corporate-muted/90 truncate mt-1">{email}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function profilePassword(user: User): string {
+  return credentials.getPassword(user.id) ?? DEFAULT_PLATFORM_PASSWORD;
+}
+
+function tempProfileSubtitle(user: User): string {
+  if (isAngajatUser(user) && isMentorUser(user)) {
+    return 'Angajat · Mentor temporar (HR)';
+  }
+  if (isMentorUser(user)) return 'Mentor — validări & feedback';
+  if (isAngajatUser(user)) return 'Panou Angajat · plan instruire';
+  return formatUserRoles(user);
+}
+
+function tempProfileEmoji(user: User): string {
+  if (isAngajatUser(user) && isMentorUser(user)) return '🎓👤';
+  if (isMentorUser(user)) return '👤';
+  return '🎓';
+}
 
 export function LoginPage() {
-  const { login, demoUsers, isAuthenticated, loading, supabaseAuth } = useAuth();
+  const { login, isAuthenticated, loading, user } = useAuth();
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const admins = useMemo(() => userStore.getAdministratorProfiles(), []);
+  const hrProfiles = useMemo(() => userStore.getHrProfiles(), []);
+  const tempProfiles = useMemo(() => userStore.getTemporaryLoginProfiles(), []);
 
   if (loading) {
     return (
@@ -28,20 +79,58 @@ export function LoginPage() {
     );
   }
 
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  if (isAuthenticated && user) return <Navigate to={getPostLoginPath(user)} replace />;
 
-  const handleQuickLogin = async (userEmail: string) => {
+  const applyProfile = (profile: User) => {
+    setEmail(profile.email);
+    setPassword(profilePassword(profile));
+    setError('');
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
     setSubmitting(true);
-    const ok = await login(userEmail, supabaseAuth ? password || undefined : undefined);
+    const ok = await login(email.trim(), password);
     setSubmitting(false);
-    if (!ok) setError('Autentificare eșuată. Verificați email-ul' + (supabaseAuth ? ' și parola.' : '.'));
+    if (!ok) {
+      setError('Profil sau parolă incorectă. Verificați datele și încercați din nou.');
+    }
   };
 
-  const handleFormLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await handleQuickLogin(email);
+  const quickLogin = async (profile: User) => {
+    const pwd = profilePassword(profile);
+    applyProfile(profile);
+    setError('');
+    setSubmitting(true);
+    const ok = await login(profile.email, pwd);
+    setSubmitting(false);
+    if (!ok) {
+      setError('Profil sau parolă incorectă. Verificați datele și încercați din nou.');
+    }
   };
+
+  const renderProfileButton = (
+    profile: User,
+    card: { emoji: string; title: string; subtitle: string },
+  ) => (
+    <button
+      key={profile.id}
+      type="button"
+      disabled={submitting}
+      onClick={() => void quickLogin(profile)}
+      className="text-left rounded-xl transition-colors hover:ring-2 hover:ring-corporate-gold/40 disabled:opacity-60"
+      title={`Conectare: ${profile.email} · parolă demo`}
+    >
+      <OrgProfileCard
+        emoji={card.emoji}
+        title={card.title}
+        subtitle={card.subtitle}
+        name={profile.name}
+        email={profile.email}
+      />
+    </button>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -60,73 +149,93 @@ export function LoginPage() {
       </div>
 
       <div className="flex-1 px-4 pb-10 -mt-6 relative z-10">
-        <div className="mx-auto w-full max-w-md">
+        <div className="mx-auto w-full max-w-lg space-y-4">
           <Card className="shadow-neural-lg border-corporate-border">
             <h2 className="text-lg font-semibold text-corporate-black mb-1">Autentificare</h2>
-            <p className="text-sm text-corporate-muted mb-5">Platformă internă artGRANIT</p>
+            <p className="text-sm text-corporate-muted mb-4">Platformă internă artGRANIT</p>
 
-            {supabaseAuth && (
-              <form onSubmit={handleFormLogin} className="space-y-3 mb-5">
-                <Input
-                  id="email"
-                  label="Email artGRANIT"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="a.popescu@artgranit.ro"
-                  required
-                />
-                <Input
-                  id="password"
-                  type="password"
-                  label="Parolă"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-                <Button type="submit" variant="primary" className="w-full" disabled={submitting}>
-                  {submitting ? 'Se conectează…' : 'Conectare'}
-                </Button>
-              </form>
-            )}
-
-            <p className="text-sm text-corporate-muted mb-3">
-              {supabaseAuth ? 'Sau selectați cont demo:' : 'Selectați un cont demo:'}
-            </p>
-
-            <div className="space-y-2">
-              {demoUsers.map((u) => {
-                const meta = ROLE_LABELS[u.role] ?? ROLE_LABELS.stagiar;
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => handleQuickLogin(u.email)}
-                    className="w-full flex items-center gap-4 rounded-xl border border-corporate-border p-3.5 text-left hover:border-corporate-gold hover:bg-corporate-gold-light/40 transition-all group disabled:opacity-50"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-corporate-surface text-lg">
-                      {meta.emoji}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-corporate-black group-hover:text-corporate-gold-hover truncate">
-                        {u.name}
-                      </p>
-                      <p className="text-xs text-corporate-muted">{meta.label}</p>
-                      <p className="text-xs text-corporate-muted/80 truncate">{u.email}</p>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="mb-5 rounded-xl border border-corporate-gold/25 bg-corporate-gold-light/30 p-3 text-xs text-corporate-stone space-y-1.5">
+              <p>
+                <strong>Ierarhie acces:</strong> Administrator → creează profile HR → HR creează
+                angajați și acordă statut mentor temporar.
+              </p>
+              <p>
+                Apăsați un card — email și parolă demo se completează automat și vă conectați.
+              </p>
             </div>
 
-            {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
-            {isSupabaseConfigured() && (
-              <p className="text-xs text-corporate-gold mt-4">Sync cloud Supabase disponibil</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
+              Profile organizaționale
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2 mb-5">
+              {admins.map((a) =>
+                renderProfileButton(a, {
+                  emoji: '⚙️',
+                  title: ROLE_LABELS.admin,
+                  subtitle: 'Acces complet · HR & setări',
+                }),
+              )}
+              {hrProfiles.map((h) =>
+                renderProfileButton(h, {
+                  emoji: '📋',
+                  title: ROLE_LABELS.hr,
+                  subtitle: 'Panou HR · angajați & evaluări',
+                }),
+              )}
+            </div>
+
+            {tempProfiles.length > 0 && (
+              <>
+                <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
+                  Profile temporare (demo)
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2 mb-5">
+                  {tempProfiles.map((p) =>
+                    renderProfileButton(p, {
+                      emoji: tempProfileEmoji(p),
+                      title: formatUserRoles(p),
+                      subtitle: tempProfileSubtitle(p),
+                    }),
+                  )}
+                </div>
+              </>
             )}
+
+            <form onSubmit={handleLogin} className="space-y-3">
+              <Input
+                id="email"
+                label="Profil (email artGRANIT)"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@artgranit.ro"
+                required
+                autoComplete="username"
+              />
+              <Input
+                id="password"
+                type="password"
+                label="Parolă"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
+              />
+              <Button type="submit" variant="primary" className="w-full" disabled={submitting}>
+                {submitting ? 'Se conectează…' : 'Conectare'}
+              </Button>
+            </form>
+
+            {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+
+            <p className="text-xs text-corporate-muted mt-4 border-t border-corporate-border pt-3">
+              Parolă demo (toate profilele):{' '}
+              <code className="text-corporate-dark">{DEFAULT_PLATFORM_PASSWORD}</code>
+            </p>
           </Card>
 
-          <p className="text-center text-xs text-corporate-muted mt-6">
+          <p className="text-center text-xs text-corporate-muted">
             PWA · funcționează offline după prima încărcare
           </p>
         </div>

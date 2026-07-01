@@ -1,5 +1,6 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { getDepartmentFromPath } from '@/data/departments';
+import { DepartmentGlyph } from '@/components/departments/DepartmentGlyph';
 
 export function DepartmentPlanBanner() {
   const { pathname } = useLocation();
@@ -8,15 +9,14 @@ export function DepartmentPlanBanner() {
   if (!dept?.planAvailable) return null;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-corporate-border bg-white px-4 py-3 text-sm">
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-corporate-border bg-white px-4 py-3 text-sm">
+      <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-corporate-gold/30 bg-corporate-gold-light text-corporate-gold">
+        <DepartmentGlyph id={dept.id} className="h-4 w-4" />
+      </span>
       <div>
-        <span className="text-corporate-muted">Departament: </span>
         <strong className="text-corporate-dark">{dept.label}</strong>
         <span className="text-corporate-muted"> — {dept.subtitle}</span>
       </div>
-      <Link to="/" className="text-corporate-gold font-medium hover:underline text-xs">
-        Schimbă departamentul
-      </Link>
     </div>
   );
 }

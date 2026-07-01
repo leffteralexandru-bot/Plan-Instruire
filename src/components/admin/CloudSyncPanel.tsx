@@ -1,35 +1,71 @@
 import { useState } from 'react';
-import { STAGIARI } from '@/data/users';
+import { useUsers } from '@/context/UsersContext';
 import { isSupabaseConfigured } from '@/store/storage';
 import { syncAllTraineesToCloud } from '@/lib/authService';
+import { syncHrPerformanceWithCloud } from '@/lib/hrPerformanceSync';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
 export function CloudSyncPanel() {
+  const { allTrainees } = useUsers();
   const [status, setStatus] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<'progress' | 'hr' | 'all' | null>(null);
 
   if (!isSupabaseConfigured()) {
     return (
       <Card padding="sm" className="border-slate-200 bg-slate-50/50">
         <h2 className="text-sm font-semibold text-corporate-dark">Sincronizare cloud</h2>
         <p className="text-xs text-corporate-muted mt-1">
-          Configurați Supabase în .env.local pentru sync multi-device.
+          Configurați Supabase în .env.local. Rulați și{' '}
+          <code className="bg-slate-100 px-1 rounded">supabase/schema-hr-performance.sql</code>.
         </p>
       </Card>
     );
   }
 
-  const handleSyncAll = async () => {
-    setLoading(true);
+  const syncProgress = async () => {
+    setLoading('progress');
     setStatus(null);
     try {
-      const count = await syncAllTraineesToCloud(STAGIARI.map((s) => s.id));
-      setStatus(`Sincronizat ${count}/${STAGIARI.length} stagiari în cloud.`);
+      const count = await syncAllTraineesToCloud(allTrainees.map((s) => s.id));
+      setStatus(`Progres instruire: ${count}/${allTrainees.length} angajați sincronizați.`);
     } catch {
-      setStatus('Eroare la sincronizare. Verificați conexiunea și credențialele Supabase.');
+      setStatus('Eroare sync progres. Verificați Supabase.');
     } finally {
-      setLoading(false);
+      setLoading(null);
+    }
+  };
+
+  const syncHr = async () => {
+    setLoading('hr');
+    setStatus(null);
+    try {
+      const result = await syncHrPerformanceWithCloud();
+      const labels: Record<string, string> = {
+        pushed: 'Date HR trimise în cloud.',
+        pulled: 'Date HR încărcate din cloud.',
+        merged: 'Date HR îmbinate (local + cloud).',
+        skipped: 'Sync HR omis — verificați tabelul hr_performance.',
+      };
+      setStatus(labels[result] ?? result);
+    } catch {
+      setStatus('Eroare sync HR. Rulați schema-hr-performance.sql în Supabase.');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const syncAll = async () => {
+    setLoading('all');
+    setStatus(null);
+    try {
+      const count = await syncAllTraineesToCloud(allTrainees.map((s) => s.id));
+      const hrResult = await syncHrPerformanceWithCloud();
+      setStatus(`Complet: progres ${count}/${allTrainees.length} · HR: ${hrResult}`);
+    } catch {
+      setStatus('Eroare sincronizare completă.');
+    } finally {
+      setLoading(null);
     }
   };
 
@@ -37,17 +73,25 @@ export function CloudSyncPanel() {
     <Card>
       <h2 className="text-lg font-semibold text-corporate-dark mb-1">Sincronizare cloud Supabase</h2>
       <p className="text-sm text-corporate-muted mb-4">
-        Trimite progresul tuturor stagiarilor din acest browser către cloud. Recomandat înainte de schimbare
-        dispozitiv sau raport HR centralizat.
+        Progres instruire + date performanță HR (profile, evaluări, erori, KPI). Documentele scanate rămân
+        local (IndexedDB) — doar metadata se sincronizează.
       </p>
       {status && (
         <div className="mb-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2 text-sm text-emerald-800">
           {status}
         </div>
       )}
-      <Button variant="primary" size="sm" type="button" onClick={handleSyncAll} disabled={loading}>
-        {loading ? 'Se sincronizează…' : 'Sync toate cohortele → cloud'}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" size="sm" type="button" onClick={syncProgress} disabled={!!loading}>
+          {loading === 'progress' ? '…' : 'Sync progres instruire'}
+        </Button>
+        <Button variant="secondary" size="sm" type="button" onClick={syncHr} disabled={!!loading}>
+          {loading === 'hr' ? '…' : 'Sync date HR'}
+        </Button>
+        <Button variant="primary" size="sm" type="button" onClick={syncAll} disabled={!!loading}>
+          {loading === 'all' ? 'Se sincronizează…' : 'Sync complet → cloud'}
+        </Button>
+      </div>
     </Card>
   );
 }

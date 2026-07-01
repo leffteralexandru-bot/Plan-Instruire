@@ -1,5 +1,5 @@
 import { ALL_DAYS } from '@/data/trainingPlan';
-import type { AppProgress, AuditEntry, User } from '@/types';
+import type { AppProgress, AuditEntry, TraineeProfile } from '@/types';
 import type { TraineeHrReport } from '@/lib/hrReport';
 import { getPendingMentorValidations } from '@/lib/hrReport';
 
@@ -66,7 +66,7 @@ export function getTraineeStatus(row: TraineeHrReport, reference = new Date()): 
 }
 
 export function aggregateAuditLog(
-  trainees: User[],
+  trainees: TraineeProfile[],
   getProgress: (userId: string) => AppProgress,
   limit = 50,
 ): AuditLogRow[] {
@@ -81,7 +81,7 @@ export function aggregateAuditLog(
 }
 
 export function getMentorWorkload(
-  trainees: User[],
+  trainees: TraineeProfile[],
   getProgress: (userId: string) => AppProgress,
 ): MentorWorkloadItem[] {
   return trainees
@@ -116,7 +116,7 @@ export function getCohortProgressAverage(trainees: TraineeHrReport[]): number {
 
 /** Distribuție progres pe săptămâni — pentru grafic cohortă */
 export function getWeekCompletionRates(
-  trainees: User[],
+  trainees: TraineeProfile[],
   getProgress: (userId: string) => AppProgress,
 ): { week: number; label: string; percent: number }[] {
   const weeks = [

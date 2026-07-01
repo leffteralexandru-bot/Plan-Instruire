@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 export function EvaluationsPage() {
-  const { isStagiar, isMentor, isAdmin, loading, user } = useAuth();
+  const { isInTraining, canAccessMentor, loading, user } = useAuth();
   const { progress, saveActConstatare } = useProgress();
 
   if (loading || !user) return null;
@@ -22,7 +22,7 @@ export function EvaluationsPage() {
         <p className="text-corporate-muted mt-1">Acte de constatare și feedback evaluări săptămânale</p>
       </div>
 
-      {isStagiar && <ActConstatareForm defaultDayId="day-18" onSubmit={saveActConstatare} />}
+      {isInTraining && <ActConstatareForm defaultDayId="day-18" onSubmit={saveActConstatare} />}
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-corporate-dark">Feedback Evaluări</h2>
@@ -38,7 +38,7 @@ export function EvaluationsPage() {
               <FeedbackSummary feedback={feedbackWeek2} />
             ) : (
               <p className="text-sm text-corporate-muted">
-                {isMentor || isAdmin
+                {canAccessMentor
                   ? 'Completați formularul din Panoul Mentor.'
                   : 'Feedback-ul va fi completat de mentor la finalul Săptămânii II.'}
               </p>
@@ -56,7 +56,7 @@ export function EvaluationsPage() {
               <FeedbackSummary feedback={feedbackWeek4} />
             ) : (
               <p className="text-sm text-corporate-muted">
-                {isMentor || isAdmin
+                {canAccessMentor
                   ? 'Completați formularul din Panoul Mentor.'
                   : 'Evaluarea finală va fi completată de mentor la Ziua 20.'}
               </p>

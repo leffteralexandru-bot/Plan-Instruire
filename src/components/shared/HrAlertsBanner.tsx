@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { computeHrAlerts, dismissHrAlert, type HrAlert } from '@/lib/hrAlerts';
+import { openHrAlertEmailDraft } from '@/lib/emailAlerts';
 import { Button } from '@/components/ui/Button';
 
 export function HrAlertsBanner() {
-  const { isMentor, isAdmin } = useAuth();
+  const { canAccessAdmin, canAccessMentor } = useAuth();
+  const showAlerts = canAccessAdmin || canAccessMentor;
   const [alerts, setAlerts] = useState<HrAlert[]>([]);
 
   useEffect(() => {
-    if (!isMentor && !isAdmin) return;
+    if (!showAlerts) return;
     setAlerts(computeHrAlerts().slice(0, 3));
-  }, [isMentor, isAdmin]);
+  }, [showAlerts]);
 
-  if (!isMentor && !isAdmin) return null;
+  if (!showAlerts) return null;
   if (!alerts.length) return null;
 
   const severityStyle: Record<HrAlert['severity'], string> = {
@@ -23,6 +25,11 @@ export function HrAlertsBanner() {
 
   return (
     <div className="space-y-2 mb-4">
+      <div className="flex flex-wrap justify-end gap-2 mb-1">
+        <Button type="button" variant="ghost" size="sm" onClick={() => openHrAlertEmailDraft('all')}>
+          Draft email alerte
+        </Button>
+      </div>
       {alerts.map((a) => (
         <div
           key={a.id}

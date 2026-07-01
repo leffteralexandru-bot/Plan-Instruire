@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getDayById } from '@/data/trainingPlan';
-import { ingineriPath } from '@/data/departments';
+import { INGINERI_PLAN_PATH } from '@/data/departments';
 import { useAuth } from '@/hooks/useAuth';
 import { useProgress } from '@/hooks/useProgress';
 import { DayView } from '@/components/day/DayView';
@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/Button';
 
 export function DayPage() {
   const { dayId } = useParams<{ dayId: string }>();
-  const { user, isMentor, isAdmin, loading: authLoading } = useAuth();
+  const { user, canAccessMentor, loading: authLoading } = useAuth();
   const { isDayUnlocked, visitDay } = useProgress();
-  const canViewAny = isMentor || isAdmin;
+  const canViewAny = canAccessMentor;
 
   const day = dayId ? getDayById(dayId) : undefined;
 
@@ -26,8 +26,8 @@ export function DayPage() {
     return (
       <Card className="text-center py-12">
         <p className="text-corporate-muted">Ziua nu a fost găsită.</p>
-        <Link to={ingineriPath()} className="mt-4 inline-block">
-          <Button variant="ghost">Înapoi la Dashboard</Button>
+        <Link to={INGINERI_PLAN_PATH} className="mt-4 inline-block">
+          <Button variant="ghost">Înapoi la plan</Button>
         </Link>
       </Card>
     );
@@ -41,8 +41,8 @@ export function DayPage() {
         <p className="text-sm text-corporate-muted mt-2">
           Finalizați ziua anterioară pentru a debloca această zi.
         </p>
-        <Link to={ingineriPath()} className="mt-4 inline-block">
-          <Button variant="primary">Înapoi la Dashboard</Button>
+        <Link to={INGINERI_PLAN_PATH} className="mt-4 inline-block">
+          <Button variant="primary">Înapoi la plan</Button>
         </Link>
       </Card>
     );

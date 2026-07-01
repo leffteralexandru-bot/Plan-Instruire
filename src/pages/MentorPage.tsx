@@ -2,11 +2,13 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { MentorPanel } from '@/components/mentor/MentorPanel';
 import { ingineriPath } from '@/data/departments';
+import { useAccessControl } from '@/hooks/useAccessControl';
 
 export function MentorPage() {
-  const { isMentor, isAdmin } = useAuth();
-
-  if (!isMentor && !isAdmin) return <Navigate to={ingineriPath()} replace />;
+  const { loading } = useAuth();
+  const { canOpenMentorPanel } = useAccessControl();
+  if (loading) return null;
+  if (!canOpenMentorPanel) return <Navigate to={ingineriPath()} replace />;
 
   return <MentorPanel />;
 }

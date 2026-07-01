@@ -8,6 +8,17 @@ export interface DepartmentPlanPreview {
 }
 
 export const DEPARTMENT_PLAN_PREVIEWS: Record<Exclude<DepartmentId, 'ingineri'>, DepartmentPlanPreview> = {
+  montatori: {
+    id: 'montatori',
+    durationEstimate: 'în definire',
+    modules: [
+      'Siguranță pe șantier și manipulare piese',
+      'Pregătire șantier și protecții',
+      'Montaj blaturi granit, quartz și ceramică',
+      'Impermeabilizare, etanșări (chiuvetă, plită)',
+      'Predare lucrare și checklist calitate',
+    ],
+  },
   productie: {
     id: 'productie',
     durationEstimate: 'în definire',

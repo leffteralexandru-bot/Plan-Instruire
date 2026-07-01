@@ -1,7 +1,8 @@
-import { STAGIARI } from '@/data/users';
+import { userStore } from '@/lib/userStore';
 import { storage } from '@/store/storage';
 import { buildTraineeHrReport } from '@/lib/hrReport';
 import { getTraineeStatus, getTraineeStatusLabel, getMentorWorkload } from '@/lib/hrAnalytics';
+import { hrPerformanceStore, EVALUATION_ALERT_DAYS, EVALUATION_STATUS_LABELS } from '@/lib/hrPerformanceStore';
 
 export type HrAlertSeverity = 'info' | 'warning' | 'critical';
 
@@ -17,9 +18,10 @@ const ALERT_DISMISS_KEY = 'artgranit_hr_alerts_dismissed';
 
 export function computeHrAlerts(): HrAlert[] {
   const alerts: HrAlert[] = [];
+  const trainees = userStore.getTraineeProfiles();
   const getProgress = (id: string) => storage.getProgress(id);
 
-  for (const t of STAGIARI) {
+  for (const t of trainees) {
     const row = buildTraineeHrReport(t, getProgress(t.id));
     const status = getTraineeStatus(row);
 
@@ -52,7 +54,7 @@ export function computeHrAlerts(): HrAlert[] {
     }
   }
 
-  const workload = getMentorWorkload(STAGIARI, getProgress);
+  const workload = getMentorWorkload(trainees, getProgress);
   if (workload.length > 0) {
     const total = workload.reduce((n, w) => n + w.pendingDayNumbers.length, 0);
     alerts.push({
@@ -61,6 +63,47 @@ export function computeHrAlerts(): HrAlert[] {
       title: 'Validări mentor în așteptare',
       message: `${total} validări pentru ${workload.length} stagiar(i)`,
     });
+  }
+
+  for (const profile of hrPerformanceStore.getProfiles()) {
+    const name = `${profile.prenume} ${profile.nume}`.trim();
+    const current = hrPerformanceStore.getCurrentEvaluation(profile.userId);
+    if (!current || current.status === 'evaluat') continue;
+
+    const days = hrPerformanceStore.daysUntil(current.termenReevaluare);
+    if (current.status === 'intarziat') {
+      alerts.push({
+        id: `eval-overdue-${profile.userId}`,
+        severity: 'critical',
+        title: `Evaluare întârziată — ${name}`,
+        message: `Termen ${current.termenReevaluare} · ${EVALUATION_STATUS_LABELS[current.status]}`,
+        traineeId: profile.userId,
+      });
+    } else if (days >= 0 && days <= EVALUATION_ALERT_DAYS) {
+      alerts.push({
+        id: `eval-due-${profile.userId}`,
+        severity: 'warning',
+        title: `Evaluare în ${days} zile — ${name}`,
+        message: `Termen reevaluare: ${current.termenReevaluare}`,
+        traineeId: profile.userId,
+      });
+    }
+  }
+
+  for (const err of hrPerformanceStore.getErrorCases()) {
+    if (err.planActiune.status === 'inchis') continue;
+    const days = hrPerformanceStore.daysUntil(err.planActiune.termenLimita);
+    if (days < 0) {
+      const profile = hrPerformanceStore.getProfile(err.angajatId);
+      const name = profile ? `${profile.prenume} ${profile.nume}`.trim() : err.angajatId;
+      alerts.push({
+        id: `action-overdue-${err.id}`,
+        severity: 'warning',
+        title: `Plan acțiune depășit — ${name}`,
+        message: err.proiectNume ?? err.descriere.slice(0, 80),
+        traineeId: err.angajatId,
+      });
+    }
   }
 
   return alerts;

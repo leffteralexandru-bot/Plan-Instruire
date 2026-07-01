@@ -1,49 +1,44 @@
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { DEPARTMENTS, departmentBasePath, getAvailableDepartments, ingineriPath } from '@/data/departments';
-import { DepartmentCard } from '@/components/departments/DepartmentCard';
+import { DEPARTMENTS, getAvailableDepartments, INGINERI_ANGAJAT_PANEL_PATH, ingineriPath } from '@/data/departments';
 import { Card } from '@/components/ui/Card';
 
-/** Stagiar cu un singur departament activ → intră direct în plan */
-function StagiarAutoRedirect() {
-  const { user, isStagiar } = useAuth();
+/** Angajat autentificat → Panou Angajat (hub principal) */
+function AngajatAutoRedirect() {
+  const { isAngajat, loading } = useAuth();
 
-  if (!isStagiar || !user?.departmentId) return null;
+  if (loading || !isAngajat) return null;
 
-  const dept = DEPARTMENTS.find((d) => d.id === user.departmentId);
-  if (dept?.planAvailable) {
-    return <Navigate to={departmentBasePath(dept.id)} replace />;
-  }
-
-  return null;
+  return <Navigate to={INGINERI_ANGAJAT_PANEL_PATH} replace />;
 }
 
 export function DepartmentHubPage() {
-  const { user, isMentor, isAdmin } = useAuth();
+  const { user, canAccessMentor, canAccessAdmin } = useAuth();
   const available = getAvailableDepartments();
+  const comingSoon = DEPARTMENTS.filter((d) => !d.planAvailable);
 
   return (
     <>
-      <StagiarAutoRedirect />
+      <AngajatAutoRedirect />
 
-      <div className="space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
+      <div className="space-y-6 max-w-2xl mx-auto">
+        <div className="text-center space-y-3 pt-2">
           <h1 className="text-2xl sm:text-3xl font-semibold text-corporate-dark">
             Plan Instruire & Adaptare Profesională
           </h1>
-          <p className="text-corporate-muted">
-            Bine ai venit{user ? `, ${user.name.split(' ')[0]}` : ''}! Selectează departamentul
-            pentru care dorești să accesezi planul de instruire.
+          <p className="text-corporate-muted text-sm sm:text-base">
+            Bine ai venit{user ? `, ${user.name.split(' ')[0]}` : ''}! Alege departamentul din bara de
+            sus pentru a accesa planul de instruire.
           </p>
         </div>
 
-        {(isMentor || isAdmin) && (
+        {(canAccessMentor || canAccessAdmin) && (
           <Card className="border-corporate-gold/25 bg-corporate-gold-light/20">
             <p className="text-sm text-corporate-stone">
               <strong>Mentor / HR:</strong> Planul complet este disponibil pentru{' '}
               <strong>Ingineri</strong>. Accesați{' '}
               <Link to={ingineriPath('/admin')} className="text-corporate-gold underline">
-                Admin HR
+                Panoul HR
               </Link>{' '}
               sau{' '}
               <Link to={ingineriPath('/mentor')} className="text-corporate-gold underline">
@@ -54,15 +49,14 @@ export function DepartmentHubPage() {
           </Card>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {DEPARTMENTS.map((dept) => (
-            <DepartmentCard key={dept.id} department={dept} />
-          ))}
-        </div>
-
-        <p className="text-center text-xs text-corporate-muted max-w-xl mx-auto">
-          {available.length} din {DEPARTMENTS.length} planuri active · Producție, Administrație și
-          Management — în curând
+        <p className="text-center text-xs text-corporate-muted">
+          {available.length} din {DEPARTMENTS.length} planuri active
+          {comingSoon.length > 0 && (
+            <>
+              {' '}
+              · {comingSoon.map((d) => d.label).join(', ')} — în curând
+            </>
+          )}
         </p>
       </div>
     </>

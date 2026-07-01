@@ -6,15 +6,21 @@ import {
   getPendingMentorValidations,
   MENTOR_VALIDATION_DAY_NUMBERS,
 } from '@/lib/hrReport';
-import type { AppProgress, User } from '@/types';
+import type { AppProgress, TraineeProfile } from '@/types';
 
-const trainee: User = {
+const trainee: TraineeProfile = {
   id: 'u-stagiar-1',
   name: 'Alexandru Popescu',
-  role: 'stagiar',
+  roles: ['angajat'],
   email: 'a.popescu@artgranit.ro',
+  active: true,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  enrollmentId: 'enr-1',
   mentorId: 'u-mentor',
+  cohortId: 'cohort-2026-i',
+  departmentId: 'ingineri',
   programStart: '2026-06-01',
+  enrollmentStatus: 'active',
 };
 
 function baseProgress(overrides: Partial<AppProgress> = {}): AppProgress {

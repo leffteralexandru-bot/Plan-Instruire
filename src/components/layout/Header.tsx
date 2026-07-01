@@ -6,14 +6,12 @@ import { Navigation } from './Navigation';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { getDepartmentFromPath } from '@/data/departments';
 
-const ROLE_LABELS: Record<string, string> = {
-  stagiar: 'Inginer Stagiar',
-  mentor: 'Mentor / Șef Proiectare',
-  admin: 'Admin / HR',
-};
+import { formatUserRoles } from '@/lib/roles';
+import { DepartmentBar } from '@/components/departments/DepartmentBar';
+import { QuickNoteButton } from '@/components/shared/QuickNoteButton';
 
 export function Header() {
-  const { user, logout, isStagiar } = useAuth();
+  const { user, logout, isInTraining } = useAuth();
   const location = useLocation();
   const isHub = location.pathname === '/';
   const activeDept = getDepartmentFromPath(location.pathname);
@@ -40,18 +38,11 @@ export function Header() {
 
         {user && (
           <div className="flex items-center gap-2 sm:gap-3">
-            {!isHub && activeDept?.planAvailable && isStagiar && <FieldModeToggle />}
-            {!isHub && activeDept && (
-              <Link
-                to="/"
-                className="hidden sm:inline text-xs text-white/60 hover:text-corporate-gold transition-colors"
-              >
-                ← Departamente
-              </Link>
-            )}
+            {!isHub && activeDept?.planAvailable && isInTraining && <FieldModeToggle />}
+            <QuickNoteButton />
             <div className="text-right hidden md:block">
               <p className="text-sm font-medium text-white">{user.name}</p>
-              <p className="text-xs text-white/60">{ROLE_LABELS[user.role]}</p>
+              <p className="text-xs text-white/60">{formatUserRoles(user)}</p>
             </div>
             <Button
               variant="ghost"
@@ -65,6 +56,7 @@ export function Header() {
         )}
       </div>
 
+      {user && <DepartmentBar />}
       {showNav && <Navigation />}
     </header>
   );

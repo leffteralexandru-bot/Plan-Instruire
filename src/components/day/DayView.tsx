@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { DayPlan } from '@/types';
 import { getWeekForDay } from '@/data/trainingPlan';
-import { ingineriPath } from '@/data/departments';
+import { ingineriPath, INGINERI_PLAN_PATH } from '@/data/departments';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { useStagiarName } from '@/hooks/useStagiarId';
@@ -55,7 +55,7 @@ export function DayView({ day, readOnly }: DayViewProps) {
   return (
     <div className={`space-y-6 ${fieldMode ? 'field-mode-active' : ''}`}>
       <div>
-        <Link to={ingineriPath()} className="text-sm text-corporate-accent-blue hover:underline mb-3 inline-block">
+        <Link to={INGINERI_PLAN_PATH} className="text-sm text-corporate-accent-blue hover:underline mb-3 inline-block">
           ← Înapoi la Dashboard
         </Link>
         <div className="flex flex-wrap items-center gap-2 mb-2">

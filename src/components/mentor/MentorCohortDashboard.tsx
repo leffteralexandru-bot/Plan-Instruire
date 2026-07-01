@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { STAGIARI } from '@/data/users';
 import { storage } from '@/store/storage';
 import { buildTraineeHrReport, getPendingMentorValidations } from '@/lib/hrReport';
 import { getTraineeStatus, getTraineeStatusLabel } from '@/lib/hrAnalytics';
@@ -7,15 +6,20 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Link } from 'react-router-dom';
 import { ingineriPath } from '@/data/departments';
+import { useUsers } from '@/context/UsersContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MentorCohortDashboardProps {
   onSelectTrainee?: (traineeId: string) => void;
 }
 
 export function MentorCohortDashboard({ onSelectTrainee }: MentorCohortDashboardProps) {
+  const { visibleTrainees } = useUsers();
+  const { canAccessAdmin } = useAuth();
+
   const rows = useMemo(
-    () => STAGIARI.map((t) => buildTraineeHrReport(t, storage.getProgress(t.id))),
-    [],
+    () => visibleTrainees.map((t) => buildTraineeHrReport(t, storage.getProgress(t.id))),
+    [visibleTrainees],
   );
 
   const pendingTotal = rows.reduce((n, r) => n + r.pendingMentorValidations.length, 0);
@@ -24,18 +28,22 @@ export function MentorCohortDashboard({ onSelectTrainee }: MentorCohortDashboard
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-corporate-dark">Vedere cohortă — toți stagiarii</h2>
+          <h2 className="text-lg font-semibold text-corporate-dark">
+            {canAccessAdmin ? 'Vedere cohortă — toți angajații' : 'Angajații mei în instruire'}
+          </h2>
           <p className="text-sm text-corporate-muted">
-            {STAGIARI.length} stagiari · {pendingTotal} validări în așteptare
+            {visibleTrainees.length} angajat(i) · {pendingTotal} validări în așteptare
           </p>
         </div>
-        <Link to={ingineriPath('/admin')} className="text-xs text-corporate-accent-blue hover:underline">
-          Raport HR complet →
-        </Link>
+        {canAccessAdmin && (
+          <Link to={ingineriPath('/admin')} className="text-xs text-corporate-accent-blue hover:underline">
+            Raport HR complet →
+          </Link>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {STAGIARI.map((t) => {
+        {visibleTrainees.map((t) => {
           const row = rows.find((r) => r.userId === t.id)!;
           const status = getTraineeStatus(row);
           const pending = getPendingMentorValidations(storage.getProgress(t.id));
@@ -65,3 +73,4 @@ export function MentorCohortDashboard({ onSelectTrainee }: MentorCohortDashboard
     </Card>
   );
 }
+

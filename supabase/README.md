@@ -7,7 +7,10 @@
 | Fișier | Utilizare |
 |--------|-----------|
 | `schema.sql` | **MVP / demo** — policy anon deschis |
-| `schema-production.sql` | **Producție** — RLS + profiles + auth.uid() |
+| `schema-production.sql` | **Producție** — RLS + profiles + auth |
+| `schema-hr-performance.sql` | **Performanță HR** — evaluări, erori, KPI |
+
+Rulați `schema-hr-performance.sql` după schema principală pentru sync date HR.
 
 ## 3. Storage
 
@@ -41,4 +44,5 @@ VITE_BITRIX_WEBHOOK_URL=https://artgranit.bitrix24.ro/rest/1/xxx/
 |-----|-----------|
 | Fără .env | LocalStorage + IndexedDB |
 | Cu Supabase | Sync progres la login + save |
+| Cu Supabase + `hr_performance` | Sync profile HR, evaluări, erori, KPI |
 | Cu Auth | Login email + parolă Supabase |

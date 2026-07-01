@@ -21,6 +21,9 @@ import {
   getResumeDayId,
 } from '@/lib/progressLogic';
 import { useAuth } from '@/hooks/useAuth';
+import { trainingSystemStore } from '@/lib/trainingSystemStore';
+import { ACTIVE_DEPARTMENT_ID } from '@/lib/departmentPlans';
+import { userStore } from '@/lib/userStore';
 
 function emptyDayProgress(): DayProgress {
   return { completedTasks: [], mentorValidated: false };
@@ -108,6 +111,25 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
         });
       }
       void syncProgressToCloud(next.userId, next);
+
+      const allDaysComplete = ALL_DAYS.every((day) =>
+        checkDayComplete(day, next.days[day.id] ?? emptyDayProgress()),
+      );
+      if (allDaysComplete) {
+        const enr = userStore.getActiveEnrollmentForAngajat(next.userId);
+        const totalTasks = getTotalTasks();
+        let completedTasks = 0;
+        ALL_DAYS.forEach((day) => {
+          completedTasks += next.days[day.id]?.completedTasks.length ?? 0;
+        });
+        trainingSystemStore.tryArchiveCompletedPlan({
+          angajatId: next.userId,
+          departmentId: enr?.departmentId ?? ACTIVE_DEPARTMENT_ID,
+          enrollmentId: enr?.id,
+          progressPercent: totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 100,
+          allDaysComplete: true,
+        });
+      }
     },
     [user],
   );
