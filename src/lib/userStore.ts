@@ -129,8 +129,8 @@ const SEED_ENROLLMENTS: TrainingEnrollment[] = [
 ];
 
 function seedIfEmpty(): void {
-  let users = readJson<RawUser[]>(USERS_KEY, []);
-  let enrollments = readJson<TrainingEnrollment[]>(ENROLLMENTS_KEY, []);
+  const users = readJson<RawUser[]>(USERS_KEY, []);
+  const enrollments = readJson<TrainingEnrollment[]>(ENROLLMENTS_KEY, []);
 
   if (users.length === 0) {
     writeJson(USERS_KEY, SEED_USERS);
