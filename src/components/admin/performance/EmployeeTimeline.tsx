@@ -6,6 +6,8 @@ const TYPE_LABELS: Record<TimelineEvent['type'], string> = {
   eroare: 'Eroare',
   document: 'Document',
   instruire: 'Instruire',
+  re_instruire: 'Re-instruire',
+  alerta_eroare: 'Alertă eroare',
   audit: 'Activitate',
 };
 

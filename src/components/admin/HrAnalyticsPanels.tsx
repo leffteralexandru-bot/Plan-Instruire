@@ -13,7 +13,7 @@ export function ProgressCohortChart({ weekRates, cohortAverage }: ProgressCohort
     <Card>
       <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-corporate-dark">Progres cohortă</h2>
+          <h2 className="text-lg font-semibold text-corporate-dark">Progres grupă</h2>
           <p className="text-sm text-corporate-muted">Media generală: {cohortAverage}%</p>
         </div>
       </div>

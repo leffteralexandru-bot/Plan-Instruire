@@ -84,7 +84,7 @@ export function OrgSettingsForm() {
         />
         <div className="space-y-1.5">
           <label htmlFor="activeCohortId" className="block text-sm font-medium text-slate-700">
-            Cohortă activă
+            Grupă activă
           </label>
           <select
             id="activeCohortId"

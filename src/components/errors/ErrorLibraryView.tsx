@@ -59,7 +59,7 @@ export function ErrorLibraryView() {
 
       {cohortHeatmap && cohortHeatmap.some((h) => h.count > 0) && (
         <Card>
-          <h2 className="font-semibold text-corporate-dark">Heatmap cohortă (toți stagiarii)</h2>
+          <h2 className="font-semibold text-corporate-dark">Heatmap grupă (toți stagiarii)</h2>
           <div className="flex flex-wrap gap-2 mt-2">
             {cohortHeatmap
               .filter((h) => h.count > 0)

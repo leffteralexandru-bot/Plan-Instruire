@@ -49,7 +49,7 @@ export function AuditLogViewer({ entries, onExport }: AuditLogViewerProps) {
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-        <h2 className="text-lg font-semibold text-corporate-dark">Jurnal audit (cohortă)</h2>
+        <h2 className="text-lg font-semibold text-corporate-dark">Jurnal audit (grupă)</h2>
         {entries.length > 0 && (
           <Button variant="ghost" size="sm" type="button" onClick={onExport}>
             Export audit CSV

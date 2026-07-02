@@ -19,6 +19,7 @@ import { EmployeeDetailPage, LegacyAdminEmployeeRedirect } from '@/pages/Employe
 import { AngajatPanelPage } from '@/pages/AngajatPanelPage';
 import { MyAccountPage } from '@/pages/MyAccountPage';
 import { DocumentatieBazaPage } from '@/pages/DocumentatieBazaPage';
+import { IngineriIndexPage } from '@/pages/IngineriIndexPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();

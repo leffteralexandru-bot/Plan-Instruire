@@ -60,18 +60,18 @@ export function TrainingPanel() {
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Stagiari activi" value={String(report.summary.totalTrainees)} />
-        <KpiCard label="Medie cohortă" value={`${cohortAverage}%`} />
+        <KpiCard label="Medie grupă" value={`${cohortAverage}%`} />
         <KpiCard
           label="Validări în așteptare"
           value={String(report.summary.pendingValidationsTotal)}
           highlight={report.summary.pendingValidationsTotal > 0}
         />
-        <KpiCard label="Cohortă activă" value={getActiveCohort().label.split('—')[0].trim()} />
+        <KpiCard label="Grupă activă" value={getActiveCohort().label.split('—')[0].trim()} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card padding="sm">
-          <h2 className="text-sm font-semibold text-corporate-dark mb-3">Status cohortă</h2>
+          <h2 className="text-sm font-semibold text-corporate-dark mb-3">Status grupă</h2>
           <div className="flex flex-wrap gap-2">
             {(Object.entries(statusCounts) as [keyof typeof statusCounts, number][]).map(([key, count]) =>
               count > 0 ? (

@@ -1,4 +1,4 @@
-/** Cohorte program instruire artGRANIT */
+/** Grupuri (colective) program instruire artGRANIT */
 export interface Cohort {
   id: string;
   label: string;
@@ -10,14 +10,14 @@ export interface Cohort {
 export const COHORTS: Cohort[] = [
   {
     id: 'cohort-2026-i',
-    label: 'Cohortă I — Iunie 2026',
+    label: 'Grupa I — Iunie 2026',
     programVersion: '2026.1',
     startDate: '2026-06-01',
     active: true,
   },
   {
     id: 'cohort-2026-ii',
-    label: 'Cohortă II — Septembrie 2026',
+    label: 'Grupa II — Septembrie 2026',
     programVersion: '2026.2',
     startDate: '2026-09-01',
     active: false,

@@ -326,7 +326,7 @@ function HrStaffSection() {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-corporate-muted">Cohortă</span>
+              <span className="text-corporate-muted">Grupă instruire</span>
               <select
                 className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"
                 value={enrCohortId}

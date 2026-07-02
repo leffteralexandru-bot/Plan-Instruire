@@ -4,7 +4,7 @@ export const ADMIN_TABS: { id: AdminTab; label: string; description: string }[] 
   { id: 'angajati', label: 'Angajați', description: 'Baza de date & fișe 360°' },
   { id: 'evaluari', label: 'Evaluări', description: 'Cicluri tri-lunale (90 zile)' },
   { id: 'erori', label: 'Erori & KPI', description: 'Performanță & trend' },
-  { id: 'instruire', label: 'Instruire', description: 'Plan cohortă & export' },
+  { id: 'instruire', label: 'Instruire', description: 'Plan grupă & export' },
   { id: 'setari', label: 'Setări', description: 'Organizare & backup' },
 ];
 

@@ -29,7 +29,7 @@ export function MentorCohortDashboard({ onSelectTrainee }: MentorCohortDashboard
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div>
           <h2 className="text-lg font-semibold text-corporate-dark">
-            {canAccessAdmin ? 'Vedere cohortă — toți angajații' : 'Angajații mei în instruire'}
+            {canAccessAdmin ? 'Vedere grupă — toți angajații' : 'Angajații mei în instruire'}
           </h2>
           <p className="text-sm text-corporate-muted">
             {visibleTrainees.length} angajat(i) · {pendingTotal} validări în așteptare
