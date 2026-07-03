@@ -49,6 +49,16 @@ export function AngajatPanelView() {
     [user?.id],
   );
 
+  const currentEval = useMemo(() => {
+    if (!user) return undefined;
+    const mine = evaluations.filter((e) => e.angajatId === user.id);
+    return (
+      mine.find((c) => c.status === 'in_curs' || c.status === 'intarziat') ??
+      mine.find((c) => c.status === 'planificat') ??
+      [...mine].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+    );
+  }, [evaluations, user?.id]);
+
   if (!user) return null;
 
   const profile = profiles.find((p) => p.userId === user.id);
@@ -58,14 +68,6 @@ export function AngajatPanelView() {
   const assignedMentor = enrollment ? users.find((u) => u.id === enrollment.mentorId) : undefined;
   const evaluator = profile?.managerId ? users.find((u) => u.id === profile.managerId) : assignedMentor;
 
-  const currentEval = useMemo(() => {
-    const mine = evaluations.filter((e) => e.angajatId === user.id);
-    return (
-      mine.find((c) => c.status === 'in_curs' || c.status === 'intarziat') ??
-      mine.find((c) => c.status === 'planificat') ??
-      [...mine].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
-    );
-  }, [evaluations, user.id]);
   const evalHistory = evaluations.filter((e) => e.angajatId === user.id);
   const timeline = buildEmployeeTimeline(user.id);
 

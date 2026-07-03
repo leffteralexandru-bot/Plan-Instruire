@@ -18,7 +18,16 @@ beforeEach(() => {
       for (const k of Object.keys(ls)) delete ls[k];
     },
   });
-  ls['artgranit_users'] = JSON.stringify([]);
+  ls['artgranit_users'] = JSON.stringify([
+    {
+      id: 'u1',
+      name: 'Test User',
+      email: 'u1@test.ro',
+      roles: ['angajat'],
+      active: true,
+      createdAt: '2026-01-01',
+    },
+  ]);
   ls['artgranit_enrollments'] = JSON.stringify([]);
   ls['artgranit_employee_profiles'] = JSON.stringify([
     {
@@ -28,6 +37,8 @@ beforeEach(() => {
       functie: 'Inginer',
       departamentId: 'ingineri',
       dataAngajarii: '2026-01-01',
+      supervisorId: 'u-sup',
+      managerId: 'u-sup',
       status: 'activ',
       tipAngajat: 'experimentat',
       createdAt: '2026-01-01',

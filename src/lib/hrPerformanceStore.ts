@@ -565,7 +565,7 @@ export const hrPerformanceStore = {
     const termen = addDays(start, EVALUATION_CYCLE_DAYS);
     const evaluatorId = profile.supervisorId ?? profile.managerId ?? angajatId;
 
-    let cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
+    const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
     const openIdx = cycles.findIndex(
       (c) =>
         c.angajatId === angajatId &&

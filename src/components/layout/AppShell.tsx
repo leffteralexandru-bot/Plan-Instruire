@@ -51,12 +51,12 @@ function ProgressGate({ children }: { children: React.ReactNode }) {
   const { visibleTrainees } = useUsers();
   const userId = useStagiarId();
 
-  if (loading) return <LoadingScreen />;
-
   const activeTrainees = useMemo(
     () => visibleTrainees.filter(isTraineeInActiveTraining),
     [visibleTrainees],
   );
+
+  if (loading) return <LoadingScreen />;
 
   const effectiveUserId =
     userId ||

@@ -27,6 +27,10 @@ const users = [
 
 describe('getEmployeeMentorAssignments', () => {
   it('folosește supervizorul din profil și mentorul din înscriere', () => {
+    ls.artgranit_users = JSON.stringify([
+      { id: 'u-ang', name: 'Test Angajat', roles: ['angajat'], email: 'ang@test.ro', active: true, createdAt: '2026-01-01' },
+      ...users,
+    ]);
     ls.artgranit_employee_profiles = JSON.stringify([
       {
         userId: 'u-ang',
