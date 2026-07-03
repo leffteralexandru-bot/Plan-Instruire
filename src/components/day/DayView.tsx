@@ -10,18 +10,15 @@ import { useFieldMode } from '@/context/FieldModeContext';
 import { TaskChecklist } from './TaskChecklist';
 import { MaterialsPanel } from './MaterialsPanel';
 import { TheoreticalTest } from './TheoreticalTest';
-import { BitrixQuickLink } from './BitrixQuickLink';
-import { BitrixConnectionStatus } from '@/components/bitrix/BitrixConnectionStatus';
 import { PhotoUpload } from '@/components/field/PhotoUpload';
 import { DevelopmentPlanForm } from '@/components/forms/DevelopmentPlanForm';
-import { CertificateIssue } from '@/components/certificate/CertificateGenerator';
+import { CertificateIssue, CertificateView } from '@/components/certificate/CertificateGenerator';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/dashboard/ProgressBar';
 import { Button } from '@/components/ui/Button';
 
 const FIELD_DAYS = [5, 6, 7, 11, 14];
-const BITRIX_DAYS = [5, 7, 11];
 
 interface DayViewProps {
   day: DayPlan;
@@ -81,13 +78,13 @@ export function DayView({ day, readOnly }: DayViewProps) {
         </Card>
       )}
 
-      {BITRIX_DAYS.includes(day.dayNumber) && (
-        <>
-          <BitrixConnectionStatus
-            dealId={progress?.acteConstatare.find((a) => a.bitrixProjectId)?.bitrixProjectId}
-          />
-          <BitrixQuickLink dayNumber={day.dayNumber} />
-        </>
+      {readOnly && (
+        <Card className="border-corporate-gold/25 bg-corporate-gold-light/25">
+          <p className="text-sm text-corporate-dark">
+            <strong>Vizualizare mentor</strong> — progresul lui {stagiarName}. Bifarea activităților se face
+            din contul angajatului sau de mentor din Cohortă instruire (validări/deblocări).
+          </p>
+        </Card>
       )}
 
       {day.id === 'day-10' && <TheoreticalTest readOnly={readOnly} />}
@@ -120,13 +117,23 @@ export function DayView({ day, readOnly }: DayViewProps) {
             onSave={saveDevelopmentPlan}
             readOnly={readOnly}
           />
-          {(isMentor || readOnly) && (
+          {progress?.certificate ? (
+            <CertificateView certificate={progress.certificate} progress={progress ?? undefined} />
+          ) : isMentor || readOnly ? (
             <CertificateIssue
               stagiarName={stagiarName}
               mentorName={user?.name ?? 'Mentor'}
-              existing={progress?.certificate}
+              progress={progress ?? undefined}
               onIssue={(mentor, stagiar) => issueCertificate({ mentorName: mentor, stagiarName: stagiar })}
             />
+          ) : (
+            <Card className="border-amber-200 bg-amber-50/40">
+              <h2 className="text-lg font-semibold text-corporate-dark">Certificat finalizare</h2>
+              <p className="text-sm text-corporate-muted mt-1">
+                Certificatul digital va apărea aici după ce mentorul validează Ziua 20 și apasă
+                „Emite certificat digital”. Veți putea descărca PDF-ul direct din aplicație.
+              </p>
+            </Card>
           )}
         </>
       )}

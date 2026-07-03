@@ -4,6 +4,7 @@ import { useProgress } from '@/hooks/useProgress';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { TheoreticalTestReview } from '@/components/mentor/TheoreticalTestReview';
 
 interface TheoreticalTestProps {
   readOnly?: boolean;
@@ -38,6 +39,7 @@ export function TheoreticalTest({ readOnly }: TheoreticalTestProps) {
         passed: didPass,
         completedAt: new Date().toISOString(),
         attempts: attempts + 1,
+        answers: { ...answers },
       },
       THEORETICAL_TEST.autoTaskId,
     );
@@ -86,14 +88,19 @@ export function TheoreticalTest({ readOnly }: TheoreticalTestProps) {
   }
 
   if (readOnly) {
+    if (!existing) {
+      return (
+        <Card>
+          <h2 className="text-lg font-semibold text-corporate-dark">Test Teoretic</h2>
+          <p className="text-sm text-corporate-muted mt-1">Angajatul nu a completat încă testul.</p>
+        </Card>
+      );
+    }
+
     return (
       <Card>
         <h2 className="text-lg font-semibold text-corporate-dark">Test Teoretic</h2>
-        <p className="text-sm text-corporate-muted mt-1">
-          {existing
-            ? `Stagiarul: ${existing.score}/${existing.total} — ${existing.passed ? 'promovat' : 'nepromovat'}`
-            : 'Stagiarul nu a completat încă testul.'}
-        </p>
+        <TheoreticalTestReview quizResult={existing} title="Rezultat test — verificare mentor" />
       </Card>
     );
   }

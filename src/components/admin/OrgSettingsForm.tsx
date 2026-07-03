@@ -1,20 +1,11 @@
 import { useState } from 'react';
 import type { OrgSettings } from '@/types';
-import { ARTGRANIT_BITRIX_PORTAL, getDefaultOrgSettings } from '@/data/bitrix';
+import { getDefaultOrgSettings } from '@/data/orgSettings';
 import { COHORTS } from '@/data/cohorts';
 import { storage } from '@/store/storage';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-
-function isValidUrl(value: string): boolean {
-  try {
-    const u = new URL(value);
-    return u.protocol === 'https:' || u.protocol === 'http:';
-  } catch {
-    return false;
-  }
-}
 
 export function OrgSettingsForm() {
   const current = storage.getSettings();
@@ -24,16 +15,11 @@ export function OrgSettingsForm() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isValidUrl(settings.bitrixPortalUrl)) {
-      setError('URL portal Bitrix invalid. Exemplu: https://artgranit.bitrix24.ro');
-      return;
-    }
     if (!settings.programVersion.trim()) {
       setError('Versiunea programului este obligatorie.');
       return;
     }
     storage.saveSettings({
-      bitrixPortalUrl: settings.bitrixPortalUrl.trim(),
       programVersion: settings.programVersion.trim(),
       activeCohortId: settings.activeCohortId,
     });
@@ -51,7 +37,7 @@ export function OrgSettingsForm() {
     <Card>
       <h2 className="text-lg font-semibold text-corporate-dark mb-1">Setări organizație artGRANIT</h2>
       <p className="text-sm text-corporate-muted mb-4">
-        Configurare locală (browser). Portal Bitrix poate fi setat și în <code className="bg-slate-100 px-1 rounded text-xs">.env.local</code>.
+        Configurare locală (browser) — versiune program și grupă activă.
       </p>
 
       {saved && (
@@ -66,14 +52,6 @@ export function OrgSettingsForm() {
       )}
 
       <form onSubmit={handleSave} className="space-y-4 max-w-lg">
-        <Input
-          id="bitrixPortalUrl"
-          label="Portal Bitrix24"
-          value={settings.bitrixPortalUrl}
-          onChange={(e) => setSettings((s) => ({ ...s, bitrixPortalUrl: e.target.value }))}
-          placeholder={ARTGRANIT_BITRIX_PORTAL}
-          required
-        />
         <Input
           id="programVersion"
           label="Versiune program instruire"
@@ -104,7 +82,7 @@ export function OrgSettingsForm() {
             Salvează setări
           </Button>
           <Button type="button" variant="secondary" size="sm" onClick={handleReset}>
-            Resetează URL Bitrix
+            Resetează la implicit
           </Button>
         </div>
       </form>

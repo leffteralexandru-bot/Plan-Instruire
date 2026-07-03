@@ -1,11 +1,14 @@
 import type { DepartmentId } from '@/data/departments';
 import type {
+  DesignerCompetencyScores,
   EmployeeProfile,
   EmployeeArchiveFolder,
+  EmployeeSelfAssessment,
   ErrorCase,
   ErrorMotiv,
   EvaluationCycle,
   EvaluationScores,
+  EvaluationStage,
   EvaluationStatus,
   HrDocument,
   HrDocumentType,
@@ -14,11 +17,29 @@ import type {
   QuickNoteType,
   User,
 } from '@/types';
-import { isAngajatUser, isMentorUser } from '@/lib/roles';
 import { userStore } from '@/lib/userStore';
+import { isAngajatUser, isMentorUser, canEditTrainingPlan } from '@/lib/roles';
 import { storage } from '@/store/storage';
 import { hrDocumentStore } from '@/store/hrDocumentStore';
 import { buildTraineeHrReport } from '@/lib/hrReport';
+import {
+  computeCompetencyOutcome,
+  competencyToEvaluationScores,
+  isCompetencyScoresComplete,
+} from '@/lib/competencyScoring';
+import {
+  createDefaultEvaluationStages,
+  ensureEvaluationStages,
+  isSelfAssessmentComplete,
+  isSupervisorAssessmentComplete,
+} from '@/lib/evaluationStages';
+import { upsertWeeklyEvalMentor, getWeeklyEvalMentorForWeek } from '@/lib/evaluationWeekMentors';
+import {
+  appendPrincipalMentorHistory,
+  appendSupervisorHistory,
+  appendWeeklyMentorHistory,
+  createHistoryEntry,
+} from '@/lib/assignmentHistory';
 
 const PROFILES_KEY = 'artgranit_employee_profiles';
 const EVALUATIONS_KEY = 'artgranit_evaluation_cycles';
@@ -30,6 +51,12 @@ const PERF_MIGRATION_FLAG = 'artgranit_perf_migrated_v1';
 
 export const EVALUATION_CYCLE_DAYS = 90;
 export const EVALUATION_ALERT_DAYS = 7;
+/** Reminder angajat/supervizor — evaluare se apropie */
+export const EVALUATION_REMINDER_START_DAYS = 14;
+/** După câte zile fără auto-evaluare → escalare supervizor */
+export const SELF_ASSESSMENT_SUPERVISOR_ESCALATION_DAYS = 7;
+/** După câte zile fără auto-evaluare → excepție HR */
+export const SELF_ASSESSMENT_HR_ESCALATION_DAYS = 14;
 
 export interface HrPerformancePayload {
   profiles: EmployeeProfile[];
@@ -86,13 +113,32 @@ function resolveDocumentFolder(
   if (explicit) return explicit;
   if (tip === 'evaluare_semnata' || tip === 'evaluare_electronica') return 'istoric_evaluari';
   if (tip === 're_instruire') return 'istoric_instruire';
-  if (tip === 'sablon_lucru') return 'documentatie_baza';
+  if (tip === 'sablon_lucru' || tip === 'material_instruire') return 'documentatie_baza';
   return undefined;
 }
 
-function inferManager(userId: string): string | undefined {
+function inferSupervisorForProfile(userId: string): string | undefined {
   const enr = userStore.getActiveEnrollmentForAngajat(userId);
   return enr?.mentorId;
+}
+
+function revertOrphanAutoStartedCycle(c: EvaluationCycle): EvaluationCycle {
+  if (c.status !== 'in_curs' && c.status !== 'intarziat') return c;
+  const hasWork =
+    c.employeeSelfAssessment?.completedAt ||
+    c.competencySelfScores ||
+    c.scoruri ||
+    c.observatiiMentor;
+  if (hasWork) return c;
+  const stages = c.stages ?? createDefaultEvaluationStages();
+  const started = stages.some((s) => s.status === 'in_curs' || s.status === 'completat');
+  if (!started) return c;
+  return {
+    ...c,
+    status: 'planificat',
+    stages: createDefaultEvaluationStages(),
+    updatedAt: nowIso(),
+  };
 }
 
 function syncEvaluationStatuses(cycles: EvaluationCycle[]): EvaluationCycle[] {
@@ -100,13 +146,14 @@ function syncEvaluationStatuses(cycles: EvaluationCycle[]): EvaluationCycle[] {
   let changed = false;
   const updated = cycles.map((c) => {
     if (c.status === 'evaluat') return c;
+    const reverted = revertOrphanAutoStartedCycle(c);
+    if (reverted !== c) {
+      changed = true;
+      c = reverted;
+    }
     if (c.termenReevaluare < today && c.status !== 'intarziat') {
       changed = true;
       return { ...c, status: 'intarziat' as EvaluationStatus, updatedAt: nowIso() };
-    }
-    if (c.status === 'planificat' && c.perioadaStart <= today) {
-      changed = true;
-      return { ...c, status: 'in_curs' as EvaluationStatus, updatedAt: nowIso() };
     }
     return c;
   });
@@ -180,7 +227,84 @@ function migrateActeConstatare(): void {
   }
 }
 
+function isEvaluationSubject(profile: EmployeeProfile): boolean {
+  return !!(profile.supervisorId || profile.managerId);
+}
+
+function evaluationCycleHasWork(c: EvaluationCycle): boolean {
+  return !!(
+    c.employeeSelfAssessment?.completedAt ||
+    c.competencySelfScores ||
+    c.scoruri ||
+    c.observatiiMentor ||
+    c.status === 'in_curs' ||
+    c.status === 'intarziat' ||
+    c.status === 'evaluat'
+  );
+}
+
+/** Angajat încă în programul inițial de 4 săptămâni — fără evaluare tri-lunară încă */
+function isInActiveInitialTraining(angajatId: string): boolean {
+  const enr = userStore.getActiveEnrollmentForAngajat(angajatId);
+  return !!enr && enr.status === 'active';
+}
+
+function cleanupPrematureEvaluationCycles(): void {
+  const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
+  const next = cycles.filter((c) => {
+    if (!isInActiveInitialTraining(c.angajatId)) return true;
+    return evaluationCycleHasWork(c);
+  });
+  if (next.length !== cycles.length) writeJson(EVALUATIONS_KEY, next);
+}
+
+/** Elimină profile, evaluări și date HR pentru utilizatori șterși sau inexistenți */
+function pruneOrphanHrData(): void {
+  const activeIds = new Set(userStore.getAllUsers().filter((u) => u.active).map((u) => u.id));
+
+  const filterStore = <T>(key: string, keep: (row: T) => boolean) => {
+    const rows = readJson<T[]>(key, []);
+    const next = rows.filter(keep);
+    if (next.length !== rows.length) writeJson(key, next);
+  };
+
+  filterStore<EmployeeProfile>(PROFILES_KEY, (p) => activeIds.has(p.userId));
+  filterStore<QuickNote>(NOTES_KEY, (n) => activeIds.has(n.angajatId));
+  filterStore<ErrorCase>(ERRORS_KEY, (e) => activeIds.has(e.angajatId));
+
+  const profiles = readJson<EmployeeProfile[]>(PROFILES_KEY, []);
+  const profileByUser = new Map(profiles.map((p) => [p.userId, p]));
+
+  const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
+  const nextCycles = cycles.filter((c) => {
+    if (!activeIds.has(c.angajatId)) return false;
+    const profile = profileByUser.get(c.angajatId);
+    return profile ? isEvaluationSubject(profile) : false;
+  });
+  if (nextCycles.length !== cycles.length) writeJson(EVALUATIONS_KEY, nextCycles);
+
+  const docs = readJson<HrDocument[]>(DOCS_KEY, []);
+  const nextDocs = docs.filter((d) => !d.angajatId || activeIds.has(d.angajatId));
+  if (nextDocs.length !== docs.length) writeJson(DOCS_KEY, nextDocs);
+
+  try {
+    const progressRaw = localStorage.getItem('artgranit_progress');
+    if (progressRaw) {
+      const progress = JSON.parse(progressRaw) as Record<string, unknown>;
+      const pruned = Object.fromEntries(
+        Object.entries(progress).filter(([userId]) => activeIds.has(userId)),
+      );
+      if (Object.keys(pruned).length !== Object.keys(progress).length) {
+        localStorage.setItem('artgranit_progress', JSON.stringify(pruned));
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 function ensureProfiles(): EmployeeProfile[] {
+  pruneOrphanHrData();
   const profiles = readJson<EmployeeProfile[]>(PROFILES_KEY, []);
   const byUser = new Map(profiles.map((p) => [p.userId, p]));
   const users = userStore.getAllUsers().filter((u) => u.active && isAngajatUser(u));
@@ -196,7 +320,8 @@ function ensureProfiles(): EmployeeProfile[] {
       functie: inferFunctie(u),
       departamentId: inferDepartment(u.id),
       dataAngajarii: u.createdAt.slice(0, 10),
-      managerId: inferManager(u.id),
+      managerId: inferSupervisorForProfile(u.id),
+      supervisorId: inferSupervisorForProfile(u.id),
       status: 'activ',
       tipAngajat: userStore.getActiveEnrollmentForAngajat(u.id) ? 'incepator' : 'experimentat',
       createdAt: nowIso(),
@@ -209,19 +334,24 @@ function ensureProfiles(): EmployeeProfile[] {
 
   if (changed) writeJson(PROFILES_KEY, profiles);
 
+  cleanupPrematureEvaluationCycles();
+
   const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
   let cyclesChanged = false;
   for (const u of users) {
     if (cycles.some((c) => c.angajatId === u.id)) continue;
     const profile = byUser.get(u.id)!;
+    if (!isEvaluationSubject(profile)) continue;
+    if (isInActiveInitialTraining(u.id)) continue;
     cycles.push({
       id: newId('eval'),
       angajatId: u.id,
-      evaluatorId: profile.managerId ?? u.id,
+      evaluatorId: profile.supervisorId ?? profile.managerId ?? u.id,
       perioadaStart: profile.dataAngajarii,
       perioadaEnd: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
       termenReevaluare: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
       status: 'planificat',
+      stages: createDefaultEvaluationStages(),
       createdAt: nowIso(),
       updatedAt: nowIso(),
     });
@@ -237,7 +367,8 @@ export const hrPerformanceStore = {
   ensureProfiles,
 
   getProfiles(): EmployeeProfile[] {
-    return ensureProfiles().filter((p) => p.status !== 'incetat');
+    const activeIds = new Set(userStore.getUsers().map((u) => u.id));
+    return ensureProfiles().filter((p) => p.status !== 'incetat' && activeIds.has(p.userId));
   },
 
   getProfile(userId: string): EmployeeProfile | undefined {
@@ -249,7 +380,8 @@ export const hrPerformanceStore = {
     patch: Partial<
       Pick<
         EmployeeProfile,
-        'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'status' | 'tipAngajat'
+        'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'supervisorId' |         'status' | 'tipAngajat' | 'weeklyEvalMentors' | 'assignmentHistory'
+        | 'nivelCompetenta' | 'scorCompetentaTotal' | 'coeficientSalarialPercent'
       >
     >,
   ): EmployeeProfile {
@@ -259,6 +391,73 @@ export const hrPerformanceStore = {
     profiles[idx] = { ...profiles[idx], ...patch, updatedAt: nowIso() };
     writeJson(PROFILES_KEY, profiles);
     return profiles[idx];
+  },
+
+  setWeeklyEvalMentor(
+    userId: string,
+    weekNumber: number,
+    mentorId: string,
+    changedBy?: { id: string; name: string },
+  ): EmployeeProfile {
+    const profile = hrPerformanceStore.getProfile(userId);
+    if (!profile) throw new Error('Profil angajat negăsit.');
+    const fromId = getWeeklyEvalMentorForWeek(profile, weekNumber);
+    const toId = mentorId || undefined;
+    const weeklyEvalMentors = upsertWeeklyEvalMentor(profile.weeklyEvalMentors, weekNumber, mentorId);
+    let assignmentHistory = profile.assignmentHistory;
+    if (fromId !== toId) {
+      assignmentHistory = appendWeeklyMentorHistory(
+        assignmentHistory,
+        { ...createHistoryEntry(fromId, toId, changedBy), weekNumber },
+      );
+    }
+    if (toId) {
+      userStore.ensureMentorOnAssignment(toId, userId);
+    }
+    return hrPerformanceStore.updateProfile(userId, { weeklyEvalMentors, assignmentHistory });
+  },
+
+  setSupervisor(
+    userId: string,
+    supervisorId: string,
+    changedBy?: { id: string; name: string },
+  ): EmployeeProfile {
+    const profile = hrPerformanceStore.getProfile(userId);
+    if (!profile) throw new Error('Profil angajat negăsit.');
+    const fromId = profile.supervisorId ?? profile.managerId;
+    let assignmentHistory = profile.assignmentHistory;
+    if (fromId !== supervisorId) {
+      assignmentHistory = appendSupervisorHistory(
+        assignmentHistory,
+        createHistoryEntry(fromId, supervisorId, changedBy),
+      );
+    }
+    const updated = hrPerformanceStore.updateProfile(userId, {
+      supervisorId,
+      managerId: supervisorId,
+      assignmentHistory,
+    });
+    const evalCurrent = hrPerformanceStore.getCurrentEvaluation(userId);
+    if (evalCurrent && evalCurrent.status !== 'evaluat') {
+      hrPerformanceStore.updateEvaluation(evalCurrent.id, { evaluatorId: supervisorId });
+    }
+    return updated;
+  },
+
+  recordPrincipalMentorChange(
+    angajatId: string,
+    fromUserId: string | undefined,
+    toUserId: string,
+    changedBy?: { id: string; name: string },
+  ): EmployeeProfile {
+    const profile = hrPerformanceStore.getProfile(angajatId);
+    if (!profile) throw new Error('Profil angajat negăsit.');
+    if (fromUserId === toUserId) return profile;
+    const assignmentHistory = appendPrincipalMentorHistory(
+      profile.assignmentHistory,
+      createHistoryEntry(fromUserId, toUserId, changedBy),
+    );
+    return hrPerformanceStore.updateProfile(angajatId, { assignmentHistory });
   },
 
   createProfileForUser(user: User, extra?: Partial<EmployeeProfile>): EmployeeProfile {
@@ -273,7 +472,8 @@ export const hrPerformanceStore = {
       functie: extra?.functie ?? inferFunctie(user),
       departamentId: extra?.departamentId ?? 'ingineri',
       dataAngajarii: extra?.dataAngajarii ?? new Date().toISOString().slice(0, 10),
-      managerId: extra?.managerId,
+      managerId: extra?.managerId ?? extra?.supervisorId,
+      supervisorId: extra?.supervisorId ?? extra?.managerId,
       status: 'activ',
       tipAngajat: extra?.tipAngajat ?? 'incepator',
       createdAt: nowIso(),
@@ -283,25 +483,38 @@ export const hrPerformanceStore = {
     profiles.push(profile);
     writeJson(PROFILES_KEY, profiles);
 
-    const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
-    cycles.push({
-      id: newId('eval'),
-      angajatId: user.id,
-      evaluatorId: profile.managerId ?? user.id,
-      perioadaStart: profile.dataAngajarii,
-      perioadaEnd: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
-      termenReevaluare: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
-      status: 'planificat',
-      createdAt: nowIso(),
-      updatedAt: nowIso(),
-    });
-    writeJson(EVALUATIONS_KEY, cycles);
+    if (isEvaluationSubject(profile) && profile.tipAngajat !== 'incepator') {
+      const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
+      cycles.push({
+        id: newId('eval'),
+        angajatId: user.id,
+        evaluatorId: profile.supervisorId ?? profile.managerId ?? user.id,
+        perioadaStart: profile.dataAngajarii,
+        perioadaEnd: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
+        termenReevaluare: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
+        status: 'planificat',
+        stages: createDefaultEvaluationStages(),
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+      });
+      writeJson(EVALUATIONS_KEY, cycles);
+    }
     return profile;
   },
 
   getEvaluations(angajatId?: string): EvaluationCycle[] {
-    const all = syncEvaluationStatuses(readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []));
-    return angajatId ? all.filter((e) => e.angajatId === angajatId) : all;
+    pruneOrphanHrData();
+    const all = syncEvaluationStatuses(readJson<EvaluationCycle[]>(EVALUATIONS_KEY, [])).map(
+      ensureEvaluationStages,
+    );
+    const activeIds = new Set(userStore.getUsers().map((u) => u.id));
+    const visible = all.filter((e) => activeIds.has(e.angajatId));
+    return angajatId ? visible.filter((e) => e.angajatId === angajatId) : visible;
+  },
+
+  /** Curăță evaluări și profile pentru conturi șterse */
+  pruneOrphanRecords(): void {
+    pruneOrphanHrData();
   },
 
   getCurrentEvaluation(angajatId: string): EvaluationCycle | undefined {
@@ -328,6 +541,7 @@ export const hrPerformanceStore = {
       perioadaEnd: addDays(start, EVALUATION_CYCLE_DAYS),
       termenReevaluare: addDays(start, EVALUATION_CYCLE_DAYS),
       status: 'planificat',
+      stages: createDefaultEvaluationStages(),
       createdAt: nowIso(),
       updatedAt: nowIso(),
     };
@@ -336,12 +550,92 @@ export const hrPerformanceStore = {
     return cycle;
   },
 
+  /**
+   * Programează prima evaluare tri-lunară la 90 zile după finalizarea instruirii inițiale (certificat).
+   */
+  schedulePostTrainingEvaluation(
+    angajatId: string,
+    trainingCompletedOn: string,
+  ): EvaluationCycle | null {
+    ensureProfiles();
+    const profile = hrPerformanceStore.getProfile(angajatId);
+    if (!profile || !isEvaluationSubject(profile)) return null;
+
+    const start = trainingCompletedOn.slice(0, 10);
+    const termen = addDays(start, EVALUATION_CYCLE_DAYS);
+    const evaluatorId = profile.supervisorId ?? profile.managerId ?? angajatId;
+
+    let cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
+    const openIdx = cycles.findIndex(
+      (c) =>
+        c.angajatId === angajatId &&
+        c.status === 'planificat' &&
+        !evaluationCycleHasWork(c),
+    );
+
+    let cycle: EvaluationCycle;
+    if (openIdx >= 0) {
+      cycle = {
+        ...cycles[openIdx],
+        evaluatorId,
+        perioadaStart: start,
+        perioadaEnd: termen,
+        termenReevaluare: termen,
+        stages: createDefaultEvaluationStages(),
+        updatedAt: nowIso(),
+      };
+      cycles[openIdx] = cycle;
+    } else if (
+      !cycles.some(
+        (c) =>
+          c.angajatId === angajatId &&
+          (c.status === 'planificat' || c.status === 'in_curs' || c.status === 'intarziat'),
+      )
+    ) {
+      cycle = {
+        id: newId('eval'),
+        angajatId,
+        evaluatorId,
+        perioadaStart: start,
+        perioadaEnd: termen,
+        termenReevaluare: termen,
+        status: 'planificat',
+        stages: createDefaultEvaluationStages(),
+        createdAt: nowIso(),
+        updatedAt: nowIso(),
+      };
+      cycles.push(cycle);
+    } else {
+      writeJson(EVALUATIONS_KEY, cycles);
+      return hrPerformanceStore.getCurrentEvaluation(angajatId) ?? null;
+    }
+
+    writeJson(EVALUATIONS_KEY, cycles);
+    hrPerformanceStore.updateProfile(angajatId, { tipAngajat: 'experimentat' });
+    return cycle;
+  },
+
   updateEvaluation(
     id: string,
     patch: Partial<
       Pick<
         EvaluationCycle,
-        'evaluatorId' | 'termenReevaluare' | 'status' | 'scoruri' | 'concluzii' | 'planDezvoltare' | 'documentId' | 'dataEvaluare'
+        | 'evaluatorId'
+        | 'termenReevaluare'
+        | 'status'
+        | 'scoruri'
+        | 'concluzii'
+        | 'planDezvoltare'
+        | 'documentId'
+        | 'dataEvaluare'
+        | 'stages'
+        | 'employeeSelfAssessment'
+        | 'supervisorAssessment'
+        | 'observatiiMentor'
+        | 'electronicDocumentId'
+        | 'competencySelfScores'
+        | 'competencySupervisorScores'
+        | 'competencyResult'
       >
     >,
   ): EvaluationCycle {
@@ -355,12 +649,49 @@ export const hrPerformanceStore = {
 
   completeEvaluation(
     id: string,
-    input: { scoruri: EvaluationScores; concluzii: string; planDezvoltare?: string; documentId?: string },
+    input: {
+      scoruri?: EvaluationScores;
+      competencySupervisorScores?: DesignerCompetencyScores;
+      concluzii: string;
+      planDezvoltare?: string;
+      documentId?: string;
+    },
   ): EvaluationCycle {
+    const existing = hrPerformanceStore.getEvaluations().find((c) => c.id === id);
+    if (!existing) throw new Error('Evaluare negăsită.');
+
+    const competencyScores =
+      input.competencySupervisorScores ??
+      existing.competencySupervisorScores ??
+      existing.competencySelfScores;
+    if (!isCompetencyScoresComplete(competencyScores)) {
+      throw new Error('Completați matricea de competențe (10 criterii) înainte de finalizare.');
+    }
+
+    const competencyResult = computeCompetencyOutcome(competencyScores);
+    const scoruri = input.scoruri ?? competencyToEvaluationScores(competencyScores);
+
+    const stages = (existing.stages ?? createDefaultEvaluationStages()).map((s) => ({
+      ...s,
+      status: 'completat' as const,
+      completedAt: s.completedAt ?? nowIso(),
+    }));
     const completed = hrPerformanceStore.updateEvaluation(id, {
-      ...input,
+      scoruri,
+      competencySupervisorScores: competencyScores,
+      competencyResult,
+      concluzii: input.concluzii,
+      planDezvoltare: input.planDezvoltare,
+      documentId: input.documentId,
       status: 'evaluat',
       dataEvaluare: new Date().toISOString().slice(0, 10),
+      stages,
+    });
+
+    hrPerformanceStore.updateProfile(completed.angajatId, {
+      nivelCompetenta: competencyResult.nivel,
+      scorCompetentaTotal: competencyResult.total,
+      coeficientSalarialPercent: competencyResult.coeficientSalarialPercent,
     });
     hrPerformanceStore.createEvaluationCycle({
       angajatId: completed.angajatId,
@@ -368,6 +699,116 @@ export const hrPerformanceStore = {
       startDate: completed.termenReevaluare,
     });
     return completed;
+  },
+
+  /** HR pornește fluxul de evaluare — etapa 1 devine activă */
+  startEvaluationWorkflow(id: string, _actor: Pick<User, 'id' | 'name'>): EvaluationCycle {
+    const stages = createDefaultEvaluationStages();
+    stages[0] = {
+      ...stages[0],
+      status: 'in_curs',
+    };
+    return hrPerformanceStore.updateEvaluation(id, {
+      status: 'in_curs',
+      stages,
+    });
+  },
+
+  /** Angajat sau HR salvează auto-evaluarea */
+  saveEmployeeSelfAssessment(
+    id: string,
+    data: EmployeeSelfAssessment,
+    actor: Pick<User, 'id' | 'name'>,
+    competencySelfScores?: DesignerCompetencyScores,
+  ): EvaluationCycle {
+    const cycle = hrPerformanceStore.getEvaluations().find((c) => c.id === id);
+    if (!cycle) throw new Error('Evaluare negăsită.');
+    const assessment: EmployeeSelfAssessment = {
+      ...data,
+      completedAt:
+        isSelfAssessmentComplete(data) && isCompetencyScoresComplete(competencySelfScores)
+          ? nowIso()
+          : data.completedAt,
+    };
+    const stages = [...(cycle.stages ?? createDefaultEvaluationStages())];
+    const stageIdx = stages.findIndex((s) => s.id === 'auto_evaluare');
+    if (stageIdx >= 0 && isSelfAssessmentComplete(assessment) && isCompetencyScoresComplete(competencySelfScores)) {
+      stages[stageIdx] = {
+        ...stages[stageIdx],
+        status: 'completat',
+        completedAt: nowIso(),
+        completedBy: actor.id,
+        completedByName: actor.name,
+      };
+      const mentorIdx = stages.findIndex((s) => s.id === 'evaluare_mentor');
+      if (mentorIdx >= 0 && stages[mentorIdx].status === 'neinceput') {
+        stages[mentorIdx] = { ...stages[mentorIdx], status: 'in_curs' };
+      }
+    }
+    return hrPerformanceStore.updateEvaluation(id, {
+      employeeSelfAssessment: assessment,
+      competencySelfScores,
+      stages,
+      status: cycle.status === 'planificat' ? 'in_curs' : cycle.status,
+    });
+  },
+
+  /** Supervizor/HR completează etapa de evaluare (evaluatorId = supervizorul angajatului) */
+  saveMentorEvaluationStage(
+    id: string,
+    input: {
+      scoruri?: EvaluationScores;
+      supervisorAssessment: EmployeeSelfAssessment;
+      competencySupervisorScores: DesignerCompetencyScores;
+      observatiiMentor?: string;
+    },
+    actor: Pick<User, 'id' | 'name'>,
+  ): EvaluationCycle {
+    if (!isSupervisorAssessmentComplete(input.supervisorAssessment)) {
+      throw new Error('Completați realizările, dificultățile și obiectivele (minim caractere cerute).');
+    }
+    if (!isCompetencyScoresComplete(input.competencySupervisorScores)) {
+      throw new Error('Completați toate criteriile matricei de competențe.');
+    }
+    const assessment: EmployeeSelfAssessment = {
+      ...input.supervisorAssessment,
+      completedAt: nowIso(),
+    };
+    const observatiiMentor =
+      input.observatiiMentor?.trim() ||
+      assessment.realizari.trim().slice(0, 500);
+    const scoruri =
+      input.scoruri ?? competencyToEvaluationScores(input.competencySupervisorScores);
+    const cycle = hrPerformanceStore.getEvaluations().find((c) => c.id === id);
+    if (!cycle) throw new Error('Evaluare negăsită.');
+    const stages = [...(cycle.stages ?? createDefaultEvaluationStages())];
+    const mentorIdx = stages.findIndex((s) => s.id === 'evaluare_mentor');
+    if (mentorIdx >= 0) {
+      stages[mentorIdx] = {
+        ...stages[mentorIdx],
+        status: 'completat',
+        completedAt: nowIso(),
+        completedBy: actor.id,
+        completedByName: actor.name,
+      };
+    }
+    const hrIdx = stages.findIndex((s) => s.id === 'validare_hr');
+    if (hrIdx >= 0) {
+      stages[hrIdx] = { ...stages[hrIdx], status: 'in_curs' };
+    }
+    return hrPerformanceStore.updateEvaluation(id, {
+      scoruri,
+      supervisorAssessment: assessment,
+      competencySupervisorScores: input.competencySupervisorScores,
+      observatiiMentor,
+      stages,
+      status: 'in_curs',
+    });
+  },
+
+  /** HR editează manual etapele (ex. reset sau corecție) */
+  updateEvaluationStages(id: string, stages: EvaluationStage[]): EvaluationCycle {
+    return hrPerformanceStore.updateEvaluation(id, { stages });
   },
 
   getQuickNotes(angajatId?: string): QuickNote[] {
@@ -419,11 +860,13 @@ export const hrPerformanceStore = {
     angajatId?: string;
     tip?: HrDocumentType;
     folder?: EmployeeArchiveFolder;
+    dayId?: string;
   }): HrDocument[] {
     let docs = readJson<HrDocument[]>(DOCS_KEY, []);
     if (filters?.angajatId) docs = docs.filter((d) => d.angajatId === filters.angajatId);
     if (filters?.tip) docs = docs.filter((d) => d.tip === filters.tip);
     if (filters?.folder) docs = docs.filter((d) => d.folder === filters.folder);
+    if (filters?.dayId) docs = docs.filter((d) => d.dayId === filters.dayId);
     return docs.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
@@ -437,7 +880,15 @@ export const hrPerformanceStore = {
     errorCaseId?: string;
     reTrainingSessionId?: string;
     folder?: EmployeeArchiveFolder;
+    dayId?: string;
+    departmentId?: DepartmentId;
   }): Promise<HrDocument> {
+    if (input.tip === 'material_instruire') {
+      const uploader = userStore.getUserById(input.uploadedBy);
+      if (!canEditTrainingPlan(uploader)) {
+        throw new Error('Doar Resurse Umane (HR) pot încărca materiale în planul de instruire.');
+      }
+    }
     const id = newId('doc');
     await hrDocumentStore.save({ id, blob: input.file });
     const meta: HrDocument = {
@@ -453,6 +904,8 @@ export const hrPerformanceStore = {
       evaluationCycleId: input.evaluationCycleId,
       errorCaseId: input.errorCaseId,
       reTrainingSessionId: input.reTrainingSessionId,
+      dayId: input.dayId,
+      departmentId: input.departmentId,
       createdAt: nowIso(),
     };
     const docs = readJson<HrDocument[]>(DOCS_KEY, []);

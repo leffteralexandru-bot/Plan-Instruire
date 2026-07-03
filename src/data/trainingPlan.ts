@@ -1,4 +1,5 @@
 import type { WeekPlan } from '@/types';
+import { trainingPlanStore } from '@/lib/trainingPlanStore';
 
 export const TRAINING_PLAN: WeekPlan[] = [
   {
@@ -329,14 +330,23 @@ export const TRAINING_PLAN: WeekPlan[] = [
 
 export const ALL_DAYS = TRAINING_PLAN.flatMap((w) => w.days);
 
+/** Plan efectiv (static + override-uri HR) */
+export function getTrainingPlanWeeks(): WeekPlan[] {
+  return trainingPlanStore.getEffectivePlan();
+}
+
+export function getEffectiveAllDays() {
+  return trainingPlanStore.getEffectiveAllDays();
+}
+
 export function getDayById(dayId: string) {
-  return ALL_DAYS.find((d) => d.id === dayId);
+  return trainingPlanStore.getEffectiveDay(dayId);
 }
 
 export function getWeekForDay(dayId: string) {
-  return TRAINING_PLAN.find((w) => w.days.some((d) => d.id === dayId));
+  return trainingPlanStore.getEffectiveWeekForDay(dayId);
 }
 
 export function getTotalTasks(): number {
-  return ALL_DAYS.reduce((sum, d) => sum + d.tasks.length, 0);
+  return trainingPlanStore.getEffectiveTotalTasks();
 }

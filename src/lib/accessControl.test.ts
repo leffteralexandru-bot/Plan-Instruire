@@ -3,8 +3,8 @@ import {
   canViewEmployee,
   canOpenMentorPanel,
   getAccessibleEmployeeIds,
-  isSubordinateOf,
 } from '@/lib/accessControl';
+import { isSubordinateOf } from '@/lib/supervisor';
 import type { User } from '@/types';
 
 const ls: Record<string, string> = {};
@@ -82,8 +82,8 @@ describe('accessControl', () => {
     expect(canViewEmployee(mentor, 'u-hr')).toBe(false);
   });
 
-  it('HR fără rol mentor nu deschide panou mentor', () => {
-    expect(canOpenMentorPanel(hr)).toBe(false);
+  it('HR și admin deschid panou mentor; mentorul cu rol dedicat', () => {
+    expect(canOpenMentorPanel(hr)).toBe(true);
     expect(canOpenMentorPanel(mentor)).toBe(true);
     expect(canOpenMentorPanel(admin)).toBe(true);
   });

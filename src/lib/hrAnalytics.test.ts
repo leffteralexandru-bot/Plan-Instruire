@@ -77,7 +77,7 @@ describe('dataBackup', () => {
       backupVersion: 1,
       exportedAt: '2026-06-01',
       organization: 'artGRANIT',
-      settings: { bitrixPortalUrl: 'https://artgranit.bitrix24.ro', programVersion: '2026.1' },
+      settings: { programVersion: '2026.1' },
       progress: {},
     });
     expect(backup?.organization).toBe('artGRANIT');

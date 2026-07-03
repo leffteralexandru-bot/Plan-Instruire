@@ -62,6 +62,23 @@ export function isAngajatMentor(user: Pick<User, 'roles'> | null | undefined): b
   return isAngajatUser(user) && isMentorUser(user);
 }
 
+/** HR fără rol administrator — nu accesează planul zilnic (Dashboard) */
+export function isHrOnly(user: Pick<User, 'roles'> | null | undefined): boolean {
+  return hasRole(user, 'hr') && !hasRole(user, 'admin');
+}
+
+export function canAccessTrainingPlanDashboard(user: Pick<User, 'roles'> | null | undefined): boolean {
+  if (!user) return false;
+  if (isHrOnly(user)) return false;
+  if (hasRole(user, 'admin')) return true;
+  if (isAngajatUser(user)) return true;
+  return isMentorUser(user);
+}
+
+export function canViewSalaryCoefficient(user: Pick<User, 'roles'> | null | undefined): boolean {
+  return hasAnyRole(user, ['admin', 'hr']);
+}
+
 export function canManageUsers(user: Pick<User, 'roles'> | null | undefined): boolean {
   return hasAnyRole(user, ['admin', 'hr']);
 }
@@ -72,7 +89,7 @@ export function canAccessAdminPanel(user: Pick<User, 'roles'> | null | undefined
 
 export function canAccessMentorPanel(user: Pick<User, 'roles'> | null | undefined): boolean {
   if (!user) return false;
-  return isMentorUser(user) || hasRole(user, 'admin');
+  return isMentorUser(user) || hasAnyRole(user, ['admin', 'hr']);
 }
 
 export function canManageSystemSettings(user: Pick<User, 'roles'> | null | undefined): boolean {
@@ -81,6 +98,11 @@ export function canManageSystemSettings(user: Pick<User, 'roles'> | null | undef
 
 export function canViewAllTrainees(user: Pick<User, 'roles'> | null | undefined): boolean {
   return hasAnyRole(user, ['admin', 'hr']);
+}
+
+/** Doar HR editează planul de instruire și încarcă materiale pe zile */
+export function canEditTrainingPlan(user: Pick<User, 'roles'> | null | undefined): boolean {
+  return hasRole(user, 'hr');
 }
 
 /** Etichetă afișată în UI (ex: „Angajat · Mentor”) */

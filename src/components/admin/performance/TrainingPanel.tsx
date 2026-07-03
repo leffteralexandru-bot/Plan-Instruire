@@ -17,7 +17,6 @@ import { ProgressCohortChart, TraineeTable } from '@/components/admin/HrAnalytic
 import { AuditLogViewer, MentorWorkloadBoard } from '@/components/admin/AuditAndWorkload';
 import { downloadWeeklyHrReport } from '@/lib/weeklyReport';
 import { useUsers } from '@/context/UsersContext';
-import { UserManagementPanel } from '@/components/admin/UserManagementPanel';
 
 export function TrainingPanel() {
   const { visibleTrainees } = useUsers();
@@ -127,8 +126,6 @@ export function TrainingPanel() {
       />
 
       <AuditLogViewer entries={auditEntries} onExport={() => downloadAuditCsv(auditEntries)} />
-
-      <UserManagementPanel />
     </div>
   );
 }

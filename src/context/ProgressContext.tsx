@@ -10,9 +10,11 @@ import type {
   PhotoAttachment,
   QuizResult,
 } from '@/types';
-import { ALL_DAYS, getDayById, getTotalTasks, TRAINING_PLAN } from '@/data/trainingPlan';
-import { getDefaultOrgSettings } from '@/data/bitrix';
+import { getDayById, getTotalTasks } from '@/data/trainingPlan';
+import { useTrainingPlan } from '@/hooks/useTrainingPlan';
+import { getDefaultOrgSettings } from '@/data/orgSettings';
 import { certificateNumber as genCertNumber } from '@/lib/certificatePdf';
+import { buildCertificateMetrics } from '@/lib/certificateMetrics';
 import { storage } from '@/store/storage';
 import { loadProgress, syncProgressToCloud } from '@/lib/sync';
 import {
@@ -24,6 +26,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
 import { ACTIVE_DEPARTMENT_ID } from '@/lib/departmentPlans';
 import { userStore } from '@/lib/userStore';
+import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 
 function emptyDayProgress(): DayProgress {
   return { completedTasks: [], mentorValidated: false };
@@ -60,6 +63,8 @@ const ProgressContext = createContext<ProgressContextValue | null>(null);
 
 export function ProgressProvider({ userId, children }: { userId: string | undefined; children: ReactNode }) {
   const { user } = useAuth();
+  const planWeeks = useTrainingPlan();
+  const allDays = useMemo(() => planWeeks.flatMap((w) => w.days), [planWeeks]);
   const [progress, setProgress] = useState<AppProgress | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -112,14 +117,14 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
       }
       void syncProgressToCloud(next.userId, next);
 
-      const allDaysComplete = ALL_DAYS.every((day) =>
+      const allDaysComplete = allDays.every((day) =>
         checkDayComplete(day, next.days[day.id] ?? emptyDayProgress()),
       );
       if (allDaysComplete) {
         const enr = userStore.getActiveEnrollmentForAngajat(next.userId);
         const totalTasks = getTotalTasks();
         let completedTasks = 0;
-        ALL_DAYS.forEach((day) => {
+        allDays.forEach((day) => {
           completedTasks += next.days[day.id]?.completedTasks.length ?? 0;
         });
         trainingSystemStore.tryArchiveCompletedPlan({
@@ -131,7 +136,7 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
         });
       }
     },
-    [user],
+    [user, allDays],
   );
 
   const getDayProgress = useCallback(
@@ -268,60 +273,78 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
   const issueCertificate = useCallback(
     (cert: Omit<Certificate, 'issuedAt' | 'programVersion'>) => {
       if (!progress) return;
+      const metrics = buildCertificateMetrics(progress);
+      const issuedAt = new Date().toISOString();
+      const programVersion = getDefaultOrgSettings().programVersion;
+      const enr = userStore.getActiveEnrollmentForAngajat(progress.userId);
+      if (enr) {
+        userStore.updateEnrollment(enr.id, { status: 'completed' });
+      }
       persist(
         {
           ...progress,
           certificate: {
             ...cert,
-            issuedAt: new Date().toISOString(),
-            programVersion: getDefaultOrgSettings().programVersion,
+            issuedAt,
+            programVersion,
             certificateNumber: genCertNumber({
               ...cert,
-              issuedAt: new Date().toISOString(),
-              programVersion: getDefaultOrgSettings().programVersion,
+              issuedAt,
+              programVersion,
             }),
+            ...(metrics.nivelLabel && metrics.nivelScore !== null
+              ? { nivelLabel: metrics.nivelLabel, nivelScore: metrics.nivelScore }
+              : {}),
+            ...(metrics.testScoreLabel && metrics.testPercent !== null
+              ? {
+                  testScoreLabel: metrics.testScoreLabel,
+                  testPercent: metrics.testPercent,
+                  testPassed: metrics.testPassed ?? undefined,
+                }
+              : {}),
           },
         },
         { action: 'certificate_issued' },
       );
+      hrPerformanceStore.schedulePostTrainingEvaluation(progress.userId, issuedAt);
     },
     [progress, persist],
   );
 
   const isDayComplete = useCallback(
     (dayId: string): boolean => {
-      const dayPlan = ALL_DAYS.find((d) => d.id === dayId);
+      const dayPlan = allDays.find((d) => d.id === dayId);
       return checkDayComplete(dayPlan, getDayProgress(dayId));
     },
-    [getDayProgress],
+    [getDayProgress, allDays],
   );
 
   const isDayUnlocked = useCallback(
     (dayId: string): boolean =>
-      checkDayUnlocked(dayId, ALL_DAYS, getDayProgress, isDayComplete),
-    [getDayProgress, isDayComplete],
+      checkDayUnlocked(dayId, allDays, getDayProgress, isDayComplete),
+    [getDayProgress, isDayComplete, allDays],
   );
 
   const getResumeDay = useCallback((): DayPlan | null => {
     const id = getResumeDayId(
-      ALL_DAYS,
+      allDays,
       progress?.lastVisitedDayId,
       isDayUnlocked,
       isDayComplete,
     );
     return id ? getDayById(id) ?? null : null;
-  }, [progress, isDayUnlocked, isDayComplete]);
+  }, [progress, isDayUnlocked, isDayComplete, allDays]);
 
   const stats = useMemo(() => {
     const totalTasks = getTotalTasks();
     let completedTasks = 0;
     let completedDays = 0;
-    ALL_DAYS.forEach((day) => {
+    allDays.forEach((day) => {
       const dp = getDayProgress(day.id);
       completedTasks += dp.completedTasks.length;
       if (isDayComplete(day.id)) completedDays++;
     });
-    const weekProgress = TRAINING_PLAN.map((week) => {
+    const weekProgress = planWeeks.map((week) => {
       const weekDone = week.days.filter((d) => isDayComplete(d.id)).length;
       return { weekNumber: week.weekNumber, percent: Math.round((weekDone / week.days.length) * 100) };
     });
@@ -330,10 +353,10 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
       completedTasks,
       overallPercent: totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0,
       completedDays,
-      totalDays: ALL_DAYS.length,
+      totalDays: allDays.length,
       weekProgress,
     };
-  }, [getDayProgress, isDayComplete, progress]);
+  }, [getDayProgress, isDayComplete, progress, allDays, planWeeks]);
 
   const value = useMemo<ProgressContextValue>(
     () => ({

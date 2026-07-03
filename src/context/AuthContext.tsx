@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const isInTraining = !!user && !!userStore.getActiveEnrollmentForAngajat(user.id);
+  const isInTraining = !!user && !!userStore.getEnrollmentForAngajat(user.id);
 
   const value = useMemo<AuthContextValue>(
     () => ({

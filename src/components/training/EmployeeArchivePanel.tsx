@@ -10,7 +10,8 @@ import { trainingSystemStore } from '@/lib/trainingSystemStore';
 import { useAuth } from '@/hooks/useAuth';
 import { canAccessEmployeeArchive } from '@/lib/accessControl';
 import { ingineriPath } from '@/data/departments';
-import { ERROR_MOTIV_LABELS } from '@/lib/hrPerformanceStore';
+import { RE_TRAINING_STATUS_LABELS, normalizeReTrainingStatus } from '@/lib/reTrainingWorkflow';
+import { userStore } from '@/lib/userStore';
 
 const FOLDERS: EmployeeArchiveFolder[] = [
   'documentatie_baza',
@@ -110,18 +111,51 @@ export function EmployeeArchivePanel({ angajatId, showPlanLink }: EmployeeArchiv
       )}
 
       {activeFolder === 'istoric_instruire' && reTraining.length > 0 && (
-        <ul className="space-y-2 mb-4">
-          {reTraining.map((s) => (
-            <li key={s.id} className="rounded-lg border border-corporate-border px-3 py-2 text-sm">
-              <div className="flex justify-between gap-2">
-                <strong>{s.titlu}</strong>
-                <Badge variant={s.status === 'finalizat' ? 'success' : 'warning'}>{s.status}</Badge>
-              </div>
-              <p className="text-xs text-corporate-muted mt-1">
-                {ERROR_MOTIV_LABELS[s.errorMotiv]} · termen {s.termenLimita}
-              </p>
-            </li>
-          ))}
+        <ul className="space-y-3 mb-4">
+          {reTraining.map((s) => {
+            const status = normalizeReTrainingStatus(s.status);
+            const supervisorName =
+              userStore.getUserById(s.supervisorId)?.name ?? s.supervisorId;
+            const trainerName = s.trainerId
+              ? userStore.getUserById(s.trainerId)?.name ?? s.trainerId
+              : undefined;
+            return (
+              <li key={s.id} className="rounded-lg border border-corporate-border px-3 py-3 text-sm space-y-2">
+                <div className="flex justify-between gap-2">
+                  <strong>{s.topicTitle ?? s.titlu}</strong>
+                  <Badge variant={status === 'finalizat' ? 'success' : 'warning'}>
+                    {RE_TRAINING_STATUS_LABELS[status]}
+                  </Badge>
+                </div>
+                <p className="text-xs text-corporate-muted">
+                  Supervizor: {supervisorName}
+                  {trainerName && <> · Trainer: {trainerName}</>}
+                  {' · '}Termen: {s.termenLimita}
+                </p>
+                {s.trainerReport && (
+                  <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                    <p className="font-medium text-corporate-dark">Raport trainer</p>
+                    <p className="text-corporate-muted mt-1">{s.trainerReport.text}</p>
+                    <p className="text-corporate-muted/80 mt-1">
+                      {s.trainerReport.submittedByName} ·{' '}
+                      {new Date(s.trainerReport.submittedAt).toLocaleString('ro-RO')}
+                    </p>
+                  </div>
+                )}
+                {s.supervisorConfirmedAt && (
+                  <p className="text-xs text-emerald-700">
+                    Confirmat supervizor: {new Date(s.supervisorConfirmedAt).toLocaleString('ro-RO')}
+                  </p>
+                )}
+                {s.hrConfirmedAt && (
+                  <p className="text-xs text-emerald-700">
+                    Validat HR: {new Date(s.hrConfirmedAt).toLocaleString('ro-RO')}
+                    {s.hrConfirmedByName ? ` · ${s.hrConfirmedByName}` : ''}
+                  </p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

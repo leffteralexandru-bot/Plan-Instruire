@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
-import { userStore } from '@/lib/userStore';
+import { userStore, repairDemoProfiles, DEMO_LOGIN_HINTS } from '@/lib/userStore';
 import { credentials, DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
 import { ROLE_LABELS, formatUserRoles, isAngajatUser, isMentorUser } from '@/lib/roles';
 import type { User } from '@/types';
@@ -66,10 +66,13 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [profileTick, setProfileTick] = useState(0);
 
-  const admins = useMemo(() => userStore.getAdministratorProfiles(), []);
-  const hrProfiles = useMemo(() => userStore.getHrProfiles(), []);
-  const tempProfiles = useMemo(() => userStore.getTemporaryLoginProfiles(), []);
+  const admins = useMemo(() => userStore.getAdministratorProfiles(), [profileTick]);
+  const hrProfiles = useMemo(() => userStore.getHrProfiles(), [profileTick]);
+  const tempProfiles = useMemo(() => userStore.getTemporaryLoginProfiles(), [profileTick]);
+
+  const hasOrgProfiles = admins.length > 0 || hrProfiles.length > 0;
 
   if (loading) {
     return (
@@ -200,6 +203,55 @@ export function LoginPage() {
                 </div>
               </>
             )}
+
+            {!hasOrgProfiles && tempProfiles.length === 0 && (
+              <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="font-medium">Nu apar profile demo în browserul curent.</p>
+                <p className="mt-1 text-amber-800">
+                  Apăsați butonul de mai jos sau introduceți manual un email din listă.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => {
+                    repairDemoProfiles();
+                    setProfileTick((t) => t + 1);
+                  }}
+                >
+                  Restaurează scenariu test (1 angajat + supervizor + mentor)
+                </Button>
+              </div>
+            )}
+
+            <details className="mb-5 text-xs text-corporate-muted">
+              <summary className="cursor-pointer font-medium text-corporate-stone hover:text-corporate-dark">
+                Lista conturi demo (email + parolă)
+              </summary>
+              <ul className="mt-2 space-y-1 border-t border-corporate-border pt-2">
+                {DEMO_LOGIN_HINTS.map((h) => (
+                  <li key={h.email} className="flex flex-wrap gap-x-2 gap-y-0.5">
+                    <button
+                      type="button"
+                      className="text-corporate-gold hover:underline text-left"
+                      onClick={() => {
+                        setEmail(h.email);
+                        setPassword(DEFAULT_PLATFORM_PASSWORD);
+                        setError('');
+                      }}
+                    >
+                      {h.email}
+                    </button>
+                    <span>— {h.rol}</span>
+                  </li>
+                ))}
+                <li className="pt-1">
+                  Parolă pentru toate:{' '}
+                  <code className="text-corporate-dark">{DEFAULT_PLATFORM_PASSWORD}</code>
+                </li>
+              </ul>
+            </details>
 
             <form onSubmit={handleLogin} className="space-y-3">
               <Input

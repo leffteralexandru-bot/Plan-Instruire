@@ -14,9 +14,10 @@ interface FeedbackFormProps {
   existing?: FeedbackForm;
   mentorName: string;
   onSave: (feedback: FeedbackForm) => void;
+  formIdPrefix?: string;
 }
 
-export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave }: FeedbackFormProps) {
+export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave, formIdPrefix = '' }: FeedbackFormProps) {
   const [submitted, setSubmitted] = useState(!!existing);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -49,7 +50,7 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave }:
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <Select
-            id={`autonomie-${weekNumber}`}
+            id={`${formIdPrefix}autonomie-${weekNumber}`}
             name="autonomieProliner"
             label="Autonomie utilizare Proliner"
             options={RATING_OPTIONS}
@@ -57,7 +58,7 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave }:
             required
           />
           <Select
-            id={`proiectare-${weekNumber}`}
+            id={`${formIdPrefix}proiectare-${weekNumber}`}
             name="proiectareFaraErori"
             label="Proiectare fără erori"
             options={RATING_OPTIONS}
@@ -65,7 +66,7 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave }:
             required
           />
           <Select
-            id={`echipa-${weekNumber}`}
+            id={`${formIdPrefix}echipa-${weekNumber}`}
             name="integrareEchipa"
             label="Integrare în echipă"
             options={RATING_OPTIONS}
@@ -73,7 +74,7 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave }:
             required
           />
           <Textarea
-            id={`comentarii-${weekNumber}`}
+            id={`${formIdPrefix}comentarii-${weekNumber}`}
             name="comentarii"
             label="Comentarii suplimentare"
             placeholder="Puncte forte, zone de îmbunătățire, recomandări..."

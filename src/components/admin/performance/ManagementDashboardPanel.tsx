@@ -1,0 +1,301 @@
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import type { AdminTab } from '@/components/admin/performance/AdminTabNav';
+import { useUsers } from '@/context/UsersContext';
+import { storage } from '@/store/storage';
+import { ingineriPath } from '@/data/departments';
+import { adminPath } from '@/lib/adminRoutes';
+import {
+  computeManagementDashboardMetrics,
+  downloadManagementDashboardCsv,
+  type ManagementTrendPoint,
+} from '@/lib/managementDashboard';
+
+function TrendBars({
+  points,
+  field,
+  colorClass,
+  label,
+}: {
+  points: ManagementTrendPoint[];
+  field: keyof ManagementTrendPoint;
+  colorClass: string;
+  label: string;
+}) {
+  const max = Math.max(...points.map((p) => Number(p[field]) || 0), 1);
+  return (
+    <div>
+      <p className="text-xs font-medium text-corporate-muted mb-2">{label}</p>
+      <div className="flex items-end gap-2 h-28">
+        {points.map((p) => (
+          <div key={p.luna} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+            <span className="text-[10px] font-medium text-corporate-dark">{String(p[field])}</span>
+            <div
+              className={`w-full max-w-[2.5rem] rounded-t ${colorClass}`}
+              style={{ height: `${Math.max(8, (Number(p[field]) / max) * 100)}%` }}
+            />
+            <span className="text-[9px] text-corporate-muted truncate w-full text-center">
+              {String(p.luna).slice(5)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: AdminTab) => void }) {
+  const { allTrainees } = useUsers();
+  const settings = storage.getSettings();
+
+  const metrics = useMemo(
+    () => computeManagementDashboardMetrics(allTrainees, settings.programVersion),
+    [allTrainees, settings.programVersion],
+  );
+
+  return (
+    <div className="space-y-4">
+      <Card padding="sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-corporate-dark">Dashboard Management</h2>
+            <p className="text-sm text-corporate-muted mt-1">
+              Retenție instruire · evaluări la timp · trend erori · gap-uri dezvoltare.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadManagementDashboardCsv(metrics)}
+          >
+            Export CSV management
+          </Button>
+        </div>
+      </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Angajați activi" value={String(metrics.totalAngajati)} />
+        <Kpi
+          label="Progres instruire mediu"
+          value={`${metrics.progresInstruireMediu}%`}
+          sub={`${metrics.angajatiInInstruire} în program`}
+        />
+        <Kpi
+          label="Finalizare instruire"
+          value={`${metrics.rataFinalizareInstruire}%`}
+          sub={`${metrics.certificateEmise} certificate`}
+          highlight={metrics.rataFinalizareInstruire < 50}
+        />
+        <Kpi
+          label="Evaluări la timp"
+          value={`${metrics.rataEvaluariLaTimp}%`}
+          sub={`${metrics.evaluariIntarziate} întârziate`}
+          highlight={metrics.evaluariIntarziate > 0}
+        />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Erori luna curentă" value={String(metrics.eroriLunaCurenta)} />
+        <Kpi
+          label="Planuri acțiune deschise"
+          value={String(metrics.planuriActiuneDeschise)}
+          highlight={metrics.planuriActiuneDeschise > 0}
+        />
+        <Kpi
+          label="Re-instruiri active"
+          value={String(metrics.reInstruiriActive)}
+          highlight={metrics.reInstruiriActive > 0}
+        />
+        <Kpi
+          label="Validări mentor"
+          value={String(metrics.validariMentorPending)}
+          sub="pending"
+          highlight={metrics.validariMentorPending > 0}
+        />
+      </div>
+
+      {metrics.trend.length > 0 && (
+        <Card>
+          <h3 className="text-sm font-semibold text-corporate-dark mb-4">Trend lunar (ultimele 6 luni)</h3>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <TrendBars
+              points={metrics.trend}
+              field="eroriLuna"
+              colorClass="bg-red-400/80"
+              label="Erori / lună"
+            />
+            <TrendBars
+              points={metrics.trend}
+              field="progresMediu"
+              colorClass="bg-corporate-gold/80"
+              label="Progres instruire mediu %"
+            />
+            <TrendBars
+              points={metrics.trend}
+              field="evaluariFinalizate"
+              colorClass="bg-emerald-500/80"
+              label="Evaluări finalizate"
+            />
+          </div>
+        </Card>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card padding="sm">
+          <h3 className="text-sm font-semibold text-corporate-dark mb-3">Sănătate evaluări 90 zile</h3>
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between">
+              <span className="text-corporate-muted">La timp / în curs</span>
+              <strong className="text-emerald-700">{metrics.evaluariLaTimp}</strong>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-corporate-muted">Întârziate</span>
+              <strong className={metrics.evaluariIntarziate ? 'text-amber-700' : ''}>
+                {metrics.evaluariIntarziate}
+              </strong>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-corporate-muted">Total active</span>
+              <strong>{metrics.evaluariInCurs + metrics.evaluariIntarziate}</strong>
+            </li>
+          </ul>
+          {onOpenTab ? (
+            <button
+              type="button"
+              onClick={() => onOpenTab('evaluari')}
+              className="text-xs text-corporate-gold hover:underline mt-3 inline-block"
+            >
+              Detalii → tab Evaluări
+            </button>
+          ) : (
+            <Link to={adminPath('evaluari')} className="text-xs text-corporate-gold hover:underline mt-3 inline-block">
+              Detalii → tab Evaluări
+            </Link>
+          )}
+        </Card>
+
+        <Card padding="sm">
+          <h3 className="text-sm font-semibold text-corporate-dark mb-3">Operațiuni deschise</h3>
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between">
+              <span className="text-corporate-muted">Re-instruiri active</span>
+              <strong className={metrics.reInstruiriActive ? 'text-amber-700' : ''}>
+                {metrics.reInstruiriActive}
+              </strong>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-corporate-muted">Validări mentor pending</span>
+              <strong className={metrics.validariMentorPending ? 'text-amber-700' : ''}>
+                {metrics.validariMentorPending}
+              </strong>
+            </li>
+            <li className="flex justify-between">
+              <span className="text-corporate-muted">Planuri acțiune deschise</span>
+              <strong>{metrics.planuriActiuneDeschise}</strong>
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-3 mt-3">
+            {onOpenTab ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenTab('supervizor')}
+                  className="text-xs text-corporate-gold hover:underline"
+                >
+                  Re-instruiri →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenTab('instruire')}
+                  className="text-xs text-corporate-muted hover:underline"
+                >
+                  Instruire →
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to={adminPath('supervizor')} className="text-xs text-corporate-gold hover:underline">
+                  Re-instruiri →
+                </Link>
+                <Link to={adminPath('instruire')} className="text-xs text-corporate-muted hover:underline">
+                  Instruire →
+                </Link>
+              </>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <Card>
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-corporate-dark">Gap-uri dezvoltare (evaluări finalizate)</h3>
+          <Badge variant="default">{metrics.developmentGaps.length}</Badge>
+        </div>
+        <p className="text-xs text-corporate-muted mb-4">
+          Angajați cu scor mediu sub 3,5 sau fără plan de dezvoltare — acțiune HR / supervizor.
+        </p>
+        {metrics.developmentGaps.length === 0 ? (
+          <p className="text-sm text-emerald-700">Niciun gap identificat în evaluările finalizate.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
+              <thead>
+                <tr className="border-b border-corporate-border text-left text-xs text-corporate-muted">
+                  <th className="py-2 pr-3">Angajat</th>
+                  <th className="py-2 pr-3">Scor mediu</th>
+                  <th className="py-2 pr-3">Motiv</th>
+                  <th className="py-2">Fișă</th>
+                </tr>
+              </thead>
+              <tbody>
+                {metrics.developmentGaps.map((g) => (
+                  <tr key={g.evaluationId} className="border-b border-corporate-border/60">
+                    <td className="py-2 pr-3 font-medium">{g.angajatName}</td>
+                    <td className="py-2 pr-3">
+                      <Badge variant={g.scorMediu < 3 ? 'warning' : 'default'}>{g.scorMediu}/5</Badge>
+                    </td>
+                    <td className="py-2 pr-3 text-xs text-corporate-muted">{g.motiv}</td>
+                    <td className="py-2">
+                      <Link
+                        to={ingineriPath(`/angajat/${g.angajatId}`)}
+                        className="text-corporate-gold text-xs font-medium hover:underline"
+                      >
+                        Deschide →
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <Card padding="sm">
+      <p className="text-[10px] uppercase tracking-wide text-corporate-muted">{label}</p>
+      <p className={`text-2xl font-bold mt-1 ${highlight ? 'text-amber-600' : 'text-corporate-dark'}`}>
+        {value}
+      </p>
+      {sub && <p className="text-xs text-corporate-muted mt-0.5">{sub}</p>}
+    </Card>
+  );
+}

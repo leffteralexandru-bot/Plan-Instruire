@@ -10,6 +10,7 @@ import {
 import { isSupabaseConfigured } from '@/store/storage';
 import { syncHrPerformanceWithCloud } from '@/lib/hrPerformanceSync';
 import type {
+  DesignerCompetencyScores,
   EmployeeProfile,
   ErrorCase,
   EvaluationCycle,
@@ -40,13 +41,19 @@ interface HrPerformanceContextValue {
     patch: Partial<
       Pick<
         EmployeeProfile,
-        'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'status' | 'tipAngajat'
+        'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'status' | 'tipAngajat' | 'weeklyEvalMentors'
       >
     >,
   ) => EmployeeProfile;
   completeEvaluation: (
     id: string,
-    input: { scoruri: EvaluationScores; concluzii: string; planDezvoltare?: string; documentId?: string },
+    input: {
+      scoruri?: EvaluationScores;
+      competencySupervisorScores?: DesignerCompetencyScores;
+      concluzii: string;
+      planDezvoltare?: string;
+      documentId?: string;
+    },
   ) => EvaluationCycle;
   updateEvaluation: (
     id: string,
@@ -75,6 +82,8 @@ interface HrPerformanceContextValue {
     errorCaseId?: string;
     reTrainingSessionId?: string;
     folder?: import('@/types').EmployeeArchiveFolder;
+    dayId?: string;
+    departmentId?: import('@/data/departments').DepartmentId;
   }) => Promise<HrDocument>;
   downloadDocument: (id: string) => Promise<void>;
   ensureMonthlyKpi: () => KpiSnapshot;

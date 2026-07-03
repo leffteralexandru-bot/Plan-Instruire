@@ -7,6 +7,7 @@ import type {
   PlanArchiveIndexEntry,
   PlanArchiveRecord,
   ReTrainingSession,
+  TrainerReport,
 } from '@/types';
 import { getTrainingPlan } from '@/lib/departmentPlans';
 import {
@@ -18,7 +19,8 @@ import {
   shouldTriggerRepeatAlert,
 } from '@/lib/errorRepeatEngine';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
-import { userStore } from '@/lib/userStore';
+import { migrateReTrainingSession, normalizeReTrainingStatus } from '@/lib/reTrainingWorkflow';
+import { resolveSupervisorId } from '@/lib/supervisor';
 
 const PLAN_ARCHIVES_KEY = 'artgranit_plan_archives';
 const RE_TRAINING_KEY = 'artgranit_re_training_sessions';
@@ -45,11 +47,33 @@ function newId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function resolveMentorId(angajatId: string): string | undefined {
-  const enr = userStore.getActiveEnrollmentForAngajat(angajatId);
-  if (enr?.mentorId) return enr.mentorId;
-  const profile = hrPerformanceStore.getProfile(angajatId);
-  return profile?.managerId;
+function readSessions(): ReTrainingSession[] {
+  return readJson<ReTrainingSession[]>(RE_TRAINING_KEY, []).map(migrateReTrainingSession);
+}
+
+function writeSessions(sessions: ReTrainingSession[]): void {
+  writeJson(RE_TRAINING_KEY, sessions);
+}
+
+function setAngajatReTrainingStatus(angajatId: string, inReTraining: boolean): void {
+  if (!hrPerformanceStore.getProfile(angajatId)) return;
+  hrPerformanceStore.updateProfile(angajatId, {
+    status: inReTraining ? 'in_reinstruire' : 'activ',
+  });
+}
+
+export function getBaseTrainingTopics(departmentId: DepartmentId = 'ingineri') {
+  const plan = getTrainingPlan(departmentId);
+  if (!plan) return [];
+  return plan.flatMap((week) =>
+    week.days.map((day) => ({
+      dayId: day.id,
+      dayNumber: day.dayNumber,
+      weekNumber: week.weekNumber,
+      title: day.title,
+      label: `S${week.weekNumber} · Z${day.dayNumber}: ${day.title}`,
+    })),
+  );
 }
 
 export function buildPlanArchiveIndex(departmentId: DepartmentId): PlanArchiveIndexEntry[] {
@@ -104,33 +128,116 @@ export const trainingSystemStore = {
     return record;
   },
 
-  getReTrainingSessions(filters?: { angajatId?: string; mentorId?: string }): ReTrainingSession[] {
-    let sessions = readJson<ReTrainingSession[]>(RE_TRAINING_KEY, []);
+  getReTrainingSessions(filters?: {
+    angajatId?: string;
+    mentorId?: string;
+    supervisorId?: string;
+    trainerId?: string;
+  }): ReTrainingSession[] {
+    let sessions = readSessions();
     if (filters?.angajatId) sessions = sessions.filter((s) => s.angajatId === filters.angajatId);
-    if (filters?.mentorId) sessions = sessions.filter((s) => s.mentorId === filters.mentorId);
+    if (filters?.supervisorId) sessions = sessions.filter((s) => s.supervisorId === filters.supervisorId);
+    if (filters?.trainerId) {
+      sessions = sessions.filter((s) => (s.trainerId ?? s.mentorId) === filters.trainerId);
+    }
+    if (filters?.mentorId) {
+      sessions = sessions.filter((s) => s.mentorId === filters.mentorId || s.trainerId === filters.mentorId);
+    }
     return sessions.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
-  completeReTrainingSession(sessionId: string): ReTrainingSession | null {
-    const sessions = readJson<ReTrainingSession[]>(RE_TRAINING_KEY, []);
+  getSessionById(sessionId: string): ReTrainingSession | undefined {
+    return readSessions().find((s) => s.id === sessionId);
+  },
+
+  updateSession(sessionId: string, patch: Partial<ReTrainingSession>): ReTrainingSession | null {
+    const sessions = readSessions();
     const idx = sessions.findIndex((s) => s.id === sessionId);
     if (idx < 0) return null;
-    sessions[idx] = {
-      ...sessions[idx]!,
+    sessions[idx] = migrateReTrainingSession({ ...sessions[idx]!, ...patch });
+    writeSessions(sessions);
+    return sessions[idx]!;
+  },
+
+  planReTrainingBySupervisor(
+    sessionId: string,
+    input: { topicDayId: string; topicTitle: string; trainerId: string; supervisorId: string },
+  ): ReTrainingSession | null {
+    const session = trainingSystemStore.getSessionById(sessionId);
+    if (!session || normalizeReTrainingStatus(session.status) !== 'alerta_supervizor') return null;
+    setAngajatReTrainingStatus(session.angajatId, true);
+    return trainingSystemStore.updateSession(sessionId, {
+      topicDayId: input.topicDayId,
+      topicTitle: input.topicTitle,
+      trainerId: input.trainerId,
+      mentorId: input.trainerId,
+      supervisorId: input.supervisorId,
+      status: 'planificat',
+      titlu: `Re-instruire: ${input.topicTitle}`,
+    });
+  },
+
+  startReTraining(sessionId: string): ReTrainingSession | null {
+    const session = trainingSystemStore.getSessionById(sessionId);
+    if (!session || normalizeReTrainingStatus(session.status) !== 'planificat') return null;
+    return trainingSystemStore.updateSession(sessionId, { status: 'in_curs' });
+  },
+
+  submitTrainerReport(sessionId: string, report: TrainerReport): ReTrainingSession | null {
+    const session = trainingSystemStore.getSessionById(sessionId);
+    if (!session) return null;
+    const st = normalizeReTrainingStatus(session.status);
+    if (st !== 'planificat' && st !== 'in_curs') return null;
+    return trainingSystemStore.updateSession(sessionId, {
+      trainerReport: report,
+      status: 'raport_trainer',
+      documentIds: report.documentId
+        ? [...new Set([...session.documentIds, report.documentId])]
+        : session.documentIds,
+    });
+  },
+
+  confirmBySupervisor(sessionId: string, supervisorId: string): ReTrainingSession | null {
+    const session = trainingSystemStore.getSessionById(sessionId);
+    if (!session || normalizeReTrainingStatus(session.status) !== 'raport_trainer') return null;
+    return trainingSystemStore.updateSession(sessionId, {
+      status: 'confirmat_supervizor',
+      supervisorConfirmedAt: nowIso(),
+      supervisorConfirmedBy: supervisorId,
+    });
+  },
+
+  confirmByHr(sessionId: string, hrUser: { id: string; name: string }): ReTrainingSession | null {
+    const session = trainingSystemStore.getSessionById(sessionId);
+    if (!session || normalizeReTrainingStatus(session.status) !== 'confirmat_supervizor') return null;
+    setAngajatReTrainingStatus(session.angajatId, false);
+    return trainingSystemStore.updateSession(sessionId, {
       status: 'finalizat',
       finalizatLa: nowIso(),
-    };
-    writeJson(RE_TRAINING_KEY, sessions);
-    return sessions[idx]!;
+      hrConfirmedAt: nowIso(),
+      hrConfirmedBy: hrUser.id,
+      hrConfirmedByName: hrUser.name,
+    });
+  },
+
+  completeReTrainingSession(sessionId: string): ReTrainingSession | null {
+    return trainingSystemStore.updateSession(sessionId, {
+      status: 'finalizat',
+      finalizatLa: nowIso(),
+    });
   },
 
   getErrorRepeatAlerts(filters?: {
     angajatId?: string;
     mentorId?: string;
+    supervisorId?: string;
     unacknowledgedOnly?: boolean;
   }): ErrorRepeatAlert[] {
     let alerts = readJson<ErrorRepeatAlert[]>(ERROR_ALERTS_KEY, []);
     if (filters?.angajatId) alerts = alerts.filter((a) => a.angajatId === filters.angajatId);
+    if (filters?.supervisorId) {
+      alerts = alerts.filter((a) => (a.supervisorId ?? a.mentorId) === filters.supervisorId);
+    }
     if (filters?.mentorId) alerts = alerts.filter((a) => a.mentorId === filters.mentorId);
     if (filters?.unacknowledgedOnly) alerts = alerts.filter((a) => !a.acknowledgedAt);
     return alerts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -150,8 +257,8 @@ export const trainingSystemStore = {
     const { trigger, recentCases } = shouldTriggerRepeatAlert(allCases, newCase);
     if (!trigger) return null;
 
-    const mentorId = resolveMentorId(newCase.angajatId);
-    if (!mentorId) return null;
+    const supervisorId = resolveSupervisorId(newCase.angajatId);
+    if (!supervisorId) return null;
 
     const openAlerts = trainingSystemStore
       .getErrorRepeatAlerts({ angajatId: newCase.angajatId, unacknowledgedOnly: true })
@@ -159,7 +266,10 @@ export const trainingSystemStore = {
 
     const activeSession = trainingSystemStore
       .getReTrainingSessions({ angajatId: newCase.angajatId })
-      .find((s) => s.errorMotiv === newCase.motiv && s.status !== 'finalizat');
+      .find(
+        (s) =>
+          s.errorMotiv === newCase.motiv && normalizeReTrainingStatus(s.status) !== 'finalizat',
+      );
 
     if (openAlerts.length > 0 && activeSession) {
       const alerts = readJson<ErrorRepeatAlert[]>(ERROR_ALERTS_KEY, []);
@@ -176,31 +286,34 @@ export const trainingSystemStore = {
       }
     }
 
-    const sessions = readJson<ReTrainingSession[]>(RE_TRAINING_KEY, []);
+    const sessions = readSessions();
     const session: ReTrainingSession = activeSession ?? {
       id: newId('retr'),
       angajatId: newCase.angajatId,
-      mentorId,
+      supervisorId,
+      mentorId: supervisorId,
       errorMotiv: newCase.motiv,
       errorCaseIds: recentCases.map((c) => c.id),
       titlu: buildReTrainingTitle(newCase.motiv),
       descriere: buildReTrainingDescription(newCase.motiv, recentCases.length),
       materialUrls: [],
       documentIds: [],
-      status: 'obligatoriu',
+      status: 'alerta_supervizor',
       termenLimita: computeReTrainingDeadline(),
       createdAt: nowIso(),
     };
     if (!activeSession) {
       sessions.push(session);
-      writeJson(RE_TRAINING_KEY, sessions);
+      writeSessions(sessions);
+      setAngajatReTrainingStatus(newCase.angajatId, true);
     }
 
     const alerts = readJson<ErrorRepeatAlert[]>(ERROR_ALERTS_KEY, []);
     const alert: ErrorRepeatAlert = {
       id: newId('alert'),
       angajatId: newCase.angajatId,
-      mentorId,
+      supervisorId,
+      mentorId: supervisorId,
       errorMotiv: newCase.motiv,
       errorTag: getErrorTag(newCase.motiv),
       count: recentCases.length,

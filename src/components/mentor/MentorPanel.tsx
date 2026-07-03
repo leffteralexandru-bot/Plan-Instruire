@@ -1,87 +1,96 @@
-import { ALL_DAYS } from '@/data/trainingPlan';
+import { Link } from 'react-router-dom';
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProgress } from '@/hooks/useProgress';
 import { useNotifications } from '@/hooks/useNotifications';
-import { ValidationList } from './ValidationList';
-import { MentorFeedbackForm } from './FeedbackForm';
+import { useAccessControl } from '@/hooks/useAccessControl';
 import { TraineeSelector } from './TraineeSelector';
 import { MentorCohortDashboard } from './MentorCohortDashboard';
 import { MentorSubordinatesPanel } from './MentorSubordinatesPanel';
 import { MentorAlertsDashboard } from './MentorAlertsDashboard';
-import { useStagiarSelection } from '@/context/StagiarContext';
-import { WeekProgressOverview } from '@/components/dashboard/ProgressBar';
+import { TrainerReTrainingPanel } from './TrainerReTrainingPanel';
+import { HrMentorOverviewPanel } from './HrMentorOverviewPanel';
+import { SupervisorErrorRegistrationPanel } from '@/components/shared/SupervisorErrorRegistrationPanel';
+import { ActionInboxPanel } from '@/components/shared/ActionInboxPanel';
+import { RoleSummaryCards } from '@/components/shared/RoleSummaryCards';
+import { getSupervisedEmployeeIds } from '@/lib/supervisor';
+import { getRoleDashboardMetrics } from '@/lib/roleDashboard';
+import { isMentorUser } from '@/lib/roles';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { INGINERI_SUPERVISOR_PANEL_PATH } from '@/data/departments';
 
 export function MentorPanel() {
-  const { user } = useAuth();
-  const {
-    getDayProgress,
-    setMentorValidation,
-    setMentorUnlock,
-    saveFeedback,
-    stats,
-    progress,
-    isDayUnlocked,
-  } = useProgress();
+  const { user, canAccessAdmin } = useAuth();
+  const { canOpenSupervisorPanel } = useAccessControl();
+  const { progress } = useProgress();
 
   useNotifications();
 
-  const { setSelectedStagiarId } = useStagiarSelection();
-  const feedbackWeek2 = progress?.feedbacks.find((f) => f.weekNumber === 2);
-  const feedbackWeek4 = progress?.feedbacks.find((f) => f.weekNumber === 4);
+  const inboxRoles = useMemo(() => {
+    if (!user) return [] as ('mentor' | 'supervisor')[];
+    const roles: ('mentor' | 'supervisor')[] = [];
+    if (isMentorUser(user) || canAccessAdmin) roles.push('mentor');
+    if (getSupervisedEmployeeIds(user.id).length > 0) roles.push('supervisor');
+    return roles;
+  }, [user, canAccessAdmin]);
 
-  const pendingValidations = ALL_DAYS.filter(
-    (d) => d.requiresMentorValidation && !getDayProgress(d.id).mentorValidated,
-  ).length;
-
-  const lockedDays = ALL_DAYS.filter((d) => !isDayUnlocked(d.id) && d.dayNumber > 1);
+  const mentorMetrics = useMemo(
+    () => (user && (isMentorUser(user) || canAccessAdmin) ? getRoleDashboardMetrics(user.id, 'mentor') : null),
+    [user, canAccessAdmin],
+  );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Mentor</h1>
-        <p className="text-corporate-muted mt-1">Monitorizare progres · Validări · Feedback</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Mentor</h1>
+          <p className="text-corporate-muted mt-1">
+            {canAccessAdmin
+              ? 'Vedere HR: mentori, responsabilități, progres angajați'
+              : 'Monitorizare progres · Validări · Feedback'}
+          </p>
+        </div>
+        {canOpenSupervisorPanel && (
+          <Link
+            to={INGINERI_SUPERVISOR_PANEL_PATH}
+            className="text-sm text-corporate-gold font-medium hover:underline"
+          >
+            Panou Supervizor →
+          </Link>
+        )}
       </div>
+
+      {canAccessAdmin && <HrMentorOverviewPanel />}
+
+      {user && inboxRoles.length > 0 && (
+        <ActionInboxPanel userId={user.id} roles={inboxRoles} maxItems={6} />
+      )}
+
+      {mentorMetrics && <RoleSummaryCards role="mentor" metrics={mentorMetrics} />}
 
       <TraineeSelector />
 
+      <MentorCohortDashboard />
+
       <MentorAlertsDashboard />
 
-      <MentorSubordinatesPanel />
+      <SupervisorErrorRegistrationPanel />
 
-      <MentorCohortDashboard onSelectTrainee={setSelectedStagiarId} />
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Progres general" value={`${stats.overallPercent}%`} />
-        <StatCard label="Zile finalizate" value={`${stats.completedDays}/${stats.totalDays}`} />
-        <StatCard label="Validări pending" value={String(pendingValidations)} highlight={pendingValidations > 0} />
-      </div>
-
-      <WeekProgressOverview weekProgress={stats.weekProgress} overallPercent={stats.overallPercent} />
-
-      {lockedDays.length > 0 && (
-        <Card>
-          <h2 className="text-lg font-semibold text-corporate-dark mb-3">Deblocări manuale</h2>
-          <p className="text-sm text-corporate-muted mb-3">Override pentru zile blocate (absență, reprogramare)</p>
-          <div className="flex flex-wrap gap-2">
-            {lockedDays.slice(0, 5).map((d) => (
-              <Button key={d.id} size="sm" variant="ghost" onClick={() => setMentorUnlock(d.id, true)}>
-                Deblochează Ziua {d.dayNumber}
-              </Button>
-            ))}
-          </div>
+      {canOpenSupervisorPanel && (
+        <Card padding="sm" className="border-corporate-gold/20">
+          <p className="text-sm text-corporate-stone">
+            Ca supervizor, gestionați evaluările și re-instruirea din{' '}
+            <Link to={INGINERI_SUPERVISOR_PANEL_PATH} className="text-corporate-gold font-medium hover:underline">
+              Panou Supervizor
+            </Link>
+            .
+          </p>
         </Card>
       )}
 
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-corporate-dark">Validări Zile Cheie</h2>
-          {pendingValidations > 0 && <Badge variant="warning">{pendingValidations} pending</Badge>}
-        </div>
-        <ValidationList days={ALL_DAYS} getDayProgress={getDayProgress} onValidate={setMentorValidation} />
-      </section>
+      <TrainerReTrainingPanel />
+
+      <MentorSubordinatesPanel />
 
       {progress && progress.auditLog.length > 0 && (
         <Card padding="sm">
@@ -96,23 +105,6 @@ export function MentorPanel() {
           </ul>
         </Card>
       )}
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-corporate-dark">Rapoarte Feedback</h2>
-        <div className="grid gap-5 lg:grid-cols-2">
-          <MentorFeedbackForm weekNumber={2} existing={feedbackWeek2} mentorName={user?.name ?? 'Mentor'} onSave={saveFeedback} />
-          <MentorFeedbackForm weekNumber={4} existing={feedbackWeek4} mentorName={user?.name ?? 'Mentor'} onSave={saveFeedback} />
-        </div>
-      </section>
     </div>
-  );
-}
-
-function StatCard({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <Card padding="sm">
-      <p className="text-xs font-medium text-corporate-muted uppercase tracking-wide">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${highlight ? 'text-amber-600' : 'text-corporate-dark'}`}>{value}</p>
-    </Card>
   );
 }

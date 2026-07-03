@@ -4,6 +4,9 @@ import { storage } from '@/store/storage';
 import { userStore } from '@/lib/userStore';
 import { buildTraineeHrReport } from '@/lib/hrReport';
 import { getDepartmentById } from '@/data/departments';
+import { getEvaluationWorkflowLabel } from '@/lib/evaluationStages';
+import { trainingSystemStore } from '@/lib/trainingSystemStore';
+import { RE_TRAINING_STATUS_LABELS, normalizeReTrainingStatus } from '@/lib/reTrainingWorkflow';
 
 export function buildEmployeeTimeline(angajatId: string): TimelineEvent[] {
   const events: TimelineEvent[] = [];
@@ -14,10 +17,47 @@ export function buildEmployeeTimeline(angajatId: string): TimelineEvent[] {
       type: 'evaluare',
       title: `Evaluare — ${EVALUATION_STATUS_LABELS[ev.status]}`,
       subtitle: ev.dataEvaluare
-        ? `Finalizată ${ev.dataEvaluare}`
-        : `Termen: ${ev.termenReevaluare}`,
+        ? `Finalizată ${ev.dataEvaluare}${ev.concluzii ? ` · ${ev.concluzii.slice(0, 120)}` : ''}`
+        : `${getEvaluationWorkflowLabel(ev)} · termen ${ev.termenReevaluare}`,
       severity: ev.status === 'intarziat' ? 'critical' : ev.status === 'evaluat' ? 'success' : 'info',
       createdAt: ev.dataEvaluare ?? ev.updatedAt,
+    });
+
+    if (ev.employeeSelfAssessment?.completedAt) {
+      events.push({
+        id: `tl-self-${ev.id}`,
+        type: 'evaluare',
+        title: 'Auto-evaluare completată',
+        subtitle: ev.employeeSelfAssessment.realizari.slice(0, 140),
+        severity: 'success',
+        createdAt: ev.employeeSelfAssessment.completedAt,
+      });
+    }
+
+    for (const stage of ev.stages ?? []) {
+      if (stage.status !== 'completat' || !stage.completedAt) continue;
+      events.push({
+        id: `tl-stage-${ev.id}-${stage.id}`,
+        type: 'evaluare',
+        title: stage.label,
+        subtitle: stage.completedByName
+          ? `Completat de ${stage.completedByName}`
+          : undefined,
+        severity: 'success',
+        createdAt: stage.completedAt,
+      });
+    }
+  }
+
+  for (const session of trainingSystemStore.getReTrainingSessions({ angajatId })) {
+    const st = normalizeReTrainingStatus(session.status);
+    events.push({
+      id: `tl-retrain-${session.id}`,
+      type: 're_instruire',
+      title: `Re-instruire — ${RE_TRAINING_STATUS_LABELS[st]}`,
+      subtitle: session.topicTitle ?? session.titlu,
+      severity: st === 'finalizat' ? 'success' : st === 'alerta_supervizor' ? 'critical' : 'warning',
+      createdAt: session.finalizatLa ?? session.createdAt,
     });
   }
 
@@ -71,7 +111,31 @@ export function buildEmployeeTimeline(angajatId: string): TimelineEvent[] {
   }
 
   const progress = storage.getProgress(angajatId);
-  for (const entry of progress.auditLog.slice(-20)) {
+
+  if (progress.certificate) {
+    events.push({
+      id: `tl-cert-${angajatId}`,
+      type: 'instruire',
+      title: 'Certificat instruire emis',
+      subtitle: `${progress.certificate.stagiarName} · ${progress.certificate.mentorName}`,
+      severity: 'success',
+      createdAt: progress.certificate.issuedAt,
+    });
+  }
+
+  for (const fb of progress.feedbacks) {
+    if (!fb.completedAt) continue;
+    events.push({
+      id: `tl-fb-${angajatId}-w${fb.weekNumber}`,
+      type: 'instruire',
+      title: `Feedback Săptămâna ${fb.weekNumber === 2 ? 'II' : 'IV'}`,
+      subtitle: fb.mentorName ? `Mentor: ${fb.mentorName}` : undefined,
+      severity: 'info',
+      createdAt: fb.completedAt,
+    });
+  }
+
+  for (const entry of progress.auditLog.slice(-30)) {
     events.push({
       id: `tl-audit-${entry.id}`,
       type: 'audit',

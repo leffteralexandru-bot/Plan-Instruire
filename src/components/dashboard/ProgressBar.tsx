@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/Card';
+import { PanelSubsection, ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 
 interface ProgressBarProps {
   percent: number;
@@ -39,24 +39,25 @@ interface WeekProgressOverviewProps {
 
 export function WeekProgressOverview({ weekProgress, overallPercent }: WeekProgressOverviewProps) {
   return (
-    <Card>
-      <div className="space-y-5">
-        <div>
-          <h2 className="text-lg font-semibold text-corporate-dark">Progres General</h2>
-          <p className="text-sm text-corporate-muted mt-0.5">Plan 4 săptămâni · 20 zile</p>
-        </div>
+    <ProfessionalPanel
+      variant="training"
+      icon="chart"
+      eyebrow="Instruire în curs"
+      title="Progres general"
+      subtitle="Plan 4 săptămâni · 20 zile de instruire la angajare"
+    >
+      <ProgressBar percent={overallPercent} size="lg" label="Completare totală" />
 
-        <ProgressBar percent={overallPercent} size="lg" label="Completare totală" />
-
+      <PanelSubsection label="Progres pe săptămâni">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {weekProgress.map((w) => (
-            <div key={w.weekNumber} className="rounded-xl bg-slate-50 p-3">
+            <div key={w.weekNumber} className="rounded-xl bg-white/80 border border-corporate-border/50 p-3">
               <p className="text-xs font-medium text-corporate-muted mb-2">Săpt. {w.weekNumber}</p>
               <ProgressBar percent={w.percent} size="sm" showPercent />
             </div>
           ))}
         </div>
-      </div>
-    </Card>
+      </PanelSubsection>
+    </ProfessionalPanel>
   );
 }

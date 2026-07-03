@@ -17,6 +17,7 @@ import { UsersProvider } from '@/context/UsersContext';
 import { HrPerformanceProvider } from '@/hooks/useHrPerformance';
 import { EmployeeDetailPage, LegacyAdminEmployeeRedirect } from '@/pages/EmployeeDetailPage';
 import { AngajatPanelPage } from '@/pages/AngajatPanelPage';
+import { SupervisorPage } from '@/pages/SupervisorPage';
 import { MyAccountPage } from '@/pages/MyAccountPage';
 import { DocumentatieBazaPage } from '@/pages/DocumentatieBazaPage';
 import { IngineriIndexPage } from '@/pages/IngineriIndexPage';
@@ -73,6 +74,7 @@ function AppRoutes() {
           <Route path="admin/angajat/:angajatId" element={<LegacyAdminEmployeeRedirect />} />
           <Route path="angajat/:angajatId" element={<EmployeeDetailPage />} />
           <Route path="panou-angajat" element={<AngajatPanelPage />} />
+          <Route path="panou-supervizor" element={<SupervisorPage />} />
           <Route path="documentatie-baza" element={<DocumentatieBazaPage />} />
           <Route path="contul-meu" element={<MyAccountPage />} />
           <Route path="erori" element={<ErrorLibraryPage />} />
