@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { computeHrAlerts, dismissHrAlert, type HrAlert } from '@/lib/hrAlerts';
+import { dismissHrAlert, getAlertsForActor, type HrAlert } from '@/lib/hrAlerts';
 import { openHrAlertEmailDraft } from '@/lib/emailAlerts';
 import { Button } from '@/components/ui/Button';
 
 export function HrAlertsBanner() {
-  const { canAccessAdmin, canAccessMentor } = useAuth();
-  const showAlerts = canAccessAdmin || canAccessMentor;
+  const { user, canAccessAdmin, canAccessMentor } = useAuth();
+  const isHrOrAdmin = canAccessAdmin;
+  const showAlerts = isHrOrAdmin || canAccessMentor;
   const [alerts, setAlerts] = useState<HrAlert[]>([]);
 
   useEffect(() => {
-    if (!showAlerts) return;
-    setAlerts(computeHrAlerts().slice(0, 3));
-  }, [showAlerts]);
+    if (!showAlerts || !user) return;
+    setAlerts(getAlertsForActor(user.id, isHrOrAdmin).slice(0, 3));
+  }, [showAlerts, user, isHrOrAdmin]);
 
   if (!showAlerts) return null;
   if (!alerts.length) return null;

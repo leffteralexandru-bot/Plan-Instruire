@@ -16,6 +16,8 @@ import { canViewAllTrainees, isMentorUser } from '@/lib/roles';
 interface UsersContextValue {
   users: User[];
   mentors: User[];
+  /** Orice angajat activ — poate fi ales mentor; devine mentor la atribuire */
+  mentorCandidates: User[];
   enrollments: TrainingEnrollment[];
   /** Angajați vizibili pentru utilizatorul curent (mentor → doar ai săi) */
   visibleTrainees: TraineeProfile[];
@@ -43,6 +45,8 @@ interface UsersContextValue {
   ) => TrainingEnrollment;
   assignMentor: (enrollmentId: string, mentorId: string) => TrainingEnrollment;
   setMentorStatus: (userId: string, enabled: boolean) => User;
+  resetUserPassword: (userId: string, newPassword: string) => void;
+  archiveEmployee: (userId: string) => void;
 }
 
 const UsersContext = createContext<UsersContextValue | null>(null);
@@ -55,13 +59,16 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const users = useMemo(() => userStore.getAllUsers(), [tick]);
   const mentors = useMemo(() => userStore.getMentors(), [tick]);
+  const mentorCandidates = useMemo(() => userStore.getMentorCandidates(), [tick]);
   const enrollments = useMemo(() => userStore.getEnrollments(), [tick]);
   const allTrainees = useMemo(() => userStore.getTraineeProfiles(), [tick]);
 
   const visibleTrainees = useMemo(() => {
     if (!user) return [];
     if (canViewAllTrainees(user)) return allTrainees;
-    if (isMentorUser(user)) return userStore.getTraineeProfiles({ mentorId: user.id });
+    const mine = userStore.getTraineeProfiles({ mentorId: user.id });
+    if (mine.length > 0) return mine;
+    if (isMentorUser(user)) return mine;
     return [];
   }, [user, allTrainees, tick]);
 
@@ -106,11 +113,17 @@ export function UsersProvider({ children }: { children: ReactNode }) {
           departamentId: input.departmentId,
           tipAngajat: 'incepator',
         });
+        hrPerformanceStore.recordPrincipalMentorChange(
+          input.angajatId,
+          undefined,
+          input.mentorId,
+          user ? { id: user.id, name: user.name } : undefined,
+        );
       }
       refresh();
       return created;
     },
-    [refresh],
+    [user, refresh],
   );
 
   const updateEnrollment = useCallback(
@@ -129,11 +142,21 @@ export function UsersProvider({ children }: { children: ReactNode }) {
 
   const assignMentor = useCallback(
     (enrollmentId: string, mentorId: string) => {
+      const enrollment = userStore.getEnrollments().find((e) => e.id === enrollmentId);
+      const previousMentorId = enrollment?.mentorId;
       const updated = userStore.assignMentor(enrollmentId, mentorId);
+      if (enrollment && previousMentorId !== mentorId) {
+        hrPerformanceStore.recordPrincipalMentorChange(
+          enrollment.angajatId,
+          previousMentorId,
+          mentorId,
+          user ? { id: user.id, name: user.name } : undefined,
+        );
+      }
       refresh();
       return updated;
     },
-    [refresh],
+    [user, refresh],
   );
 
   const setMentorStatus = useCallback(
@@ -145,10 +168,32 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  const resetUserPassword = useCallback(
+    (userId: string, newPassword: string) => {
+      if (!user) throw new Error('Autentificare necesară.');
+      userStore.resetUserPassword(user, userId, newPassword);
+    },
+    [user],
+  );
+
+  const archiveEmployee = useCallback(
+    (userId: string) => {
+      if (!user) throw new Error('Autentificare necesară.');
+      userStore.archiveEmployee(user, userId);
+      const profile = hrPerformanceStore.getProfile(userId);
+      if (profile && profile.status !== 'incetat') {
+        hrPerformanceStore.updateProfile(userId, { status: 'incetat' });
+      }
+      refresh();
+    },
+    [user, refresh],
+  );
+
   const value = useMemo(
     () => ({
       users,
       mentors,
+      mentorCandidates,
       enrollments,
       visibleTrainees,
       allTrainees,
@@ -159,10 +204,13 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       updateEnrollment,
       assignMentor,
       setMentorStatus,
+      resetUserPassword,
+      archiveEmployee,
     }),
     [
       users,
       mentors,
+      mentorCandidates,
       enrollments,
       visibleTrainees,
       allTrainees,
@@ -173,6 +221,8 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       updateEnrollment,
       assignMentor,
       setMentorStatus,
+      resetUserPassword,
+      archiveEmployee,
     ],
   );
 

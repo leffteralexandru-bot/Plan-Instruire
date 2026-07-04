@@ -1,17 +1,21 @@
 import { ProgressProvider } from '@/hooks/useProgress';
 import { StagiarProvider } from '@/context/StagiarContext';
 import { FieldModeProvider } from '@/context/FieldModeContext';
+import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStagiarId } from '@/hooks/useStagiarId';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import { HrAlertsBanner } from '@/components/shared/HrAlertsBanner';
+import { TestingStageBanner } from '@/components/shared/TestingStageBanner';
 import { useHrNotifications } from '@/hooks/useHrNotifications';
 import { Header } from './Header';
 import { Outlet, useLocation } from 'react-router-dom';
 import { getSyncStatus } from '@/lib/sync';
 import { isSupabaseConfigured } from '@/store/storage';
-import { isTrainingProgressRoute } from '@/data/departments';
+import { useUsers } from '@/context/UsersContext';
+import { isTraineeInActiveTraining } from '@/lib/hrReport';
+import { isOperationalAlertsRoute, needsProgressProvider } from '@/data/departments';
 
 function LoadingScreen() {
   return (
@@ -44,24 +48,23 @@ function SyncStatusBar() {
 function ProgressGate({ children }: { children: React.ReactNode }) {
   const { loading, user, isInTraining } = useAuth();
   const { canOpenMentorPanel } = useAccessControl();
+  const { visibleTrainees } = useUsers();
   const userId = useStagiarId();
+
+  const activeTrainees = useMemo(
+    () => visibleTrainees.filter(isTraineeInActiveTraining),
+    [visibleTrainees],
+  );
 
   if (loading) return <LoadingScreen />;
 
-  const effectiveUserId = userId || (isInTraining ? user?.id : undefined);
+  const effectiveUserId =
+    userId ||
+    (isInTraining ? user?.id : undefined) ||
+    (canOpenMentorPanel ? activeTrainees[0]?.id : undefined);
 
   if (!effectiveUserId) {
-    if (canOpenMentorPanel) {
-      return (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-6 text-sm text-amber-900">
-          <p className="font-medium">Niciun angajat în instruire de afișat.</p>
-          <p className="mt-1 text-amber-800">
-            Creați înscrieri din Panoul HR sau selectați un angajat din lista mentor.
-          </p>
-        </div>
-      );
-    }
-    return <LoadingScreen />;
+    return <>{children}</>;
   }
 
   return (
@@ -86,17 +89,17 @@ function OfflineSyncRunner() {
 
 export function AppShell() {
   const location = useLocation();
-  const inPlan = isTrainingProgressRoute(location.pathname);
+  const showAlerts = isOperationalAlertsRoute(location.pathname);
 
   return (
     <StagiarProvider>
       <FieldModeProvider>
-        {inPlan ? (
+        {needsProgressProvider(location.pathname) ? (
           <ProgressGate>
-            <ShellLayout showAlerts />
+            <ShellLayout showAlerts={showAlerts} />
           </ProgressGate>
         ) : (
-          <ShellLayout showAlerts={false} />
+          <ShellLayout showAlerts={showAlerts} />
         )}
       </FieldModeProvider>
     </StagiarProvider>
@@ -108,6 +111,7 @@ function ShellLayout({ showAlerts }: { showAlerts: boolean }) {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <TestingStageBanner />
         {showAlerts && <HrAlertsBanner />}
         <Outlet />
       </main>

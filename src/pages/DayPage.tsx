@@ -1,26 +1,36 @@
 import { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { getDayById } from '@/data/trainingPlan';
-import { INGINERI_PLAN_PATH } from '@/data/departments';
+import { INGINERI_PLAN_PATH, ingineriPath } from '@/data/departments';
 import { useAuth } from '@/hooks/useAuth';
 import { useProgress } from '@/hooks/useProgress';
 import { DayView } from '@/components/day/DayView';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { canAccessTrainingPlanDashboard } from '@/lib/roles';
 
 export function DayPage() {
   const { dayId } = useParams<{ dayId: string }>();
   const { user, canAccessMentor, loading: authLoading } = useAuth();
-  const { isDayUnlocked, visitDay } = useProgress();
-  const canViewAny = canAccessMentor;
+  const { isDayUnlocked, visitDay, progress } = useProgress();
 
   const day = dayId ? getDayById(dayId) : undefined;
 
+  const isMonitoringOtherTrainee =
+    !!user &&
+    canAccessMentor &&
+    !!progress?.userId &&
+    progress.userId !== user.id;
+
   useEffect(() => {
-    if (day && !canViewAny) visitDay(day.id);
-  }, [day, canViewAny, visitDay]);
+    if (day && !isMonitoringOtherTrainee) visitDay(day.id);
+  }, [day, isMonitoringOtherTrainee, visitDay]);
 
   if (authLoading || !user) return null;
+
+  if (!canAccessTrainingPlanDashboard(user)) {
+    return <Navigate to={ingineriPath('/admin')} replace />;
+  }
 
   if (!day) {
     return (
@@ -33,7 +43,7 @@ export function DayPage() {
     );
   }
 
-  if (!canViewAny && !isDayUnlocked(day.id)) {
+  if (!isMonitoringOtherTrainee && !isDayUnlocked(day.id)) {
     return (
       <Card className="text-center py-12">
         <span className="text-4xl mb-4 block" aria-hidden>🔒</span>
@@ -48,5 +58,5 @@ export function DayPage() {
     );
   }
 
-  return <DayView day={day} readOnly={canViewAny} />;
+  return <DayView day={day} readOnly={isMonitoringOtherTrainee} />;
 }

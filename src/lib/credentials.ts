@@ -27,6 +27,13 @@ export const credentials = {
     writePasswords(map);
   },
 
+  removePassword(userId: string): void {
+    const map = readPasswords();
+    if (!(userId in map)) return;
+    delete map[userId];
+    writePasswords(map);
+  },
+
   verify(userId: string, password: string): boolean {
     const stored = readPasswords()[userId];
     if (!stored) return false;

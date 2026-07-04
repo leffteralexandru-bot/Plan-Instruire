@@ -1,13 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { computeHrAlerts } from '@/lib/hrAlerts';
+import { getAlertsForActor } from '@/lib/hrAlerts';
+import { getSupervisedEmployeeIds } from '@/lib/supervisor';
 
 const PUSH_DISMISS_KEY = 'artgranit_push_asked';
 
-/** Notificări browser pentru mentor, HR și admin */
+/** Notificări browser pentru HR, admin, supervizori și traineri */
 export function useHrNotifications() {
-  const { canAccessAdmin, canAccessMentor } = useAuth();
-  const canNotify = canAccessAdmin || canAccessMentor;
+  const { user, canAccessAdmin, canAccessMentor } = useAuth();
+  const isHrOrAdmin = canAccessAdmin;
+  const hasSupervisorDuties =
+    !!user &&
+    (isHrOrAdmin ||
+      canAccessMentor ||
+      getSupervisedEmployeeIds(user.id).length > 0);
+  const canNotify = hasSupervisorDuties;
   const asked = useRef(false);
 
   useEffect(() => {
@@ -20,18 +27,18 @@ export function useHrNotifications() {
   }, [canNotify]);
 
   useEffect(() => {
-    if (!canNotify || Notification.permission !== 'granted') return;
+    if (!canNotify || !user || Notification.permission !== 'granted') return;
 
-    const critical = computeHrAlerts().filter((a) => a.severity === 'critical');
+    const critical = getAlertsForActor(user.id, isHrOrAdmin).filter((a) => a.severity === 'critical');
     if (!critical.length) return;
 
     const key = `hr-notif-${critical.map((a) => a.id).join(',')}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
 
-    new Notification('artGRANIT — Alertă HR', {
+    new Notification('artGRANIT — Alertă', {
       body: critical.map((a) => a.title).join(' · '),
       icon: '/icons/icon-192.png',
     });
-  }, [canNotify]);
+  }, [canNotify, user, isHrOrAdmin]);
 }

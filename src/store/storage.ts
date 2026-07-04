@@ -1,5 +1,5 @@
 import type { AppProgress, AuditEntry, AuthState, OrgSettings, User } from '@/types';
-import { getDefaultOrgSettings } from '@/data/bitrix';
+import { getDefaultOrgSettings } from '@/data/orgSettings';
 
 const AUTH_KEY = 'artgranit_auth';
 const PROGRESS_KEY = 'artgranit_progress';
@@ -57,7 +57,14 @@ export const storage = {
   },
 
   getSettings(): OrgSettings {
-    return readJson<OrgSettings>(SETTINGS_KEY, getDefaultOrgSettings());
+    const raw = readJson<OrgSettings & { bitrixPortalUrl?: string }>(
+      SETTINGS_KEY,
+      getDefaultOrgSettings(),
+    );
+    return {
+      programVersion: raw.programVersion ?? getDefaultOrgSettings().programVersion,
+      activeCohortId: raw.activeCohortId ?? getDefaultOrgSettings().activeCohortId,
+    };
   },
 
   saveSettings(settings: OrgSettings): void {

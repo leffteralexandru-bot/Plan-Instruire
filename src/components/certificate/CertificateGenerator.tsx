@@ -1,53 +1,61 @@
-import { useRef } from 'react';
-import type { Certificate } from '@/types';
+import { useMemo, useRef } from 'react';
+import type { AppProgress, Certificate } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { downloadCertificatePdf, certificateNumber } from '@/lib/certificatePdf';
+import { downloadCertificatePdf } from '@/lib/certificatePdf';
+import { resolveCertificateMetrics } from '@/lib/certificateMetrics';
+import {
+  CertificateDocument,
+  certificateNumber,
+  getCertificatePrintHtml,
+} from '@/components/certificate/CertificateDocument';
 
 interface CertificateViewProps {
   certificate: Certificate;
+  /** card = în pagină; plain = în modal */
+  variant?: 'card' | 'plain';
+  /** Progres pentru certificat vechi fără metrici salvate la emitere */
+  progress?: AppProgress;
 }
 
-export function CertificateView({ certificate }: CertificateViewProps) {
+export function CertificateView({ certificate, variant = 'card', progress }: CertificateViewProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const certNo = certificate.certificateNumber ?? certificateNumber(certificate);
+  const metrics = useMemo(
+    () => resolveCertificateMetrics(certificate, progress),
+    [certificate, progress],
+  );
 
   const handlePrint = () => {
-    const content = printRef.current;
-    if (!content) return;
     const w = window.open('', '_blank');
     if (!w) return;
     w.document.write(`
-      <html><head><title>Certificat artGRANIT</title>
-      <style>
-        body { font-family: Georgia, serif; padding: 48px; color: #1e293b; }
-        h1 { font-size: 28px; border-bottom: 3px solid #B38F55; padding-bottom: 12px; }
-        .meta { margin-top: 24px; line-height: 1.8; }
-        .footer { margin-top: 48px; font-size: 12px; color: #64748b; }
-      </style></head><body>${content.innerHTML}</body></html>
+      <!DOCTYPE html>
+      <html lang="ro">
+        <head>
+          <meta charset="utf-8" />
+          <title>Certificat artGRANIT — ${certificate.stagiarName}</title>
+          <style>
+            @page { size: A4 landscape; margin: 12mm; }
+            body { margin: 0; background: #fff; }
+          </style>
+        </head>
+        <body>${getCertificatePrintHtml(certificate, certNo, metrics)}</body>
+      </html>
     `);
     w.document.close();
+    w.focus();
     w.print();
   };
 
   const handlePdf = async () => {
-    await downloadCertificatePdf({ ...certificate, certificateNumber: certNo });
+    await downloadCertificatePdf({ ...certificate, certificateNumber: certNo }, metrics);
   };
 
-  return (
-    <Card className="border-corporate-gold/30 bg-corporate-gold-light/30">
+  const body = (
+    <>
       <div ref={printRef}>
-        <h2 className="text-xl font-bold text-corporate-dark">Certificat de Finalizare Instruire</h2>
-        <div className="mt-4 space-y-2 text-sm text-slate-700">
-          <p>Se certifică faptul că <strong>{certificate.stagiarName}</strong> a finalizat cu succes</p>
-          <p><strong>Planul de Instruire și Adaptare Profesională</strong></p>
-          <p>Rol: <strong>Inginer Proiectant</strong></p>
-          <p>Program versiunea: {certificate.programVersion}</p>
-          <p>Mentor: {certificate.mentorName}</p>
-          <p>Data: {new Date(certificate.issuedAt).toLocaleDateString('ro-RO')}</p>
-          <p>Nr. certificat: {certNo}</p>
-        </div>
-        <p className="footer text-xs text-corporate-muted mt-6">artGRANIT — Document generat digital</p>
+        <CertificateDocument certificate={certificate} certNo={certNo} metrics={metrics} />
       </div>
       <div className="flex flex-wrap gap-2 mt-4">
         <Button variant="primary" onClick={handlePdf}>
@@ -57,8 +65,14 @@ export function CertificateView({ certificate }: CertificateViewProps) {
           Printează
         </Button>
       </div>
-    </Card>
+    </>
   );
+
+  if (variant === 'plain') {
+    return <div>{body}</div>;
+  }
+
+  return <Card className="border-corporate-gold/30 bg-corporate-gold-light/20 p-1">{body}</Card>;
 }
 
 interface CertificateIssueProps {
@@ -66,16 +80,17 @@ interface CertificateIssueProps {
   mentorName: string;
   onIssue: (mentorName: string, stagiarName: string) => void;
   existing?: Certificate;
+  progress?: AppProgress;
 }
 
-export function CertificateIssue({ stagiarName, mentorName, onIssue, existing }: CertificateIssueProps) {
-  if (existing) return <CertificateView certificate={existing} />;
+export function CertificateIssue({ stagiarName, mentorName, onIssue, existing, progress }: CertificateIssueProps) {
+  if (existing) return <CertificateView certificate={existing} progress={progress} />;
 
   return (
     <Card>
-      <h2 className="text-lg font-semibold text-corporate-dark">Certificat finalizare — Ziua 20</h2>
+      <h2 className="text-lg font-semibold text-corporate-dark">Certificat de finalizare — Ziua 20</h2>
       <p className="text-sm text-corporate-muted mt-1 mb-4">
-        Emite certificatul branduit artGRANIT după validarea evaluării finale.
+        După validarea evaluării finale, emiteți certificatul digital oficial artGRANIT pentru stagiar.
       </p>
       <Button variant="secondary" onClick={() => onIssue(mentorName, stagiarName)}>
         Emite certificat digital

@@ -79,6 +79,9 @@ export const INGINERI_PLAN_PATH = '/ingineri/plan-instruire';
 /** Sub-rută panou angajat */
 export const INGINERI_ANGAJAT_PANEL_PATH = '/ingineri/panou-angajat';
 
+/** Sub-rută panou supervizor */
+export const INGINERI_SUPERVISOR_PANEL_PATH = '/ingineri/panou-supervizor';
+
 /** Sub-rută în cadrul planului Ingineri (singurul activ momentan) */
 export function ingineriPath(subpath = ''): string {
   const base = '/ingineri';
@@ -89,25 +92,40 @@ export function ingineriPath(subpath = ''): string {
 /** Rute care necesită ProgressProvider (plan zilnic) */
 const INGINERI_NON_TRAINING = [
   '/panou-angajat',
+  '/panou-supervizor',
   '/documentatie-baza',
   '/admin',
   '/mentor',
   '/angajat/',
-  '/evaluari',
   '/erori',
-  '/competente',
   '/contul-meu',
 ];
 
 export function isTrainingProgressRoute(pathname: string): boolean {
   if (!pathname.startsWith('/ingineri')) return false;
   if (INGINERI_NON_TRAINING.some((segment) => pathname.includes(segment))) return false;
+  if (pathname.includes('/evaluari') || pathname.includes('/competente')) return true;
   if (pathname === '/ingineri' || pathname === INGINERI_PLAN_PATH) return true;
   return pathname.startsWith('/ingineri/zi/');
 }
 
 export function isDepartmentPlanRoute(pathname: string): boolean {
   return DEPARTMENTS.some((d) => d.planAvailable && pathname.startsWith(d.route));
+}
+
+export function isOperationalAlertsRoute(pathname: string): boolean {
+  if (!pathname.startsWith('/ingineri')) return false;
+  return (
+    isTrainingProgressRoute(pathname) ||
+    pathname.includes('/panou-angajat') ||
+    pathname.includes('/panou-supervizor') ||
+    pathname.includes('/mentor')
+  );
+}
+
+/** Rute care necesită ProgressProvider (validări, progres zilnic) */
+export function needsProgressProvider(pathname: string): boolean {
+  return isTrainingProgressRoute(pathname) || pathname.includes('/mentor');
 }
 
 export function getDepartmentFromPath(pathname: string): Department | undefined {

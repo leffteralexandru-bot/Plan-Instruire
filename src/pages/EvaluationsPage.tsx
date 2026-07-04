@@ -1,14 +1,34 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useProgress } from '@/hooks/useProgress';
+import { useCanSelectStagiar } from '@/context/StagiarContext';
+import { useHrPerformance } from '@/hooks/useHrPerformance';
+import { useStagiarId } from '@/hooks/useStagiarId';
+import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
+import { canManageUsers } from '@/lib/roles';
 import { ActConstatareForm } from '@/components/forms/ActConstatareForm';
 import { FeedbackSummary } from '@/components/mentor/FeedbackForm';
-import { BitrixDealLink } from '@/components/bitrix/BitrixDealLink';
+import { TraineeSelector } from '@/components/mentor/TraineeSelector';
+import { EvaluationStagesFlow } from '@/components/evaluation/EvaluationStagesFlow';
+import { TestingHighlightZone } from '@/components/shared/TestingHighlightZone';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 export function EvaluationsPage() {
   const { isInTraining, canAccessMentor, loading, user } = useAuth();
   const { progress, saveActConstatare } = useProgress();
+  const { downloadDocument, refresh } = useHrPerformance();
+  const canSelect = useCanSelectStagiar();
+  const stagiarId = useStagiarId();
+  const isHrOrAdmin = user && canManageUsers(user);
+
+  const targetAngajatId = isHrOrAdmin && stagiarId ? stagiarId : user?.id;
+  const currentEval = targetAngajatId ? hrPerformanceStore.getCurrentEvaluation(targetAngajatId) : undefined;
+  const employeeProfile = targetAngajatId ? hrPerformanceStore.getProfile(targetAngajatId) : undefined;
+  const supervisorId = employeeProfile?.supervisorId ?? employeeProfile?.managerId;
+  const isSupervisorEvaluator =
+    !!currentEval &&
+    !!user &&
+    (user.id === currentEval.evaluatorId || (!!supervisorId && user.id === supervisorId));
 
   if (loading || !user) return null;
 
@@ -17,6 +37,29 @@ export function EvaluationsPage() {
 
   return (
     <div className="space-y-6">
+      {canSelect && <TraineeSelector />}
+
+      {currentEval && currentEval.status !== 'evaluat' && (
+        <TestingHighlightZone zoneId="zone-supervisor-eval">
+        <EvaluationStagesFlow
+          cycle={currentEval}
+          mode={
+            isHrOrAdmin
+              ? 'hr'
+              : user.id === currentEval.angajatId
+                ? 'employee'
+                : isSupervisorEvaluator
+                  ? 'evaluator'
+                  : 'view'
+          }
+          actorId={user.id}
+          actorName={user.name}
+          onDownloadDocument={(id) => void downloadDocument(id)}
+          onUpdated={refresh}
+        />
+        </TestingHighlightZone>
+      )}
+
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Evaluări & Rapoarte</h1>
         <p className="text-corporate-muted mt-1">Acte de constatare și feedback evaluări săptămânale</p>
@@ -82,7 +125,6 @@ export function EvaluationsPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="info">{new Date(act.dataMasuratoare).toLocaleDateString('ro-RO')}</Badge>
-                    {act.bitrixProjectId && <BitrixDealLink dealId={act.bitrixProjectId} />}
                   </div>
                 </div>
                 <div className="grid gap-2 text-sm text-slate-600">

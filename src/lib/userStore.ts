@@ -1,8 +1,21 @@
 import type { DepartmentId } from '@/data/departments';
 import type { TrainingEnrollment, TraineeProfile, User, UserRole } from '@/types';
-import { hasRole, isAngajatUser, isMentorUser, normalizeRoles, canCreateRoles } from '@/lib/roles';
+import {
+  canCreateRoles,
+  canManageUsers,
+  hasRole,
+  isAngajatUser,
+  isMentorUser,
+  normalizeRoles,
+} from '@/lib/roles';
 import { credentials, DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
 import { isSupabaseAuthEnabled } from '@/lib/authService';
+import {
+  DEMO_LOGIN_HINTS,
+  ensureMinimalDemoIfEmpty,
+  MINIMAL_DEMO_USERS,
+  resetMinimalDemoScenario,
+} from '@/lib/seedMinimalDemo';
 
 const USERS_KEY = 'artgranit_users';
 const ENROLLMENTS_KEY = 'artgranit_enrollments';
@@ -41,148 +54,34 @@ function normalizeUser(raw: RawUser): User {
   };
 }
 
-const SEED_USERS: User[] = [
-  {
-    id: 'u-admin',
-    name: 'Radu State',
-    roles: ['admin'],
-    email: 'admin@artgranit.ro',
-    active: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'u-hr',
-    name: 'Elena Vasilescu',
-    roles: ['hr'],
-    email: 'e.vasilescu@artgranit.ro',
-    active: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'u-mentor',
-    name: 'Ing. Maria Ionescu',
-    roles: ['mentor'],
-    email: 'm.ionescu@artgranit.ro',
-    active: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'u-stagiar-1',
-    name: 'Alexandru Popescu',
-    roles: ['angajat'],
-    email: 'a.popescu@artgranit.ro',
-    active: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'u-stagiar-2',
-    name: 'Andrei Dumitrescu',
-    roles: ['angajat', 'mentor'],
-    email: 'a.dumitrescu@artgranit.ro',
-    active: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'u-stagiar-3',
-    name: 'Cristina Marin',
-    roles: ['angajat'],
-    email: 'c.marin@artgranit.ro',
-    active: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-];
-
-const SEED_ENROLLMENTS: TrainingEnrollment[] = [
-  {
-    id: 'enr-1',
-    angajatId: 'u-stagiar-1',
-    departmentId: 'ingineri',
-    cohortId: 'cohort-2026-i',
-    mentorId: 'u-mentor',
-    programStart: '2026-06-01',
-    status: 'active',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'enr-2',
-    angajatId: 'u-stagiar-2',
-    departmentId: 'ingineri',
-    cohortId: 'cohort-2026-i',
-    mentorId: 'u-mentor',
-    programStart: '2026-06-15',
-    status: 'active',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'enr-3',
-    angajatId: 'u-stagiar-3',
-    departmentId: 'ingineri',
-    cohortId: 'cohort-2026-i',
-    mentorId: 'u-mentor',
-    programStart: '2026-05-20',
-    status: 'active',
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-  },
-];
-
 function seedIfEmpty(): void {
+  ensureMinimalDemoIfEmpty();
   const users = readJson<RawUser[]>(USERS_KEY, []);
-  const enrollments = readJson<TrainingEnrollment[]>(ENROLLMENTS_KEY, []);
-
-  if (users.length === 0) {
-    writeJson(USERS_KEY, SEED_USERS);
-    writeJson(ENROLLMENTS_KEY, SEED_ENROLLMENTS);
-    credentials.seedDefaults(SEED_USERS.map((u) => u.id));
-    return;
-  }
-
-  const byId = new Map(users.map((u) => [u.id, u]));
-  let usersChanged = false;
-  for (const seed of SEED_USERS) {
-    if (!byId.has(seed.id)) {
-      users.push(seed);
-      usersChanged = true;
-    }
-  }
+  if (users.length === 0) return;
 
   const normalized = users.map((u) => normalizeUser(u));
+  let usersChanged = false;
   for (let i = 0; i < normalized.length; i++) {
     const legacy = users[i];
     if (legacy.email === 'e.vasilescu@artgranit.ro' && legacy.role === 'admin') {
       normalized[i] = { ...normalized[i], roles: ['hr'] };
       usersChanged = true;
     }
-    if (legacy.role && !legacy.roles) {
-      usersChanged = true;
-    }
   }
-
   if (usersChanged) writeJson(USERS_KEY, normalized);
-
-  if (enrollments.length === 0) {
-    writeJson(ENROLLMENTS_KEY, SEED_ENROLLMENTS);
-    return;
-  }
-
-  const enrByAngajat = new Set(enrollments.map((e) => e.angajatId));
-  let enrChanged = false;
-  for (const seed of SEED_ENROLLMENTS) {
-    if (!enrByAngajat.has(seed.angajatId)) {
-      enrollments.push(seed);
-      enrChanged = true;
-    }
-  }
-  if (enrChanged) writeJson(ENROLLMENTS_KEY, enrollments);
-
   credentials.seedDefaults(normalized.map((u) => u.id));
 }
 
+/** Reîncarcă scenariul demo minimal (1 angajat + supervizor + mentor) */
+export function repairDemoProfiles(): User[] {
+  return resetMinimalDemoScenario();
+}
+
+export { DEMO_LOGIN_HINTS };
+
 function loadUsers(): User[] {
   seedIfEmpty();
-  return readJson<RawUser[]>(USERS_KEY, SEED_USERS).map((u) => normalizeUser(u));
+  return readJson<RawUser[]>(USERS_KEY, MINIMAL_DEMO_USERS).map((u) => normalizeUser(u));
 }
 
 function saveUsers(users: User[]): void {
@@ -191,7 +90,7 @@ function saveUsers(users: User[]): void {
 
 function loadEnrollments(): TrainingEnrollment[] {
   seedIfEmpty();
-  return readJson<TrainingEnrollment[]>(ENROLLMENTS_KEY, SEED_ENROLLMENTS);
+  return readJson<TrainingEnrollment[]>(ENROLLMENTS_KEY, []);
 }
 
 function saveEnrollments(enrollments: TrainingEnrollment[]): void {
@@ -210,10 +109,28 @@ export function toTraineeProfile(user: User, enrollment: TrainingEnrollment): Tr
   };
 }
 
-function assertValidMentor(user: User | undefined): asserts user is User {
-  if (!user || !isMentorUser(user)) {
-    throw new Error('Mentor invalid — HR trebuie să acorde statutul de mentor.');
+function assertMentorAssignable(
+  user: User | undefined,
+  angajatId?: string,
+): asserts user is User {
+  if (!user || !user.active) {
+    throw new Error('Mentor invalid — selectați un angajat activ.');
   }
+  if (hasRole(user, 'admin') || hasRole(user, 'hr')) {
+    throw new Error('Conturile Admin/HR nu pot fi mentori.');
+  }
+  if (!isAngajatUser(user) && !isMentorUser(user)) {
+    throw new Error('Doar angajații pot fi mentori.');
+  }
+  if (angajatId && user.id === angajatId) {
+    throw new Error('Angajatul nu poate fi propriul mentor.');
+  }
+}
+
+function ensureMentorRole(mentorId: string): void {
+  const mentor = loadUsers().find((u) => u.id === mentorId);
+  if (!mentor || isMentorUser(mentor)) return;
+  userStore.setMentorStatus(mentorId, true);
 }
 
 export const userStore = {
@@ -236,6 +153,20 @@ export const userStore = {
 
   getMentors(): User[] {
     return loadUsers().filter((u) => u.active && isMentorUser(u));
+  },
+
+  /** Orice angajat activ poate fi ales mentor — devine mentor la atribuire */
+  getMentorCandidates(excludeUserId?: string): User[] {
+    return loadUsers()
+      .filter(
+        (u) =>
+          u.active &&
+          !hasRole(u, 'admin') &&
+          !hasRole(u, 'hr') &&
+          (isAngajatUser(u) || isMentorUser(u)) &&
+          u.id !== excludeUserId,
+      )
+      .sort((a, b) => a.name.localeCompare(b.name, 'ro'));
   },
 
   /** Profilul standard Administrator (afișat permanent la login) */
@@ -301,12 +232,77 @@ export const userStore = {
     return user;
   },
 
+  resetUserPassword(actor: User, userId: string, newPassword: string): void {
+    if (!canManageUsers(actor)) {
+      throw new Error('Nu aveți dreptul să modificați parole.');
+    }
+    if (isSupabaseAuthEnabled()) {
+      throw new Error(
+        'Parolele se gestionează în Supabase Auth când autentificarea cloud este activă.',
+      );
+    }
+    const target = loadUsers().find((u) => u.id === userId);
+    if (!target) throw new Error('Utilizator negăsit.');
+    if (hasRole(target, 'admin') || hasRole(target, 'hr')) {
+      throw new Error('Nu puteți reseta parola conturilor Admin/HR din acest panou.');
+    }
+    const pwd = newPassword.trim();
+    if (pwd.length < 6) {
+      throw new Error('Parola trebuie să aibă cel puțin 6 caractere.');
+    }
+    credentials.setPassword(userId, pwd);
+  },
+
+  archiveEmployee(actor: User, userId: string): void {
+    if (!canManageUsers(actor)) {
+      throw new Error('Nu aveți dreptul să arhivați angajați.');
+    }
+    if (actor.id === userId) {
+      throw new Error('Nu vă puteți arhiva propriul cont.');
+    }
+    const target = loadUsers().find((u) => u.id === userId);
+    if (!target) throw new Error('Utilizator negăsit.');
+    if (hasRole(target, 'admin') || hasRole(target, 'hr')) {
+      throw new Error('Nu puteți arhiva conturi Admin sau HR.');
+    }
+    if (!isAngajatUser(target) && !isMentorUser(target)) {
+      throw new Error('Doar angajații pot fi arhivați din acest panou.');
+    }
+
+    const menteeCount = loadEnrollments().filter(
+      (e) => e.status === 'active' && e.mentorId === userId,
+    ).length;
+    if (menteeCount > 0) {
+      throw new Error(
+        `Angajatul este mentor principal pentru ${menteeCount} persoane. Reatribuiți mentorul înainte de arhivare.`,
+      );
+    }
+
+    const enrollments = loadEnrollments();
+    let enrollmentsChanged = false;
+    const updatedEnrollments = enrollments.map((e) => {
+      if (e.angajatId !== userId || e.status !== 'active') return e;
+      enrollmentsChanged = true;
+      return { ...e, status: 'suspended' as const, updatedAt: nowIso() };
+    });
+    if (enrollmentsChanged) saveEnrollments(updatedEnrollments);
+
+    userStore.updateUser(userId, { active: false });
+  },
+
   getEnrollments(): TrainingEnrollment[] {
     return loadEnrollments();
   },
 
   getActiveEnrollmentForAngajat(angajatId: string): TrainingEnrollment | undefined {
     return loadEnrollments().find((e) => e.angajatId === angajatId && e.status === 'active');
+  },
+
+  /** Înscriere activă sau finalizată — acces plan / certificat */
+  getEnrollmentForAngajat(angajatId: string): TrainingEnrollment | undefined {
+    return loadEnrollments().find(
+      (e) => e.angajatId === angajatId && (e.status === 'active' || e.status === 'completed'),
+    );
   },
 
   getTraineeProfiles(filters?: {
@@ -376,6 +372,12 @@ export const userStore = {
     return userStore.updateUser(userId, { roles: normalizeRoles(roles) });
   },
 
+  ensureMentorOnAssignment(mentorId: string, angajatId?: string): void {
+    const mentor = loadUsers().find((u) => u.id === mentorId);
+    assertMentorAssignable(mentor, angajatId);
+    ensureMentorRole(mentorId);
+  },
+
   createEnrollment(input: {
     angajatId: string;
     departmentId: DepartmentId;
@@ -388,7 +390,8 @@ export const userStore = {
       throw new Error('Înscrierea este permisă doar pentru angajați.');
     }
     const mentor = loadUsers().find((u) => u.id === input.mentorId);
-    assertValidMentor(mentor);
+    assertMentorAssignable(mentor, input.angajatId);
+    ensureMentorRole(input.mentorId);
 
     const enrollments = loadEnrollments();
     const existing = enrollments.find(
@@ -421,7 +424,8 @@ export const userStore = {
     if (idx < 0) throw new Error('Înscriere negăsită.');
     if (patch.mentorId) {
       const mentor = loadUsers().find((u) => u.id === patch.mentorId);
-      assertValidMentor(mentor);
+      assertMentorAssignable(mentor, enrollments[idx].angajatId);
+      ensureMentorRole(patch.mentorId);
     }
     const updated = { ...enrollments[idx], ...patch, updatedAt: nowIso() };
     enrollments[idx] = updated;

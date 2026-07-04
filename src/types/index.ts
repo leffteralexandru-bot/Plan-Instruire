@@ -44,6 +44,21 @@ export interface Material {
   url: string;
   description?: string;
   bitrixTemplate?: boolean;
+  /** Fișier încărcat de HR (IndexedDB) — prioritar față de url static */
+  documentId?: string;
+}
+
+/** Override HR pentru conținutul unei zile din planul de instruire */
+export interface DayPlanOverride {
+  dayId: string;
+  departmentId: DepartmentId;
+  title?: string;
+  subtitle?: string;
+  tasks?: Task[];
+  materials?: Material[];
+  updatedAt: string;
+  updatedBy: string;
+  updatedByName: string;
 }
 
 export interface Task {
@@ -79,6 +94,8 @@ export interface QuizResult {
   passed: boolean;
   completedAt: string;
   attempts: number;
+  /** Răspunsuri ale angajatului: id întrebare → index opțiune */
+  answers?: Record<string, number>;
 }
 
 export interface PhotoAttachment {
@@ -120,7 +137,6 @@ export interface ActConstatare {
   masuriCorective: string;
   observatii?: string;
   dayId?: string;
-  bitrixProjectId?: string;
   createdAt: string;
 }
 
@@ -148,6 +164,13 @@ export interface Certificate {
   stagiarName: string;
   programVersion: string;
   certificateNumber?: string;
+  /** Nivel profesional la emitere — din feedback mentor S2/S4 */
+  nivelLabel?: string;
+  nivelScore?: number;
+  /** Rezultat test teoretic Ziua 10 la emitere */
+  testScoreLabel?: string;
+  testPercent?: number;
+  testPassed?: boolean;
 }
 
 export interface AppProgress {
@@ -169,14 +192,13 @@ export interface AuthState {
 }
 
 export interface OrgSettings {
-  bitrixPortalUrl: string;
   programVersion: string;
   activeCohortId?: string;
 }
 
 // ─── Performanță HR (post-instruire) ─────────────────────────────────────────
 
-export type EmployeeStatus = 'activ' | 'suspendat' | 'incetat';
+export type EmployeeStatus = 'activ' | 'suspendat' | 'incetat' | 'in_reinstruire';
 export type EmployeeType = 'incepator' | 'experimentat';
 export type EvaluationStatus = 'planificat' | 'in_curs' | 'evaluat' | 'intarziat';
 export type QuickNoteType = 'observatie' | 'apreciere' | 'atentionare';
@@ -197,7 +219,55 @@ export type HrDocumentType =
   | 'certificat'
   | 're_instruire'
   | 'sablon_lucru'
+  | 'material_instruire'
   | 'altul';
+
+export type EvaluationStageId = 'auto_evaluare' | 'evaluare_mentor' | 'validare_hr';
+export type EvaluationStageStatus = 'neinceput' | 'in_curs' | 'completat';
+
+export interface EvaluationStage {
+  id: EvaluationStageId;
+  label: string;
+  status: EvaluationStageStatus;
+  completedAt?: string;
+  completedBy?: string;
+  completedByName?: string;
+}
+
+export interface EmployeeSelfAssessment {
+  realizari: string;
+  dificultati: string;
+  obiectiveViitoare: string;
+  completedAt?: string;
+}
+
+/** Matrice oficială inginer proiectant — 10 criterii × nivel 1–4 */
+export type DesignerCompetencyLevel = 1 | 2 | 3 | 4;
+
+export type DesignerCompetencyCriterionId =
+  | 'masuratori'
+  | 'proliner'
+  | 'autocad'
+  | 'cerinteTehnice'
+  | 'optimizareMaterial'
+  | 'preventieErori'
+  | 'termene'
+  | 'comunicare'
+  | 'autonomie'
+  | 'instruire';
+
+export type DesignerCompetencyScores = Record<DesignerCompetencyCriterionId, DesignerCompetencyLevel>;
+
+export interface DesignerCompetencyOutcome {
+  scores: DesignerCompetencyScores;
+  total: number;
+  nivel: DesignerCompetencyLevel;
+  nivelLabel: string;
+  incadrare: string;
+  /** Vizibil doar HR / Admin în UI */
+  coeficientSalarialPercent: number;
+  computedAt: string;
+}
 
 /** Foldere arhivă per angajat (structură ierarhică) */
 export type EmployeeArchiveFolder =
@@ -225,11 +295,49 @@ export interface EmployeeProfile {
   functie: string;
   departamentId: DepartmentId;
   dataAngajarii: string;
+  /** Supervizor desemnat de HR — evaluări 90 zile, re-instruire, notificări erori */
+  supervisorId?: string;
   managerId?: string;
+  /** Mentori evaluare per săptămână — setați de HR (S1–S4) */
+  weeklyEvalMentors?: WeeklyEvaluationMentor[];
+  /** Istoric atribuiri mentor principal, supervizor, mentori săptămânali */
+  assignmentHistory?: EmployeeAssignmentHistory;
   status: EmployeeStatus;
   tipAngajat: EmployeeType;
+  /** Ultimul nivel competență validat HR (matrice inginer proiectant) */
+  nivelCompetenta?: DesignerCompetencyLevel;
+  scorCompetentaTotal?: number;
+  /** Doar HR/Admin — coeficient salarial din matrice */
+  coeficientSalarialPercent?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Mentor evaluare atribuit de HR pentru o săptămână din plan */
+export interface WeeklyEvaluationMentor {
+  weekNumber: number;
+  mentorId: string;
+}
+
+/** Istoric schimbări mentor principal / supervizor / mentori săptămânali */
+export interface AssignmentHistoryEntry {
+  id: string;
+  changedAt: string;
+  changedById?: string;
+  changedByName?: string;
+  fromUserId?: string;
+  toUserId?: string;
+  note?: string;
+}
+
+export interface WeeklyMentorHistoryEntry extends AssignmentHistoryEntry {
+  weekNumber: number;
+}
+
+export interface EmployeeAssignmentHistory {
+  principalMentor?: AssignmentHistoryEntry[];
+  supervisor?: AssignmentHistoryEntry[];
+  weeklyMentors?: WeeklyMentorHistoryEntry[];
 }
 
 export interface EvaluationScores {
@@ -249,9 +357,23 @@ export interface EvaluationCycle {
   termenReevaluare: string;
   status: EvaluationStatus;
   scoruri?: EvaluationScores;
+  /** Chestionar auto-evaluare angajat (10 criterii) */
+  competencySelfScores?: DesignerCompetencyScores;
+  /** Scoruri validate de supervizor */
+  competencySupervisorScores?: DesignerCompetencyScores;
+  /** Rezultat final HR — nivel + coeficient */
+  competencyResult?: DesignerCompetencyOutcome;
   concluzii?: string;
   planDezvoltare?: string;
   documentId?: string;
+  /** Fișier evaluare încărcat de HR (template / formular electronic) */
+  electronicDocumentId?: string;
+  /** Parcurgere evaluare: auto-evaluare → supervizor → HR */
+  stages?: EvaluationStage[];
+  employeeSelfAssessment?: EmployeeSelfAssessment;
+  /** Evaluare narativă supervizor — aceleași întrebări ca la auto-evaluare */
+  supervisorAssessment?: EmployeeSelfAssessment;
+  observatiiMentor?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -306,6 +428,9 @@ export interface HrDocument {
   evaluationCycleId?: string;
   errorCaseId?: string;
   reTrainingSessionId?: string;
+  /** Zi din planul de instruire (materiale HR) */
+  dayId?: string;
+  departmentId?: DepartmentId;
   createdAt: string;
 }
 
@@ -331,27 +456,60 @@ export interface PlanArchiveRecord {
   index: PlanArchiveIndexEntry[];
 }
 
+/** Sesiune re-instruire după erori — flux supervizor → trainer → supervizor → HR */
+export type ReTrainingStatus =
+  | 'alerta_supervizor'
+  | 'planificat'
+  | 'in_curs'
+  | 'raport_trainer'
+  | 'confirmat_supervizor'
+  | 'finalizat'
+  /** @deprecated migrat la alerta_supervizor */
+  | 'obligatoriu';
+
+export interface TrainerReport {
+  text: string;
+  submittedAt: string;
+  submittedBy: string;
+  submittedByName: string;
+  documentId?: string;
+}
+
 /** Sesiune obligatorie re-instruire (declanșată de erori repetate) */
 export interface ReTrainingSession {
   id: string;
   angajatId: string;
+  supervisorId: string;
+  /** Persoana desemnată de supervizor să instruiască */
+  trainerId?: string;
+  /** Mentor legacy — egal cu trainerId când e setat */
   mentorId: string;
   errorMotiv: ErrorMotiv;
   errorCaseIds: string[];
   titlu: string;
   descriere: string;
+  /** Temă din planul de instruire de bază (zi) */
+  topicDayId?: string;
+  topicTitle?: string;
   materialUrls: string[];
   documentIds: string[];
-  status: 'obligatoriu' | 'in_curs' | 'finalizat';
+  trainerReport?: TrainerReport;
+  supervisorConfirmedAt?: string;
+  supervisorConfirmedBy?: string;
+  hrConfirmedAt?: string;
+  hrConfirmedBy?: string;
+  hrConfirmedByName?: string;
+  status: ReTrainingStatus;
   termenLimita: string;
   finalizatLa?: string;
   createdAt: string;
 }
 
-/** Alertă mentor — același tip de eroare repetat */
+/** Alertă supervizor — același tip de eroare repetat */
 export interface ErrorRepeatAlert {
   id: string;
   angajatId: string;
+  supervisorId: string;
   mentorId: string;
   errorMotiv: ErrorMotiv;
   errorTag: string;

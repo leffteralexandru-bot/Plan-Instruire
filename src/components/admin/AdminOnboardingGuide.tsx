@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { isSupabaseConfigured } from '@/store/storage';
-import { isBitrixApiConfigured } from '@/lib/bitrixApi';
 import { isSupabaseAuthEnabled } from '@/lib/authService';
 
 const STEPS = [
@@ -27,11 +26,6 @@ const STEPS = [
     title: '5. Auth producție (opțional)',
     body: 'Setați VITE_USE_SUPABASE_AUTH=true după crearea utilizatorilor în Supabase Auth. Parolă demo: artgranit2026 (schimbați în producție).',
     show: () => isSupabaseConfigured() && !isSupabaseAuthEnabled(),
-  },
-  {
-    title: '6. Bitrix24 API (opțional)',
-    body: 'Incoming webhook în VITE_BITRIX_WEBHOOK_URL pentru link-uri live la deal-uri din acte constatare.',
-    show: () => !isBitrixApiConfigured(),
   },
 ];
 

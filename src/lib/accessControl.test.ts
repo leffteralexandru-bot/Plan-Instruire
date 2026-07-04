@@ -3,8 +3,8 @@ import {
   canViewEmployee,
   canOpenMentorPanel,
   getAccessibleEmployeeIds,
-  isSubordinateOf,
 } from '@/lib/accessControl';
+import { isSubordinateOf } from '@/lib/supervisor';
 import type { User } from '@/types';
 
 const ls: Record<string, string> = {};
@@ -23,6 +23,22 @@ beforeEach(() => {
       for (const k of Object.keys(ls)) delete ls[k];
     },
   });
+  ls['artgranit_users'] = JSON.stringify([admin, hr, mentor, angajat]);
+  ls['artgranit_enrollments'] = JSON.stringify([
+    {
+      id: 'enr-1',
+      angajatId: 'u-stagiar-1',
+      mentorId: 'u-mentor',
+      departmentId: 'ingineri',
+      cohortId: 'c1',
+      programStart: '2026-01-01',
+      status: 'active',
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
+    },
+  ]);
+  ls['artgranit_employee_profiles'] = JSON.stringify([]);
+  ls['artgranit_evaluation_cycles'] = JSON.stringify([]);
 });
 
 const admin: User = {
@@ -82,8 +98,8 @@ describe('accessControl', () => {
     expect(canViewEmployee(mentor, 'u-hr')).toBe(false);
   });
 
-  it('HR fără rol mentor nu deschide panou mentor', () => {
-    expect(canOpenMentorPanel(hr)).toBe(false);
+  it('HR și admin deschid panou mentor; mentorul cu rol dedicat', () => {
+    expect(canOpenMentorPanel(hr)).toBe(true);
     expect(canOpenMentorPanel(mentor)).toBe(true);
     expect(canOpenMentorPanel(admin)).toBe(true);
   });

@@ -22,6 +22,10 @@ import {
   QUICK_NOTE_TYPE_LABELS,
   hrPerformanceStore,
 } from '@/lib/hrPerformanceStore';
+import { getEvaluationWorkflowLabel } from '@/lib/evaluationStages';
+import { THEORETICAL_TEST } from '@/data/theoreticalTest';
+import { TheoreticalTestHrPanel } from '@/components/admin/performance/TheoreticalTestHrPanel';
+import { EmployeeCertificateSection } from '@/components/certificate/EmployeeCertificateSection';
 import type { QuickNoteType } from '@/types';
 
 interface EmployeeDossierViewProps {
@@ -67,6 +71,7 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
 
   const trainee = allTrainees.find((t) => t.id === angajatId);
   const trainingRow = trainee ? buildTraineeHrReport(trainee, storage.getProgress(angajatId)) : null;
+  const quizResult = storage.getProgress(angajatId).days[THEORETICAL_TEST.dayId]?.quizResult;
 
   if (!profile || !angajatUser) {
     return (
@@ -130,6 +135,9 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
               </Badge>
             )}
             {trainingRow && <Badge variant="success">Instruire {trainingRow.progressPercent}%</Badge>}
+            {trainingRow?.certificateIssued && (
+              <EmployeeCertificateSection angajatId={angajatId} compact />
+            )}
             {canExportDossier(angajatId) && (
               <Button
                 type="button"
@@ -169,6 +177,17 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
         </div>
       </Card>
 
+      {trainingRow?.certificateIssued && (
+        <EmployeeCertificateSection angajatId={angajatId} />
+      )}
+
+      {canExportDossier(angajatId) && (
+        <TheoreticalTestHrPanel
+          employeeName={`${profile.prenume} ${profile.nume}`.trim()}
+          quizResult={quizResult}
+        />
+      )}
+
       <div className="flex gap-1 overflow-x-auto rounded-lg border border-corporate-border bg-white p-1">
         {tabs.map((t) => (
           <button
@@ -187,7 +206,10 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
 
       {tab === 'timeline' && (
         <Card>
-          <h2 className="text-sm font-semibold text-corporate-dark mb-4">Linie temporală 360°</h2>
+          <h2 className="text-sm font-semibold text-corporate-dark mb-1">Linie temporală 360°</h2>
+          <p className="text-xs text-corporate-muted mb-4">
+            Instruire · evaluări · erori · re-instruire · documente · activitate — filtrare pe categorie.
+          </p>
           <EmployeeTimeline events={timeline} />
         </Card>
       )}
@@ -210,6 +232,9 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
                 </div>
                 {ev.termenReevaluare && ev.status !== 'evaluat' && (
                   <p className="text-xs text-amber-700 mt-1">Termen: {ev.termenReevaluare}</p>
+                )}
+                {ev.status !== 'evaluat' && (
+                  <p className="text-xs text-corporate-muted mt-1">Etapa: {getEvaluationWorkflowLabel(ev)}</p>
                 )}
                 {ev.concluzii && <p className="mt-2 text-corporate-muted">{ev.concluzii}</p>}
               </li>

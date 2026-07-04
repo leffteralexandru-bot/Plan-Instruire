@@ -1,5 +1,6 @@
 import type { TraineeHrReport } from '@/lib/hrReport';
 import { getTraineeStatus, getTraineeStatusLabel } from '@/lib/hrAnalytics';
+import { CertificateTableCell } from '@/components/certificate/CertificateTableCell';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
@@ -153,7 +154,9 @@ export function TraineeTable({
                       ? `Z${r.pendingMentorValidations.join(', Z')}`
                       : 'La zi'}
                   </td>
-                  <td className="py-3 text-xs">{r.certificateIssued ? 'Da' : 'Nu'}</td>
+                  <td className="py-3">
+                    <CertificateTableCell userId={r.userId} issued={r.certificateIssued} />
+                  </td>
                 </tr>
               );
             })}

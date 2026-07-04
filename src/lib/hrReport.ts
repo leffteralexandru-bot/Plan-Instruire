@@ -1,8 +1,10 @@
 import { ALL_DAYS } from '@/data/trainingPlan';
 import { COMPETENCIES, scoreFromFeedback } from '@/data/competencies';
 import { THEORETICAL_TEST } from '@/data/theoreticalTest';
-import type { AppProgress, DayProgress, TraineeProfile } from '@/types';
+import type { AppProgress, DayProgress, TraineeProfile, TrainingEnrollment, User } from '@/types';
 import { isDayComplete } from '@/lib/progressLogic';
+import { userStore } from '@/lib/userStore';
+import { storage } from '@/store/storage';
 
 /** Zile cu validare mentor obligatorie — din planul artGRANIT */
 export const MENTOR_VALIDATION_DAY_NUMBERS = ALL_DAYS.filter(
@@ -124,6 +126,50 @@ export function buildTraineeHrReport(trainee: TraineeProfile, progress: AppProgr
     photosCount: progress.photos.length,
     competencyScores,
     lastActivityAt: getLastActivityAt(progress),
+  };
+}
+
+export function isTrainingPlanComplete(
+  report: Pick<TraineeHrReport, 'completedDays' | 'totalDays' | 'certificateIssued'>,
+): boolean {
+  return report.certificateIssued || (report.totalDays > 0 && report.completedDays >= report.totalDays);
+}
+
+/** Angajat încă în programul inițial de 4 săptămâni (monitorizare mentor activă) */
+export function isTraineeInActiveTraining(
+  trainee: Pick<TraineeProfile, 'id' | 'name' | 'email' | 'programStart' | 'enrollmentId' | 'mentorId' | 'cohortId' | 'departmentId' | 'enrollmentStatus'>,
+): boolean {
+  const report = buildTraineeHrReport(trainee as TraineeProfile, storage.getProgress(trainee.id));
+  return !isTrainingPlanComplete(report);
+}
+
+export function getAngajatTrainingReport(userId: string): TraineeHrReport | null {
+  const user = userStore.getUserById(userId);
+  if (!user) return null;
+
+  const enrollment = userStore
+    .getEnrollments()
+    .find((e) => e.angajatId === userId && (e.status === 'active' || e.status === 'completed'));
+  if (!enrollment) return null;
+
+  const trainee = toTraineeProfileForReport(user, enrollment);
+  return buildTraineeHrReport(trainee, storage.getProgress(userId));
+}
+
+function toTraineeProfileForReport(user: User, enrollment: TrainingEnrollment): TraineeProfile {
+  return {
+    id: user.id,
+    name: user.name,
+    roles: user.roles,
+    email: user.email,
+    active: user.active,
+    createdAt: user.createdAt,
+    enrollmentId: enrollment.id,
+    mentorId: enrollment.mentorId,
+    cohortId: enrollment.cohortId,
+    departmentId: enrollment.departmentId,
+    programStart: enrollment.programStart,
+    enrollmentStatus: enrollment.status,
   };
 }
 

@@ -5,11 +5,13 @@ import {
   canEditEmployeeProfile,
   canExportEmployeeDossier,
   canOpenMentorPanel,
+  canOpenSupervisorPanel,
   canSendEvaluationReminder,
   canViewEmployee,
   filterProfilesForActor,
   getAccessibleEmployeeIds,
 } from '@/lib/accessControl';
+import { canEditTrainingPlan } from '@/lib/roles';
 
 export function useAccessControl() {
   const { user } = useAuth();
@@ -22,7 +24,9 @@ export function useAccessControl() {
       canExportDossier: (targetId: string) => canExportEmployeeDossier(user, targetId),
       canAddNote: (targetId: string) => canAddEmployeeNote(user, targetId),
       canSendReminder: canSendEvaluationReminder(user),
+      canEditTrainingPlan: canEditTrainingPlan(user),
       canOpenMentorPanel: canOpenMentorPanel(user),
+      canOpenSupervisorPanel: canOpenSupervisorPanel(user),
       accessibleEmployeeIds: getAccessibleEmployeeIds(user),
       filterProfiles: <T extends { userId: string }>(items: T[]) => filterProfilesForActor(user, items),
     }),

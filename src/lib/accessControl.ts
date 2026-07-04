@@ -11,15 +11,7 @@ import {
 import { userStore } from '@/lib/userStore';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
-
-/** Mentor/manager responsabil de un angajat */
-export function isSubordinateOf(supervisorId: string, angajatId: string): boolean {
-  if (supervisorId === angajatId) return false;
-  const profile = hrPerformanceStore.getProfile(angajatId);
-  if (profile?.managerId === supervisorId) return true;
-  const enr = userStore.getActiveEnrollmentForAngajat(angajatId);
-  return enr?.mentorId === supervisorId;
-}
+import { getSupervisedEmployeeIds, isSubordinateOf, isSupervisorOf } from '@/lib/supervisor';
 
 /** Poate deschide fișa unui angajat (proprie sau subordonați) */
 export function canViewEmployee(actor: User | null | undefined, targetId: string): boolean {
@@ -27,6 +19,7 @@ export function canViewEmployee(actor: User | null | undefined, targetId: string
   if (actor.id === targetId) return true;
   if (hasRole(actor, 'admin') || canViewAllTrainees(actor)) return true;
   if (isMentorUser(actor) && isSubordinateOf(actor.id, targetId)) return true;
+  if (isSupervisorOf(actor.id, targetId)) return true;
   return false;
 }
 
@@ -51,25 +44,37 @@ export function canSendEvaluationReminder(actor: User | null | undefined): boole
   return canManageUsers(actor) || hasRole(actor, 'admin');
 }
 
-/** Panou Mentor — statut temporar acordat de HR (+ admin supraveghere) */
+/** Panou Mentor — HR/admin, statut mentor, sau mentor principal la înscriere activă */
 export function canOpenMentorPanel(actor: User | null | undefined): boolean {
   if (!actor) return false;
-  if (hasRole(actor, 'admin')) return true;
-  return isMentorUser(actor);
+  if (hasRole(actor, 'admin') || canViewAllTrainees(actor)) return true;
+  if (isMentorUser(actor)) return true;
+  return userStore.getTraineeProfiles({ mentorId: actor.id }).length > 0;
+}
+
+/** Panou Supervizor — angajați desemnați ca supervizor direct */
+export function canOpenSupervisorPanel(actor: User | null | undefined): boolean {
+  if (!actor) return false;
+  if (canManageUsers(actor) || hasRole(actor, 'admin')) return true;
+  return getSupervisedEmployeeIds(actor.id).length > 0;
 }
 
 /** ID-uri angajați vizibili pentru actor */
 export function getAccessibleEmployeeIds(actor: User | null | undefined): string[] | 'all' {
   if (!actor) return [];
   if (hasRole(actor, 'admin') || canViewAllTrainees(actor)) return 'all';
+  const ids = new Set<string>();
+
   if (isMentorUser(actor)) {
-    const fromEnroll = userStore.getTraineeProfiles({ mentorId: actor.id }).map((t) => t.id);
-    const fromManager = hrPerformanceStore
-      .getProfiles()
-      .filter((p) => p.managerId === actor.id)
-      .map((p) => p.userId);
-    return [...new Set([...fromEnroll, ...fromManager])];
+    for (const t of userStore.getTraineeProfiles({ mentorId: actor.id })) ids.add(t.id);
+    for (const p of hrPerformanceStore.getProfiles().filter((p) => p.managerId === actor.id)) {
+      ids.add(p.userId);
+    }
   }
+
+  for (const id of getSupervisedEmployeeIds(actor.id)) ids.add(id);
+
+  if (ids.size > 0) return [...ids];
   if (isAngajatUser(actor)) return [actor.id];
   return [];
 }
@@ -98,6 +103,13 @@ export function canViewMentorErrorAlerts(actor: User | null | undefined): boolea
   return canOpenMentorPanel(actor);
 }
 
+/** Înregistrare eroare — HR pentru orice angajat, supervizor doar pentru subordonați */
+export function canRegisterErrorCase(actor: User | null | undefined, angajatId: string): boolean {
+  if (!actor || !angajatId) return false;
+  if (canManageUsers(actor) || hasRole(actor, 'admin')) return true;
+  return isSupervisorOf(actor.id, angajatId);
+}
+
 /** Subordonați cu alerte active la prag (pentru dashboard mentor) */
 export function getSubordinatesWithErrorAlerts(mentorId: string): string[] {
   const alerts = trainingSystemStore
@@ -117,5 +129,6 @@ export function getPostLoginPath(user: User): string {
   if (hasRole(user, 'hr')) return ingineriPath('/admin');
   if (isAngajatUser(user)) return INGINERI_ANGAJAT_PANEL_PATH;
   if (isMentorUser(user)) return ingineriPath('/mentor');
+  if (getSupervisedEmployeeIds(user.id).length > 0) return ingineriPath('/panou-supervizor');
   return INGINERI_ANGAJAT_PANEL_PATH;
 }

@@ -13,7 +13,6 @@ interface ActConstatareFormProps {
     masuriCorective: string;
     observatii?: string;
     dayId?: string;
-    bitrixProjectId?: string;
   }) => void;
 }
 
@@ -31,7 +30,6 @@ export function ActConstatareForm({ onSubmit, defaultDayId }: ActConstatareFormP
       masuriCorective: fd.get('masuriCorective') as string,
       observatii: (fd.get('observatii') as string) || undefined,
       dayId: (fd.get('dayId') as string) || defaultDayId,
-      bitrixProjectId: (fd.get('bitrixProjectId') as string) || undefined,
     });
     setSubmitted(true);
     e.currentTarget.reset();
@@ -56,10 +54,7 @@ export function ActConstatareForm({ onSubmit, defaultDayId }: ActConstatareFormP
           <Input id="proiectNume" name="proiectNume" label="Nume proiect" required placeholder="ex. Blat Bucătărie — Popescu" />
           <Input id="dataMasuratoare" name="dataMasuratoare" label="Data măsurătorii" type="date" required />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input id="dayId" name="dayId" label="Zi program (ID)" defaultValue={defaultDayId} placeholder="ex. day-18" />
-          <Input id="bitrixProjectId" name="bitrixProjectId" label="ID proiect Bitrix (opțional)" placeholder="ex. 12345" />
-        </div>
+        <Input id="dayId" name="dayId" label="Zi program (ID)" defaultValue={defaultDayId} placeholder="ex. day-18" />
         <Textarea id="eroriIdentificate" name="eroriIdentificate" label="Erori identificate" required />
         <Textarea id="abateriMasuratori" name="abateriMasuratori" label="Abateri măsurători (oglindă)" required />
         <Textarea id="masuriCorective" name="masuriCorective" label="Măsuri corective" required />

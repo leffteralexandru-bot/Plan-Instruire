@@ -9,6 +9,13 @@ export interface Cohort {
 
 export const COHORTS: Cohort[] = [
   {
+    id: 'cohort-individual',
+    label: 'Individual (fără grupă)',
+    programVersion: 'individual',
+    startDate: '2026-01-01',
+    active: false,
+  },
+  {
     id: 'cohort-2026-i',
     label: 'Grupa I — Iunie 2026',
     programVersion: '2026.1',
