@@ -255,7 +255,7 @@ export function AdministratorCommandCenter() {
     <div className="space-y-6">
       <div className="artgranit-dark-card p-6 sm:p-8">
         <div className="relative flex flex-wrap items-start justify-between gap-6">
-          <div className="max-w-xl">
+          <div className="min-w-0 flex-1">
             <p className="text-[10px] uppercase tracking-[0.2em] text-corporate-gold font-medium mb-2">
               artGRANIT · Administrator
             </p>
@@ -283,7 +283,7 @@ export function AdministratorCommandCenter() {
           </div>
         </div>
 
-        <div className="relative grid gap-2 grid-cols-2 lg:grid-cols-4 mt-6 pt-6 border-t border-white/10">
+        <div className="relative grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-6 pt-6 border-t border-white/10">
           <OrgKpi label="Angajați activi" value={String(metrics.totalAngajati)} />
           <OrgKpi
             label="Progres instruire"

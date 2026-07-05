@@ -119,7 +119,7 @@ function ShellLayout({ showAlerts }: { showAlerts: boolean }) {
   return (
     <div className="flex min-h-screen w-full min-w-0 flex-col">
       <Header />
-      <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main className="app-width flex-1 py-6 sm:py-8">
         <TestingStageBanner />
         {showAlerts && <HrAlertsBanner />}
         <Outlet />

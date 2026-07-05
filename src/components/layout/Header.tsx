@@ -19,7 +19,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-corporate-black text-white shadow-md">
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+      <div className="app-width flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-3">
         <Link to="/" className="flex items-center gap-3 min-w-0 shrink-0">
           <BrandLogo tone="light" height={26} />
           <div className="min-w-0 hidden lg:block border-l border-white/15 pl-3">
@@ -37,7 +37,7 @@ export function Header() {
         </Link>
 
         {user && (
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 ml-auto">
             {!isHub && activeDept?.planAvailable && isInTraining && <FieldModeToggle />}
             <QuickNoteButton />
             <div className="text-right hidden md:block">

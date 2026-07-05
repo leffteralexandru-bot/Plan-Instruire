@@ -92,7 +92,7 @@ export function Navigation() {
 
   return (
     <nav className="border-t border-white/10 bg-corporate-black">
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+      <div className="app-width flex flex-wrap gap-1 py-2">
         {links.map((link) => {
           const testTarget = guide && navTheme && isTestingNavTarget(link.to, guide);
           return (
@@ -102,7 +102,7 @@ export function Navigation() {
             end={link.end}
             className={({ isActive }) =>
               [
-                'whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'rounded-lg px-3 py-2 text-sm font-medium transition-colors shrink-0',
                 isActive
                   ? 'bg-corporate-gold text-corporate-black'
                   : 'text-white/70 hover:text-corporate-gold hover:bg-white/5',

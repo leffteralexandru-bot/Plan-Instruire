@@ -186,4 +186,9 @@
     background: linear-gradient(180deg, #121212 0%, #0c0c0c 100%);
     border-top: 1px solid rgba(179, 143, 85, 0.15);
   }
+
+  /** Lățime comună header / main — full pe mobil, centrat de la xl */
+  .app-width {
+    @apply w-full min-w-0 max-w-7xl px-4 sm:px-6 xl:mx-auto;
+  }
 }

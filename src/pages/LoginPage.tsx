@@ -147,7 +147,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen w-full min-w-0 flex flex-col">
       <div className="login-hero relative w-full px-4 py-10 sm:py-14 text-center text-white">
-        <div className="relative z-10 mx-auto max-w-lg space-y-4">
+        <div className="relative z-10 w-full max-w-xl space-y-4">
           <BrandLogo tone="light" height={32} className="mx-auto" />
           <p className="text-sm text-corporate-gold font-medium tracking-wide uppercase">
             Plan de Instruire și Adaptare Profesională
@@ -160,8 +160,8 @@ export function LoginPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 pb-10 -mt-6 relative z-10">
-        <div className="mx-auto w-full max-w-lg space-y-4">
+      <div className="flex-1 w-full min-w-0 px-4 pb-10 -mt-6 relative z-10">
+        <div className="w-full max-w-xl sm:mx-auto space-y-4">
           <Card className="shadow-neural-lg border-corporate-border">
             <h2 className="text-lg font-semibold text-corporate-black mb-1">Autentificare</h2>
             <p className="text-sm text-corporate-muted mb-4">Platformă internă artGRANIT</p>

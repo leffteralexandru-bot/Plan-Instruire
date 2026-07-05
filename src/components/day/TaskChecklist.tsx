@@ -79,7 +79,7 @@ export function TaskChecklist({ tasks, completedTasks, onToggle, readOnly }: Tas
 
   return (
     <Card>
-      <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-semibold text-corporate-dark">Checklist Activități</h2>
         <Badge variant={allDone ? 'success' : 'default'}>
           {completedTasks.length}/{tasks.length}
