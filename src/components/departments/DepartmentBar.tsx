@@ -19,6 +19,8 @@ function departmentLink(
   return deptRoute;
 }
 
+import { LAYOUT_SHELL } from '@/lib/appNavigation';
+
 export function DepartmentBar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
@@ -34,7 +36,7 @@ export function DepartmentBar() {
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-corporate-gold/50 to-transparent"
         aria-hidden
       />
-      <ul className="app-width flex items-stretch justify-between gap-1 sm:gap-2">
+      <ul className={`${LAYOUT_SHELL} flex w-full items-stretch justify-between gap-1 sm:gap-2 px-3 sm:px-6`}>
         {DEPARTMENTS.map((dept) => {
           const isActive = activeDept?.id === dept.id;
           const to = departmentLink(dept.route, dept.planAvailable, isStaffAngajat, isHrStaff, isAdmin);

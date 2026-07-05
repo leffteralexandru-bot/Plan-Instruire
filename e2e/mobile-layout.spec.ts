@@ -26,21 +26,37 @@ test.describe('layout mobil (iPhone 13)', () => {
       const html = document.documentElement;
       const body = document.body;
       const main = document.querySelector('main');
-      const deptBar = document.querySelector('.dept-bar ul');
+      const bottomNav = document.querySelector('nav[aria-label="Navigare principală mobilă"]');
       const vw = window.innerWidth;
 
       return {
         scrollWidth: Math.max(html.scrollWidth, body.scrollWidth),
         clientWidth: html.clientWidth,
         mainWidth: main?.getBoundingClientRect().width ?? 0,
-        deptBarWidth: deptBar?.getBoundingClientRect().width ?? 0,
+        bottomNavVisible: !!bottomNav && bottomNav.getBoundingClientRect().height > 0,
         vw,
       };
     });
 
     expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth + 2);
     expect(layout.mainWidth).toBeGreaterThan(layout.vw * 0.82);
-    expect(layout.deptBarWidth).toBeGreaterThan(layout.vw * 0.75);
+    expect(layout.bottomNavVisible).toBe(true);
+  });
+
+  test('bottom navigation cu touch targets ≥44px', async ({ page }) => {
+    await loginAsAngajat(page);
+
+    const bottomNav = page.getByRole('navigation', { name: 'Navigare principală mobilă' });
+    await expect(bottomNav).toBeVisible();
+
+    const targets = bottomNav.locator('a, button');
+    const count = await targets.count();
+    expect(count).toBeGreaterThanOrEqual(4);
+
+    for (let i = 0; i < count; i++) {
+      const box = await targets.nth(i).boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
   });
 
   test('modulele referință sunt pe o coloană pe mobil', async ({ page }) => {
@@ -56,6 +72,14 @@ test.describe('layout mobil (iPhone 13)', () => {
     });
 
     expect(columnCount).toBe(1);
+  });
+
+  test('meniul hamburger se deschide pe mobil', async ({ page }) => {
+    await loginAsAngajat(page);
+
+    await page.getByRole('button', { name: 'Deschide meniul' }).click();
+    await expect(page.getByRole('dialog', { name: 'Meniu aplicație' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Departamente' })).toBeVisible();
   });
 
   test('login folosește lățimea ecranului (card centrat, nu coloană îngustă forțată)', async ({ page }) => {

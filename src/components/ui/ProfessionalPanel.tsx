@@ -354,7 +354,7 @@ export function ProfessionalPanel({
   const headerActionsBlock =
     badge || headerAction ? (
       <div
-        className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto sm:justify-end"
+        className="flex flex-wrap items-center gap-2 shrink-0"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
@@ -366,7 +366,7 @@ export function ProfessionalPanel({
   const headerLayout = headerActionsBlock ? (
     <div
       className={[
-        'flex flex-col sm:flex-row sm:flex-wrap items-start justify-between gap-3 w-full',
+        'flex items-start justify-between gap-3 w-full',
         headerTile ? 'h-full' : '',
       ].join(' ')}
     >

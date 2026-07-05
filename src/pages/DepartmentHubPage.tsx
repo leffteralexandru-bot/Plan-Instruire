@@ -21,7 +21,7 @@ export function DepartmentHubPage() {
     <>
       <AngajatAutoRedirect />
 
-      <div className="w-full max-w-7xl space-y-6">
+      <div className="w-full max-w-screen-xl mx-auto space-y-6">
         <div className="text-center space-y-3 pt-2">
           <h1 className="text-2xl sm:text-3xl font-semibold text-corporate-dark">
             Plan Instruire & Adaptare Profesională

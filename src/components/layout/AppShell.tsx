@@ -1,6 +1,8 @@
 import { ProgressProvider } from '@/hooks/useProgress';
 import { StagiarProvider } from '@/context/StagiarContext';
 import { FieldModeProvider } from '@/context/FieldModeContext';
+import { AppMenuProvider } from '@/context/AppMenuContext';
+import { DevicePreviewProvider, useDevicePreview } from '@/context/DevicePreviewContext';
 import { useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStagiarId } from '@/hooks/useStagiarId';
@@ -10,13 +12,17 @@ import { HrAlertsBanner } from '@/components/shared/HrAlertsBanner';
 import { TestingStageBanner } from '@/components/shared/TestingStageBanner';
 import { useHrNotifications } from '@/hooks/useHrNotifications';
 import { Header } from './Header';
+import { BottomNavigation } from './BottomNavigation';
+import { MobileAppMenu } from './MobileAppMenu';
 import { Outlet, useLocation } from 'react-router-dom';
 import { getSyncStatus } from '@/lib/sync';
 import { isSupabaseConfigured } from '@/store/storage';
 import { useUsers } from '@/context/UsersContext';
 import { isTraineeInActiveTraining } from '@/lib/hrReport';
-import { isOperationalAlertsRoute, needsProgressProvider } from '@/data/departments';
+import { getDepartmentFromPath, isOperationalAlertsRoute, needsProgressProvider } from '@/data/departments';
 import { canViewEmployee } from '@/lib/accessControl';
+import { LAYOUT_PAGE } from '@/lib/appNavigation';
+import { DEVICE_PREVIEW_LABELS, PREVIEW_FRAME_WIDTH, type DevicePreview } from '@/lib/devicePreview';
 
 function LoadingScreen() {
   return (
@@ -103,30 +109,85 @@ export function AppShell() {
   return (
     <StagiarProvider>
       <FieldModeProvider>
-        {needsProgressProvider(location.pathname) ? (
-          <ProgressGate>
+        <DevicePreviewProvider>
+          {needsProgressProvider(location.pathname) ? (
+            <ProgressGate>
+              <ShellLayout showAlerts={showAlerts} />
+            </ProgressGate>
+          ) : (
             <ShellLayout showAlerts={showAlerts} />
-          </ProgressGate>
-        ) : (
-          <ShellLayout showAlerts={showAlerts} />
-        )}
+          )}
+        </DevicePreviewProvider>
       </FieldModeProvider>
     </StagiarProvider>
   );
 }
 
 function ShellLayout({ showAlerts }: { showAlerts: boolean }) {
+  const { user, isInTraining } = useAuth();
+  const location = useLocation();
+  const { preview, isSimulated, isMobileLayout, isDesktopLayout, resetToAuto } = useDevicePreview();
+  const isHub = location.pathname === '/';
+  const activeDept = getDepartmentFromPath(location.pathname);
+  const showFieldMode = !!user && !isHub && !!activeDept?.planAvailable && isInTraining;
+
+  const appChrome = (
+    <AppMenuProvider>
+      <div className="relative flex min-h-screen w-full min-w-0 flex-col bg-corporate-black">
+        <Header />
+        <main
+          className={[
+            LAYOUT_PAGE,
+            'max-w-screen-xl flex-1 bg-corporate-surface',
+            isMobileLayout
+              ? 'pb-[calc(4.5rem+env(safe-area-inset-bottom))]'
+              : 'pb-8',
+          ].join(' ')}
+        >
+          <TestingStageBanner />
+          {showAlerts && <HrAlertsBanner />}
+          <Outlet />
+        </main>
+        {isDesktopLayout && (
+          <footer className="border-t border-corporate-border bg-corporate-black py-4 text-center text-xs text-white/50">
+            © {new Date().getFullYear()} — Plan Instruire & Adaptare Profesională
+          </footer>
+        )}
+        {user && <BottomNavigation />}
+        {user && <MobileAppMenu showFieldMode={showFieldMode} />}
+      </div>
+    </AppMenuProvider>
+  );
+
+  if (!isSimulated || preview === 'auto') {
+    return appChrome;
+  }
+
+  const framedPreview = preview as Exclude<DevicePreview, 'auto'>;
+
   return (
-    <div className="flex min-h-screen w-full min-w-0 flex-col">
-      <Header />
-      <main className="app-width flex-1 py-6 sm:py-8">
-        <TestingStageBanner />
-        {showAlerts && <HrAlertsBanner />}
-        <Outlet />
-      </main>
-      <footer className="border-t border-corporate-border bg-corporate-black py-4 text-center text-xs text-white/50">
-        © {new Date().getFullYear()} — Plan Instruire & Adaptare Profesională
-      </footer>
+    <div className="min-h-screen bg-gradient-to-b from-corporate-surface via-white to-corporate-surface/60 px-4 py-5">
+      <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-center">
+        <p className="text-xs font-medium text-corporate-muted">
+          Previzualizare manuală:{' '}
+          <strong>{DEVICE_PREVIEW_LABELS[framedPreview].replace('Forțează vizualizare ', '')}</strong>
+        </p>
+        <button
+          type="button"
+          onClick={resetToAuto}
+          className="rounded-lg border border-corporate-border bg-white px-3 py-1 text-xs font-medium text-corporate-dark hover:border-corporate-gold hover:text-corporate-gold transition-colors"
+        >
+          Revenire Auto
+        </button>
+      </div>
+      <div
+        className={[
+          'relative mx-auto w-full min-h-[min(844px,90vh)] overflow-hidden rounded-2xl border border-corporate-border bg-corporate-black shadow-2xl',
+          PREVIEW_FRAME_WIDTH[framedPreview],
+        ].join(' ')}
+      >
+        {appChrome}
+      </div>
     </div>
   );
 }

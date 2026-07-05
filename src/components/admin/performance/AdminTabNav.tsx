@@ -39,7 +39,7 @@ export function AdminTabNav({ active, onChange, pendingHrErrors = 0 }: AdminTabN
   return (
     <nav
       aria-label="Module panou HR"
-      className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-0.5 rounded-xl border border-corporate-border bg-white p-0.5 mb-6"
+      className="grid grid-cols-4 md:grid-cols-8 gap-0.5 rounded-xl border border-corporate-border bg-white p-0.5 mb-6"
     >
       {ADMIN_TABS.map((tab) => {
         const testingTarget = guide?.enabled && tabTheme && guide.adminTab === tab.id;

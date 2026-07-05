@@ -23,7 +23,7 @@ export function DepartmentComingSoonPage() {
   );
 
   return (
-    <div className="w-full max-w-7xl space-y-6">
+    <div className="w-full max-w-screen-xl mx-auto space-y-6">
       <Link to="/" className="text-sm text-corporate-gold hover:underline inline-block">
         ← Înapoi la departamente
       </Link>

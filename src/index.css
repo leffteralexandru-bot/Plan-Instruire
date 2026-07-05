@@ -36,6 +36,10 @@
   html.field-mode main select {
     @apply text-base min-h-[48px];
   }
+
+  .touch-target {
+    @apply inline-flex items-center justify-center min-h-[44px] min-w-[44px];
+  }
 }
 
 @layer components {
@@ -185,10 +189,5 @@
   .dept-bar {
     background: linear-gradient(180deg, #121212 0%, #0c0c0c 100%);
     border-top: 1px solid rgba(179, 143, 85, 0.15);
-  }
-
-  /** Lățime comună header / main — full pe mobil, centrat de la xl */
-  .app-width {
-    @apply w-full min-w-0 max-w-7xl px-4 sm:px-6 xl:mx-auto;
   }
 }
