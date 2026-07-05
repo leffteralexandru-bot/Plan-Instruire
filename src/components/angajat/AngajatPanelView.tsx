@@ -113,6 +113,11 @@ export function AngajatPanelView({ viewAsId }: { viewAsId?: string } = {}) {
       .at(-1);
   }, [evaluations, subjectId]);
 
+  const completedEvaluations = useMemo(
+    () => (subjectId ? evaluations.filter((e) => e.angajatId === subjectId) : []),
+    [evaluations, subjectId],
+  );
+
   if (!user || !subjectId) return null;
 
   const subjectUser = users.find((u) => u.id === subjectId);
@@ -153,11 +158,6 @@ export function AngajatPanelView({ viewAsId }: { viewAsId?: string } = {}) {
   const openActiveEvaluation = () => {
     navigate(isPreview ? ingineriPath(`/evaluari?viewAs=${subjectId}`) : ingineriPath('/evaluari'));
   };
-
-  const completedEvaluations = useMemo(
-    () => evaluations.filter((e) => e.angajatId === subjectId),
-    [evaluations, subjectId],
-  );
 
   const mentorGrantedByHr =
     !isPreview && isMentor && !user.roles.includes('admin') && !user.roles.includes('hr');

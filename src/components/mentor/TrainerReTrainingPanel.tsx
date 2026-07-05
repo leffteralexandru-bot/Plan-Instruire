@@ -33,13 +33,6 @@ export function TrainerReTrainingPanel() {
       .filter((s) => canMentorViewAssignedSession(s, user.id));
   }, [user, refresh]);
 
-  if (!user || sessions.length === 0) return null;
-
-  const onRefresh = () => {
-    refresh();
-    bump((n) => n + 1);
-  };
-
   useActionFocusEffect(
     {
       retrain: () => {
@@ -50,6 +43,13 @@ export function TrainerReTrainingPanel() {
     },
     [sessions.length],
   );
+
+  if (!user || sessions.length === 0) return null;
+
+  const onRefresh = () => {
+    refresh();
+    bump((n) => n + 1);
+  };
 
   return (
     <Card className={RE_TRAINING_FLOW_SHELL}>
