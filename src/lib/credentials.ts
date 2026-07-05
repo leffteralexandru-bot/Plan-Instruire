@@ -36,8 +36,8 @@ export const credentials = {
 
   verify(userId: string, password: string): boolean {
     const stored = readPasswords()[userId];
-    if (!stored) return false;
-    return stored === password;
+    const expected = stored ?? DEFAULT_PLATFORM_PASSWORD;
+    return password === expected;
   },
 
   seedDefaults(userIds: string[], password = DEFAULT_PLATFORM_PASSWORD): void {

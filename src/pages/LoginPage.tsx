@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getPostLoginPath } from '@/lib/accessControl';
@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
-import { userStore, repairDemoProfiles, DEMO_LOGIN_HINTS } from '@/lib/userStore';
+import { userStore, repairDemoProfiles, repairLoginCredentials, DEMO_LOGIN_HINTS } from '@/lib/userStore';
 import { credentials, DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
 import { ROLE_LABELS, formatUserRoles, isAngajatUser, isMentorUser } from '@/lib/roles';
 import type { User } from '@/types';
@@ -68,6 +68,11 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [profileTick, setProfileTick] = useState(0);
 
+  useEffect(() => {
+    repairLoginCredentials();
+    setProfileTick((t) => t + 1);
+  }, []);
+
   const admins = useMemo(() => userStore.getAdministratorProfiles(), [profileTick]);
   const hrProfiles = useMemo(() => userStore.getHrProfiles(), [profileTick]);
   const tempProfiles = useMemo(() => userStore.getTemporaryLoginProfiles(), [profileTick]);
@@ -97,7 +102,9 @@ export function LoginPage() {
     const ok = await login(email.trim(), password);
     setSubmitting(false);
     if (!ok) {
-      setError('Profil sau parolă incorectă. Verificați datele și încercați din nou.');
+      setError(
+        'Profil sau parolă incorectă. Parola demo: artgranit2026. Dacă nu apar carduri, apăsați „Restaurează scenariu test”.',
+      );
     }
   };
 
@@ -109,7 +116,9 @@ export function LoginPage() {
     const ok = await login(profile.email, pwd);
     setSubmitting(false);
     if (!ok) {
-      setError('Profil sau parolă incorectă. Verificați datele și încercați din nou.');
+      setError(
+        'Nu s-a putut conecta acest profil. Apăsați „Restaurează scenariu test” sau folosiți parola artgranit2026.',
+      );
     }
   };
 

@@ -83,27 +83,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password?: string) => {
     if (!password?.trim()) return false;
 
+    const finishLogin = async (found: User) => {
+      storage.setAuth(found);
+      setUser(found);
+      await migrateProgressOnLogin(found.id);
+      return true;
+    };
+
     if (isSupabaseAuthEnabled()) {
-      const ok = await signInWithSupabaseAuth(email, password);
-      if (!ok) return false;
+      const cloudOk = await signInWithSupabaseAuth(email, password);
+      if (cloudOk) {
+        const cloudUser = userStore.getUserByEmail(email);
+        if (cloudUser) return finishLogin(cloudUser);
+      }
+      // Cont demo local / Alex — parolă verificată în browser (fără cont Supabase Auth)
+      const localUser = userStore.verifyPassword(email, password);
+      if (localUser) return finishLogin(localUser);
+      return false;
     }
 
-    const found = isSupabaseAuthEnabled()
-      ? userStore.getUserByEmail(email)
-      : userStore.verifyPassword(email, password);
-
-    if (!found) return false;
-
-    storage.setAuth(found);
-    setUser(found);
-    await migrateProgressOnLogin(found.id);
-    return true;
+    const localUser = userStore.verifyPassword(email, password);
+    if (!localUser) return false;
+    return finishLogin(localUser);
   }, []);
 
   const logout = useCallback(async () => {
     await signOutSupabaseAuth();
     storage.clearAuth();
     setUser(null);
+    window.location.assign('/login');
   }, []);
 
   const isInTraining = !!user && !!userStore.getEnrollmentForAngajat(user.id);

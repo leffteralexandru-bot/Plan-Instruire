@@ -49,6 +49,7 @@ export function Header() {
               size="sm"
               className="text-white/80 hover:text-white hover:bg-white/10"
               onClick={() => void logout()}
+              title="Deconectare și alegere alt profil"
             >
               Ieșire
             </Button>

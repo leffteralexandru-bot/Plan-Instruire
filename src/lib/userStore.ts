@@ -77,6 +77,19 @@ function seedIfEmpty(): void {
   credentials.seedDefaults(normalized.map((u) => u.id));
 }
 
+/** Asigură parole demo pentru profilele salvate (fără reîncărcare userStore) */
+export function repairLoginCredentials(): void {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    const users: { id: string }[] = raw ? (JSON.parse(raw) as { id: string }[]) : [];
+    if (users.length > 0) {
+      credentials.seedDefaults(users.map((u) => u.id));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Reîncarcă scenariul demo minimal (1 angajat + supervizor + mentor) */
 export function repairDemoProfiles(): User[] {
   return resetMinimalDemoScenario();
@@ -205,7 +218,6 @@ export const userStore = {
     }
     const user = userStore.getUserByEmail(email);
     if (!user) return null;
-    if (isSupabaseAuthEnabled()) return user;
     return credentials.verify(user.id, password) ? user : null;
   },
 
