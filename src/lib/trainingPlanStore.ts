@@ -58,7 +58,7 @@ export const trainingPlanStore = {
     actor: Pick<User, 'id' | 'name' | 'roles'>,
   ): DayPlanOverride {
     if (!canEditTrainingPlan(actor)) {
-      throw new Error('Doar Resurse Umane (HR) pot modifica planul de instruire.');
+      throw new Error('Doar Alex poate modifica planul de instruire.');
     }
     const overrides = trainingPlanStore.getOverrides();
     const idx = overrides.findIndex((o) => o.dayId === dayId);
@@ -83,7 +83,7 @@ export const trainingPlanStore = {
     return saved;
   },
 
-  resetDayOverride(dayId: string, actor?: Pick<User, 'roles'>): void {
+  resetDayOverride(dayId: string, actor?: Pick<User, 'id'> & Partial<Pick<User, 'email'>>): void {
     if (actor && !canEditTrainingPlan(actor)) {
       throw new Error('Doar Resurse Umane (HR) pot modifica planul de instruire.');
     }
@@ -124,7 +124,7 @@ export const trainingPlanStore = {
 
   /** Creează task nou cu ID unic */
   newTask(label = 'Task nou'): Task {
-    return { id: newId('task'), label };
+    return { id: newId('task'), label, materials: [] };
   },
 
   /** Creează material din fișier încărcat */

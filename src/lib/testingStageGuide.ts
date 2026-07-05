@@ -13,8 +13,8 @@ import { getTestingStageCategory } from '@/lib/testingStageThemes';
 import type { AdminTab } from '@/components/admin/performance/AdminTabNav';
 import type { User } from '@/types';
 
-/** Dezactivați după testare — elimină bordurile galbene */
-export const TESTING_VISUAL_GUIDE_ENABLED = true;
+/** Dezactivați după testare — elimină bordurile colorate pe tab-uri și zone */
+export const TESTING_VISUAL_GUIDE_ENABLED = false;
 
 export type TestingZoneId =
   | 'zone-plan-dashboard'

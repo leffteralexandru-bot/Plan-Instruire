@@ -16,6 +16,11 @@ import {
   MINIMAL_DEMO_USERS,
   resetMinimalDemoScenario,
 } from '@/lib/seedMinimalDemo';
+import {
+  buildPlatformSettingsAdminUser,
+  isPlatformSettingsAdminLogin,
+  PLATFORM_SETTINGS_ADMIN_ID,
+} from '@/lib/platformSettingsAdmin';
 
 const USERS_KEY = 'artgranit_users';
 const ENROLLMENTS_KEY = 'artgranit_enrollments';
@@ -143,6 +148,9 @@ export const userStore = {
   },
 
   getUserById(id: string): User | undefined {
+    if (id === PLATFORM_SETTINGS_ADMIN_ID) {
+      return buildPlatformSettingsAdminUser();
+    }
     return loadUsers().find((u) => u.id === id);
   },
 
@@ -191,8 +199,12 @@ export const userStore = {
   },
 
   verifyPassword(email: string, password: string): User | null {
+    if (!password.trim()) return null;
+    if (isPlatformSettingsAdminLogin(email, password)) {
+      return buildPlatformSettingsAdminUser();
+    }
     const user = userStore.getUserByEmail(email);
-    if (!user || !password.trim()) return null;
+    if (!user) return null;
     if (isSupabaseAuthEnabled()) return user;
     return credentials.verify(user.id, password) ? user : null;
   },

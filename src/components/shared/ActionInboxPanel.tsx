@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import {
   countUrgentActions,
   getActionInboxForRole,
@@ -123,22 +122,31 @@ export function ActionInboxPanel({
 
 function InboxRow({ item }: { item: ActionInboxItem }) {
   return (
-    <li
-      className={[
-        'flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm',
-        item.severity === 'urgent'
-          ? 'border-amber-200 bg-amber-50/70'
-          : 'border-corporate-border bg-corporate-surface/50',
-      ].join(' ')}
-    >
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-corporate-dark">{item.title}</p>
-        <p className="text-xs text-corporate-muted mt-0.5">{item.message}</p>
-      </div>
-      <Link to={item.link}>
-        <Button type="button" variant={item.severity === 'urgent' ? 'primary' : 'secondary'} size="sm">
-          {item.actionLabel}
-        </Button>
+    <li>
+      <Link
+        to={item.link}
+        className={[
+          'flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors',
+          'hover:border-corporate-gold/50 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold',
+          item.severity === 'urgent'
+            ? 'border-amber-200 bg-amber-50/70'
+            : 'border-corporate-border bg-corporate-surface/50',
+        ].join(' ')}
+      >
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-corporate-dark">{item.title}</p>
+          <p className="text-xs text-corporate-muted mt-0.5">{item.message}</p>
+        </div>
+        <span
+          className={[
+            'shrink-0 inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-medium',
+            item.severity === 'urgent'
+              ? 'bg-corporate-gold text-corporate-black'
+              : 'bg-white border border-corporate-border text-corporate-dark',
+          ].join(' ')}
+        >
+          {item.actionLabel} →
+        </span>
       </Link>
     </li>
   );

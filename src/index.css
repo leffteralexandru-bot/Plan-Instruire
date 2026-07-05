@@ -37,12 +37,131 @@
 }
 
 @layer components {
+  /* —— Containere vii artGRANIT (inspirat artgranit.md) —— */
+  .neural-card,
+  .artgranit-panel {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+
   .neural-card {
-    @apply bg-white rounded-2xl shadow-neural border border-corporate-border transition-shadow duration-200;
+    @apply bg-artgranit-stone rounded-2xl shadow-neural border border-corporate-border;
+    background-size: 200% 200%;
+  }
+
+  .neural-card::before,
+  .artgranit-panel::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(179, 143, 85, 0.15) 20%,
+      rgba(179, 143, 85, 0.65) 50%,
+      rgba(179, 143, 85, 0.15) 80%,
+      transparent 100%
+    );
+    animation: artgranit-border 3.5s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .neural-card::after,
+  .artgranit-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 42%,
+      rgba(179, 143, 85, 0.07) 50%,
+      transparent 58%
+    );
+    transform: translateX(-120%) skewX(-12deg);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .neural-card:hover::after,
+  .artgranit-panel:hover::after {
+    animation: artgranit-shimmer 1.1s ease-out forwards;
   }
 
   .neural-card:hover {
-    @apply shadow-neural-lg;
+    @apply shadow-neural-lg border-corporate-gold/25;
+    box-shadow:
+      0 12px 40px -8px rgba(12, 12, 12, 0.14),
+      0 0 0 1px rgba(179, 143, 85, 0.12),
+      0 0 32px -8px rgba(179, 143, 85, 0.18);
+  }
+
+  .artgranit-panel:hover {
+    @apply border-corporate-gold/35 shadow-gold-soft;
+  }
+
+  /* Containere întunecate (dashboard admin, dept bar) */
+  .artgranit-dark-card {
+    @apply relative overflow-hidden rounded-2xl border border-corporate-gold/25 bg-artgranit-dark;
+  }
+
+  .artgranit-dark-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(179, 143, 85, 0.55),
+      transparent
+    );
+    animation: artgranit-border 3.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .artgranit-dark-card::after {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -20%;
+    width: 55%;
+    height: 80%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(179, 143, 85, 0.14) 0%, transparent 68%);
+    animation: artgranit-glow 5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .artgranit-dark-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .neural-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .neural-card::before,
+    .neural-card::after,
+    .artgranit-panel::before,
+    .artgranit-panel::after,
+    .artgranit-dark-card::before,
+    .artgranit-dark-card::after {
+      animation: none !important;
+    }
+
+    .neural-card:hover::after,
+    .artgranit-panel:hover::after {
+      animation: none !important;
+      transform: none;
+    }
   }
 
   .brand-link {

@@ -11,7 +11,7 @@ import {
   filterProfilesForActor,
   getAccessibleEmployeeIds,
 } from '@/lib/accessControl';
-import { canEditTrainingPlan } from '@/lib/roles';
+import { canEditTrainingPlan, canViewPlatformSettings } from '@/lib/roles';
 
 export function useAccessControl() {
   const { user } = useAuth();
@@ -25,6 +25,7 @@ export function useAccessControl() {
       canAddNote: (targetId: string) => canAddEmployeeNote(user, targetId),
       canSendReminder: canSendEvaluationReminder(user),
       canEditTrainingPlan: canEditTrainingPlan(user),
+      canViewPlatformSettings: canViewPlatformSettings(user),
       canOpenMentorPanel: canOpenMentorPanel(user),
       canOpenSupervisorPanel: canOpenSupervisorPanel(user),
       accessibleEmployeeIds: getAccessibleEmployeeIds(user),

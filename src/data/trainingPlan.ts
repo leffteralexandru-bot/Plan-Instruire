@@ -288,11 +288,10 @@ export const TRAINING_PLAN: WeekPlan[] = [
         subtitle: 'Documentare erori și abateri',
         tasks: [
           { id: 'd18-t1', label: 'Revizuire acte constatare anterioare' },
-          { id: 'd18-t2', label: 'Completare act constatare proiect curent' },
+          { id: 'd18-t2', label: 'Solicită re-instruire lecție (pagina Evaluări)' },
           { id: 'd18-t3', label: 'Analiză cauze și măsuri preventive' },
         ],
         materials: [
-          { id: 'm-model-act', title: 'Model Act Constatare', type: 'doc', url: '/docs/model-act-constatare.html' },
         ],
         requiresMentorValidation: false,
       },

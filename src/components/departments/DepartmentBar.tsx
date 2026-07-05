@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { DEPARTMENTS, getDepartmentFromPath, INGINERI_ANGAJAT_PANEL_PATH, INGINERI_PLAN_PATH, ingineriPath } from '@/data/departments';
+import { DEPARTMENTS, getDepartmentFromPath, INGINERI_ANGAJAT_PANEL_PATH, INGINERI_ADMIN_DASHBOARD_PATH, INGINERI_PLAN_PATH, ingineriPath } from '@/data/departments';
 import { DepartmentGlyph, DEPT_SHORT_LABELS } from '@/components/departments/DepartmentGlyph';
 import { useAuth } from '@/hooks/useAuth';
 import { isAngajatUser, hasRole, isHrOnly } from '@/lib/roles';
@@ -9,8 +9,10 @@ function departmentLink(
   planAvailable: boolean,
   isStaffAngajat: boolean,
   isHrStaff: boolean,
+  isAdmin: boolean,
 ): string {
   if (!planAvailable) return `${deptRoute}/in-curand`;
+  if (deptRoute === '/ingineri' && isAdmin) return INGINERI_ADMIN_DASHBOARD_PATH;
   if (deptRoute === '/ingineri' && isStaffAngajat) return INGINERI_ANGAJAT_PANEL_PATH;
   if (deptRoute === '/ingineri' && isHrStaff) return ingineriPath('/admin');
   if (deptRoute === '/ingineri') return INGINERI_PLAN_PATH;
@@ -24,6 +26,7 @@ export function DepartmentBar() {
   const isStaffAngajat =
     !!user && isAngajatUser(user) && !hasRole(user, 'admin') && !hasRole(user, 'hr');
   const isHrStaff = !!user && isHrOnly(user);
+  const isAdmin = !!user && hasRole(user, 'admin');
 
   return (
     <nav aria-label="Planuri departamente" className="dept-bar relative px-3 py-3 sm:px-6">
@@ -34,7 +37,7 @@ export function DepartmentBar() {
       <ul className="mx-auto flex max-w-3xl items-stretch justify-between gap-1 sm:gap-2">
         {DEPARTMENTS.map((dept) => {
           const isActive = activeDept?.id === dept.id;
-          const to = departmentLink(dept.route, dept.planAvailable, isStaffAngajat, isHrStaff);
+          const to = departmentLink(dept.route, dept.planAvailable, isStaffAngajat, isHrStaff, isAdmin);
 
           return (
             <li key={dept.id} className="min-w-0 flex-1">

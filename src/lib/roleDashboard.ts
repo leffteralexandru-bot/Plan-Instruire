@@ -1,5 +1,5 @@
 import { storage } from '@/store/storage';
-import { getPendingMentorValidations, buildTraineeHrReport } from '@/lib/hrReport';
+import { getPendingMentorValidations, buildTraineeHrReport, getAngajatTrainingReport, isInMentorCohort } from '@/lib/hrReport';
 import { getEvaluationWorkflowLabel } from '@/lib/evaluationStages';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
@@ -18,6 +18,7 @@ export interface RoleDashboardMetrics {
   activeEvaluations: number;
   lateEvaluations: number;
   activeRetraining: number;
+  completedRetraining?: number;
   errorsThisMonth: number;
   urgentActions: number;
   trainingProgressPercent?: number;
@@ -53,11 +54,12 @@ function evaluationCounts(ids: Set<string>): { active: number; late: number } {
 
 export function getMentorDashboardMetrics(mentorId: string): RoleDashboardMetrics {
   const trainees = userStore.getTraineeProfiles({ mentorId });
+  const cohortTrainees = trainees.filter(isInMentorCohort);
   const ids = new Set(trainees.map((t) => t.id));
   let pendingValidations = 0;
   let progressSum = 0;
 
-  for (const t of trainees) {
+  for (const t of cohortTrainees) {
     pendingValidations += getPendingMentorValidations(storage.getProgress(t.id)).length;
     progressSum += buildTraineeHrReport(t, storage.getProgress(t.id)).progressPercent;
   }
@@ -66,15 +68,15 @@ export function getMentorDashboardMetrics(mentorId: string): RoleDashboardMetric
   const inbox = getActionInboxForRole(mentorId, 'mentor');
 
   return {
-    subordinatesCount: trainees.length,
+    subordinatesCount: cohortTrainees.length,
     pendingValidations,
     activeEvaluations: evalCounts.active,
     lateEvaluations: evalCounts.late,
     activeRetraining: retrainingCountForIds(ids),
     errorsThisMonth: errorsThisMonthForIds(ids),
     urgentActions: countUrgentActions(inbox),
-    trainingProgressPercent: trainees.length
-      ? Math.round(progressSum / trainees.length)
+    trainingProgressPercent: cohortTrainees.length
+      ? Math.round(progressSum / cohortTrainees.length)
       : undefined,
   };
 }
@@ -98,29 +100,26 @@ export function getSupervisorDashboardMetrics(supervisorId: string): RoleDashboa
 export function getEmployeeDashboardMetrics(userId: string): RoleDashboardMetrics {
   const ev = hrPerformanceStore.getCurrentEvaluation(userId);
   const inbox = getActionInboxForRole(userId, 'employee');
-  const enr = userStore.getActiveEnrollmentForAngajat(userId);
-  let trainingProgressPercent: number | undefined;
-
-  if (enr) {
-    const trainee = userStore.getTraineeProfiles().find((t) => t.id === userId);
-    if (trainee) {
-      trainingProgressPercent = buildTraineeHrReport(
-        trainee,
-        storage.getProgress(userId),
-      ).progressPercent;
-    }
-  }
+  const trainingReport = getAngajatTrainingReport(userId);
+  const trainingProgressPercent = trainingReport?.progressPercent;
 
   const retraining = trainingSystemStore
     .getReTrainingSessions({ angajatId: userId })
     .filter((s) => normalizeReTrainingStatus(s.status) !== 'finalizat').length;
 
+  const completedRetraining = trainingSystemStore
+    .getReTrainingSessions({ angajatId: userId })
+    .filter((s) => normalizeReTrainingStatus(s.status) === 'finalizat').length;
+
+  const evalOpen = ev?.status === 'in_curs' || ev?.status === 'intarziat';
+
   return {
     subordinatesCount: 0,
     pendingValidations: 0,
-    activeEvaluations: ev && ev.status !== 'evaluat' ? 1 : 0,
+    activeEvaluations: evalOpen ? 1 : 0,
     lateEvaluations: ev?.status === 'intarziat' ? 1 : 0,
     activeRetraining: retraining,
+    completedRetraining,
     errorsThisMonth: errorsThisMonthForIds(new Set([userId])),
     urgentActions: countUrgentActions(inbox),
     trainingProgressPercent,
@@ -158,6 +157,7 @@ export interface SubordinateRow {
   evaluationStatus?: import('@/types').EvaluationStatus;
   evaluationStage?: string;
   retrainingActive: boolean;
+  retrainingCompleted: boolean;
 }
 
 export function buildSupervisedSubordinateRows(supervisorId: string): SubordinateRow[] {
@@ -166,9 +166,11 @@ export function buildSupervisedSubordinateRows(supervisorId: string): Subordinat
     const p = hrPerformanceStore.getProfile(userId);
     if (!p) continue;
     const ev = hrPerformanceStore.getCurrentEvaluation(userId);
-    const retraining = trainingSystemStore
-      .getReTrainingSessions({ angajatId: userId })
-      .some((s) => normalizeReTrainingStatus(s.status) !== 'finalizat');
+    const sessions = trainingSystemStore.getReTrainingSessions({ angajatId: userId });
+    const retraining = sessions.some((s) => normalizeReTrainingStatus(s.status) !== 'finalizat');
+    const retrainingCompleted = sessions.some(
+      (s) => normalizeReTrainingStatus(s.status) === 'finalizat',
+    );
     rows.push({
       userId,
       name: `${p.prenume} ${p.nume}`.trim(),
@@ -176,6 +178,7 @@ export function buildSupervisedSubordinateRows(supervisorId: string): Subordinat
       evaluationStatus: ev?.status,
       evaluationStage: ev ? getEvaluationWorkflowLabel(ev) : undefined,
       retrainingActive: retraining,
+      retrainingCompleted,
     });
   }
   return rows;

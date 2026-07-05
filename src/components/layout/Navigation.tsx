@@ -3,8 +3,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import {
   ingineriPath,
-  INGINERI_PLAN_PATH,
+  INGINERI_ADMIN_DASHBOARD_PATH,
   INGINERI_ANGAJAT_PANEL_PATH,
+  INGINERI_PLAN_PATH,
   INGINERI_SUPERVISOR_PANEL_PATH,
 } from '@/data/departments';
 import { isAngajatMentor } from '@/lib/roles';
@@ -21,13 +22,12 @@ function buildNavLinks(
   canMentor: boolean,
   canSupervisor: boolean,
   isAngajat: boolean,
-  inTraining: boolean,
   angajatMentor: boolean,
 ): NavLinkItem[] {
   const links: NavLinkItem[] = [];
 
   if (isAdmin) {
-    links.push({ to: INGINERI_PLAN_PATH, label: 'Dashboard', end: true });
+    links.push({ to: INGINERI_ADMIN_DASHBOARD_PATH, label: 'Dashboard', end: true });
     links.push({ to: ingineriPath('/admin'), label: 'Panou HR' });
     if (canMentor) links.push({ to: ingineriPath('/mentor'), label: 'Panou Mentor' });
     if (canSupervisor) links.push({ to: INGINERI_SUPERVISOR_PANEL_PATH, label: 'Panou Supervizor' });
@@ -47,7 +47,7 @@ function buildNavLinks(
 
   if (isAngajat) {
     links.push({ to: INGINERI_ANGAJAT_PANEL_PATH, label: 'Panou Angajat', end: true });
-    if (inTraining) links.push({ to: INGINERI_PLAN_PATH, label: 'Plan instruire' });
+    links.push({ to: INGINERI_PLAN_PATH, label: 'Plan instruire' });
     if (angajatMentor && canMentor) {
       links.push({ to: ingineriPath('/mentor'), label: 'Panou Mentor (temp.)' });
     }
@@ -75,7 +75,7 @@ function buildNavLinks(
 }
 
 export function Navigation() {
-  const { user, isAdmin, isHr, isAngajat, isInTraining } = useAuth();
+  const { user, isAdmin, isHr, isAngajat } = useAuth();
   const { canOpenMentorPanel, canOpenSupervisorPanel } = useAccessControl();
   const guide = useTestingStageGuide();
   const location = useLocation();
@@ -87,7 +87,6 @@ export function Navigation() {
     canOpenMentorPanel,
     canOpenSupervisorPanel,
     isAngajat,
-    isInTraining,
     angajatMentor,
   );
 

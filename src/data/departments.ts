@@ -76,11 +76,39 @@ export function departmentBasePath(id: DepartmentId): string {
 /** Sub-rută plan zilnic (20 zile) */
 export const INGINERI_PLAN_PATH = '/ingineri/plan-instruire';
 
+/** Centru de comandă Administrator — panouri HR unificate pe departamente */
+export const INGINERI_ADMIN_DASHBOARD_PATH = '/ingineri/dashboard';
+
 /** Sub-rută panou angajat */
 export const INGINERI_ANGAJAT_PANEL_PATH = '/ingineri/panou-angajat';
 
 /** Sub-rută panou supervizor */
 export const INGINERI_SUPERVISOR_PANEL_PATH = '/ingineri/panou-supervizor';
+
+/** Lecție re-instruire (o singură zi din plan, după confirmare HR) */
+export function reTrainingLessonPath(sessionId: string): string {
+  return ingineriPath(`re-instruire/${sessionId}`);
+}
+
+/** Detaliu re-instruire în panoul planului angajatului (ca instruirea inițială) */
+export function reTrainingPlanPath(sessionId: string, angajatId?: string): string {
+  const params = new URLSearchParams({ retrain: sessionId });
+  if (angajatId) params.set('viewAs', angajatId);
+  return `${INGINERI_PLAN_PATH}?${params.toString()}`;
+}
+
+/** Plan instruire al unui angajat (supervizor / HR / mentor) */
+export function traineePlanPath(angajatId: string, opts?: { retrain?: string }): string {
+  const params = new URLSearchParams({ viewAs: angajatId });
+  if (opts?.retrain) params.set('retrain', opts.retrain);
+  return `${INGINERI_PLAN_PATH}?${params.toString()}`;
+}
+
+/** Panou angajat — aceeași interfață ca în contul angajatului (HR / mentor / supervizor) */
+export function traineeAngajatPanelPath(angajatId: string): string {
+  const params = new URLSearchParams({ viewAs: angajatId });
+  return `${INGINERI_ANGAJAT_PANEL_PATH}?${params.toString()}`;
+}
 
 /** Sub-rută în cadrul planului Ingineri (singurul activ momentan) */
 export function ingineriPath(subpath = ''): string {
@@ -94,7 +122,9 @@ const INGINERI_NON_TRAINING = [
   '/panou-angajat',
   '/panou-supervizor',
   '/documentatie-baza',
+  '/re-instruire/',
   '/admin',
+  '/dashboard',
   '/mentor',
   '/angajat/',
   '/erori',
@@ -119,6 +149,7 @@ export function isOperationalAlertsRoute(pathname: string): boolean {
     isTrainingProgressRoute(pathname) ||
     pathname.includes('/panou-angajat') ||
     pathname.includes('/panou-supervizor') ||
+    pathname.includes('/re-instruire/') ||
     pathname.includes('/mentor')
   );
 }

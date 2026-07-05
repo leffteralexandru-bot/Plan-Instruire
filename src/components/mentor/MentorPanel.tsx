@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProgress } from '@/hooks/useProgress';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -10,7 +10,6 @@ import { MentorSubordinatesPanel } from './MentorSubordinatesPanel';
 import { MentorAlertsDashboard } from './MentorAlertsDashboard';
 import { TrainerReTrainingPanel } from './TrainerReTrainingPanel';
 import { HrMentorOverviewPanel } from './HrMentorOverviewPanel';
-import { SupervisorErrorRegistrationPanel } from '@/components/shared/SupervisorErrorRegistrationPanel';
 import { ActionInboxPanel } from '@/components/shared/ActionInboxPanel';
 import { RoleSummaryCards } from '@/components/shared/RoleSummaryCards';
 import { getSupervisedEmployeeIds } from '@/lib/supervisor';
@@ -18,13 +17,21 @@ import { getRoleDashboardMetrics } from '@/lib/roleDashboard';
 import { isMentorUser } from '@/lib/roles';
 import { Card } from '@/components/ui/Card';
 import { INGINERI_SUPERVISOR_PANEL_PATH } from '@/data/departments';
+import { useStagiarSelection } from '@/context/StagiarContext';
 
 export function MentorPanel() {
   const { user, canAccessAdmin } = useAuth();
   const { canOpenSupervisorPanel } = useAccessControl();
   const { progress } = useProgress();
+  const [searchParams] = useSearchParams();
+  const { setSelectedStagiarId } = useStagiarSelection();
 
   useNotifications();
+
+  useEffect(() => {
+    const trainee = searchParams.get('trainee');
+    if (trainee) setSelectedStagiarId(trainee);
+  }, [searchParams, setSelectedStagiarId]);
 
   const inboxRoles = useMemo(() => {
     if (!user) return [] as ('mentor' | 'supervisor')[];
@@ -73,20 +80,6 @@ export function MentorPanel() {
       <MentorCohortDashboard />
 
       <MentorAlertsDashboard />
-
-      <SupervisorErrorRegistrationPanel />
-
-      {canOpenSupervisorPanel && (
-        <Card padding="sm" className="border-corporate-gold/20">
-          <p className="text-sm text-corporate-stone">
-            Ca supervizor, gestionați evaluările și re-instruirea din{' '}
-            <Link to={INGINERI_SUPERVISOR_PANEL_PATH} className="text-corporate-gold font-medium hover:underline">
-              Panou Supervizor
-            </Link>
-            .
-          </p>
-        </Card>
-      )}
 
       <TrainerReTrainingPanel />
 

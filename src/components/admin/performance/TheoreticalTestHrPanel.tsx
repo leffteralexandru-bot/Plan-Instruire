@@ -10,9 +10,15 @@ import { THEORETICAL_TEST } from '@/data/theoreticalTest';
 interface TheoreticalTestHrPanelProps {
   employeeName: string;
   quizResult?: QuizResult;
+  /** Instruire închisă (certificat emis) — rezultatul rămâne arhivat, fără alertă activă */
+  trainingClosed?: boolean;
 }
 
-export function TheoreticalTestHrPanel({ employeeName, quizResult }: TheoreticalTestHrPanelProps) {
+export function TheoreticalTestHrPanel({
+  employeeName,
+  quizResult,
+  trainingClosed = false,
+}: TheoreticalTestHrPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -38,6 +44,13 @@ export function TheoreticalTestHrPanel({ employeeName, quizResult }: Theoretical
             <p className="text-xs text-slate-500 mt-1">
               Completat: {new Date(quizResult.completedAt).toLocaleString('ro-RO')}
               {quizResult.attempts ? ` · Încercare ${quizResult.attempts}/${THEORETICAL_TEST.maxAttempts}` : ''}
+            </p>
+          )}
+          {trainingClosed && quizResult && !quizResult.passed && (
+            <p className="text-xs text-corporate-muted mt-2 max-w-xl">
+              Instruire finalizată — scorul rămâne în dosar ca istoric. Certificatul emis nu depinde de
+              retrimiterea testului; pentru reluare, folosiți re-instruire sau sesiune suplimentară cu
+              supervizorul.
             </p>
           )}
         </div>

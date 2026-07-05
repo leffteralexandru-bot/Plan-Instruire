@@ -4,7 +4,7 @@ import { ERROR_MOTIV_LABELS } from '@/lib/hrPerformanceStore';
 /** Fereastră în care se numără repetările aceluiași tip de eroare */
 export const ERROR_REPEAT_WINDOW_DAYS = 90;
 
-/** A câta apariție declanșează alerta mentor + re-instruire obligatorie */
+/** A câta apariție ridică severitatea alertei (informativ) */
 export const ERROR_REPEAT_THRESHOLD = 2;
 
 export const RE_TRAINING_TERM_DAYS = 14;
@@ -58,6 +58,27 @@ export function buildReTrainingDescription(motiv: ErrorMotiv, count: number): st
   return (
     `Eroarea de tip „${label}” s-a repetat de ${count} ori în ultimele ${ERROR_REPEAT_WINDOW_DAYS} zile. ` +
     'Completați sesiunea de re-instruire și arhivați materialele în Istoric Instruire.'
+  );
+}
+
+export function buildReTrainingDescriptionForCase(errorCase: ErrorCase): string {
+  const label = ERROR_MOTIV_LABELS[errorCase.motiv] ?? errorCase.motiv;
+  const detail = errorCase.descriere.trim().slice(0, 120);
+  return (
+    `Re-instruire pentru eroarea „${label}” (${errorCase.data}). ` +
+    `${detail ? `${detail}. ` : ''}` +
+    'Încărcați nota semnată, alegeți tema din instruirea de bază și trimiteți planul la HR.'
+  );
+}
+
+export function buildReTrainingDescriptionFromGroupedErrors(errors: ErrorCase[]): string {
+  if (errors.length === 1) return buildReTrainingDescriptionForCase(errors[0]!);
+  const dates = errors.map((e) => e.data).join(', ');
+  const motivs = [...new Set(errors.map((e) => ERROR_MOTIV_LABELS[e.motiv] ?? e.motiv))];
+  return (
+    `Re-instruire grupată de HR pentru ${errors.length} erori (${dates}). ` +
+    `Tipuri: ${motivs.join(', ')}. ` +
+    'Supervizorul încarcă notele semnate, alege tema și mentorul, apoi trimite planul la HR.'
   );
 }
 

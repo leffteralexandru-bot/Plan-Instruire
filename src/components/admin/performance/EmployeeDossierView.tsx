@@ -12,7 +12,9 @@ import { buildEmployeeTimeline } from '@/lib/timelineBuilder';
 import { downloadEmployeeDossierPdf } from '@/lib/exportEmployeeDossier';
 import { openEvaluationReminderEmail } from '@/lib/emailAlerts';
 import { EmployeeTimeline } from '@/components/admin/performance/EmployeeTimeline';
+import { EmployeeTrainingHistoryPanel } from '@/components/shared/EmployeeTrainingHistoryPanel';
 import { EmployeeArchivePanel } from '@/components/training/EmployeeArchivePanel';
+import { isHistoryOnlyError } from '@/lib/errorReTrainingDisplay';
 import { storage } from '@/store/storage';
 import { buildTraineeHrReport } from '@/lib/hrReport';
 import { getDepartmentById, ingineriPath } from '@/data/departments';
@@ -23,9 +25,14 @@ import {
   hrPerformanceStore,
 } from '@/lib/hrPerformanceStore';
 import { getEvaluationWorkflowLabel } from '@/lib/evaluationStages';
+import { downloadNotaConstatareTemplate } from '@/lib/exportNotaConstatarePdf';
 import { THEORETICAL_TEST } from '@/data/theoreticalTest';
 import { TheoreticalTestHrPanel } from '@/components/admin/performance/TheoreticalTestHrPanel';
+import { CompletedEvaluationsHrPanel } from '@/components/admin/performance/CompletedEvaluationsHrPanel';
 import { EmployeeCertificateSection } from '@/components/certificate/EmployeeCertificateSection';
+import { EmployeeEvaluationHistory } from '@/components/angajat/EmployeeEvaluationHistory';
+import { canViewSalaryCoefficient, canManageUsers } from '@/lib/roles';
+import { isSupervisorOf } from '@/lib/supervisor';
 import type { QuickNoteType } from '@/types';
 
 interface EmployeeDossierViewProps {
@@ -47,9 +54,10 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
     documents,
     updateProfile,
     addQuickNote,
+    downloadDocument,
   } = useHrPerformance();
 
-  const [tab, setTab] = useState<'timeline' | 'evaluari' | 'erori' | 'documente' | 'profil'>('timeline');
+  const [tab, setTab] = useState<'timeline' | 'instruire' | 'evaluari' | 'erori' | 'documente' | 'profil'>('timeline');
   const [noteText, setNoteText] = useState('');
   const [noteTip, setNoteTip] = useState<QuickNoteType>('observatie');
   const [success, setSuccess] = useState('');
@@ -67,7 +75,7 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
 
   const evals = evaluations.filter((e) => e.angajatId === angajatId);
   const notes = quickNotes.filter((n) => n.angajatId === angajatId);
-  const errors = errorCases.filter((e) => e.angajatId === angajatId);
+  const errors = errorCases.filter((e) => e.angajatId === angajatId && isHistoryOnlyError(e));
 
   const trainee = allTrainees.find((t) => t.id === angajatId);
   const trainingRow = trainee ? buildTraineeHrReport(trainee, storage.getProgress(angajatId)) : null;
@@ -87,6 +95,10 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
   const currentEval = hrPerformanceStore.getCurrentEvaluation(angajatId);
   const showProfileEdit = canEditEmployeeProfile && !isSelf;
   const showQuickNote = canAddNote(angajatId);
+  const showHrEvalDetail =
+    !!user && !isSelf && (canManageUsers(user) || isSupervisorOf(user.id, angajatId));
+  const showSalary = canViewSalaryCoefficient(user);
+  const activeEvals = evals.filter((e) => e.status !== 'evaluat');
 
   const handleNote = () => {
     if (!user || !noteText.trim()) return;
@@ -104,8 +116,9 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
 
   const tabs = [
     { id: 'timeline' as const, label: 'Timeline' },
+    { id: 'instruire' as const, label: 'Instruire' },
     { id: 'evaluari' as const, label: 'Evaluări' },
-    { id: 'erori' as const, label: 'Erori' },
+    { id: 'erori' as const, label: 'Erori arhivate' },
     { id: 'documente' as const, label: 'Arhivă' },
     ...(showProfileEdit ? [{ id: 'profil' as const, label: 'Profil' }] : []),
   ];
@@ -135,9 +148,6 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
               </Badge>
             )}
             {trainingRow && <Badge variant="success">Instruire {trainingRow.progressPercent}%</Badge>}
-            {trainingRow?.certificateIssued && (
-              <EmployeeCertificateSection angajatId={angajatId} compact />
-            )}
             {canExportDossier(angajatId) && (
               <Button
                 type="button"
@@ -153,7 +163,7 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
                   }
                 }}
               >
-                {pdfLoading ? 'PDF…' : 'Export PDF dosar'}
+                {pdfLoading ? '…' : 'Dosar'}
               </Button>
             )}
             {canSendReminder && currentEval && currentEval.status !== 'evaluat' && (
@@ -185,6 +195,7 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
         <TheoreticalTestHrPanel
           employeeName={`${profile.prenume} ${profile.nume}`.trim()}
           quizResult={quizResult}
+          trainingClosed={!!trainingRow?.certificateIssued}
         />
       )}
 
@@ -214,47 +225,118 @@ export function EmployeeDossierView({ angajatId, backTo, backLabel, title }: Emp
         </Card>
       )}
 
+      {tab === 'instruire' && (
+        <EmployeeTrainingHistoryPanel
+          angajatId={angajatId}
+          showPlanLink={isSelf}
+          onDownloadDocument={(id) => void downloadDocument(id)}
+        />
+      )}
+
       {tab === 'evaluari' && (
-        <Card>
-          <h2 className="text-sm font-semibold text-corporate-dark mb-4">
-            {isSelf ? 'Evaluările mele' : 'Istoric evaluări'}
-          </h2>
-          <ul className="space-y-3">
-            {evals.map((ev) => (
-              <li key={ev.id} className="rounded-lg border border-corporate-border px-3 py-2 text-sm">
-                <div className="flex justify-between gap-2">
-                  <Badge variant={ev.status === 'evaluat' ? 'success' : 'default'}>
-                    {EVALUATION_STATUS_LABELS[ev.status]}
-                  </Badge>
-                  <span className="text-xs text-corporate-muted">
-                    {ev.perioadaStart} — {ev.perioadaEnd}
-                  </span>
-                </div>
-                {ev.termenReevaluare && ev.status !== 'evaluat' && (
-                  <p className="text-xs text-amber-700 mt-1">Termen: {ev.termenReevaluare}</p>
-                )}
-                {ev.status !== 'evaluat' && (
-                  <p className="text-xs text-corporate-muted mt-1">Etapa: {getEvaluationWorkflowLabel(ev)}</p>
-                )}
-                {ev.concluzii && <p className="mt-2 text-corporate-muted">{ev.concluzii}</p>}
-              </li>
-            ))}
-            {!evals.length && (
-              <p className="text-corporate-muted text-sm">Nicio evaluare înregistrată.</p>
-            )}
-          </ul>
-        </Card>
+        <div className="space-y-4">
+          {activeEvals.length > 0 && (
+            <Card>
+              <h2 className="text-sm font-semibold text-corporate-dark mb-4">Evaluări în curs</h2>
+              <ul className="space-y-3">
+                {activeEvals.map((ev) => (
+                  <li key={ev.id} className="rounded-lg border border-corporate-border px-3 py-2 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <Badge variant={ev.status === 'intarziat' ? 'warning' : 'default'}>
+                        {EVALUATION_STATUS_LABELS[ev.status]}
+                      </Badge>
+                      <span className="text-xs text-corporate-muted">
+                        {ev.perioadaStart} — {ev.perioadaEnd}
+                      </span>
+                    </div>
+                    {ev.termenReevaluare && (
+                      <p className="text-xs text-amber-700 mt-1">Termen: {ev.termenReevaluare}</p>
+                    )}
+                    <p className="text-xs text-corporate-muted mt-1">
+                      Etapa: {getEvaluationWorkflowLabel(ev)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {showHrEvalDetail ? (
+            <CompletedEvaluationsHrPanel
+              evaluations={evals}
+              users={users}
+              showSalaryCoefficient={showSalary}
+              onDownloadDocument={(id) => void downloadDocument(id)}
+              getSignedDocumentName={(cycleId) => {
+                const ev = evals.find((e) => e.id === cycleId);
+                if (!ev?.documentId) return undefined;
+                return documents.find((d) => d.id === ev.documentId)?.nume;
+              }}
+            />
+          ) : !isSelf ? (
+            <Card>
+              <h2 className="text-sm font-semibold text-corporate-dark mb-4">Istoric evaluări</h2>
+              {evals.some((e) => e.status === 'evaluat') ? (
+                <EmployeeEvaluationHistory
+                  cycles={evals}
+                  nextEvaluationDate={
+                    currentEval && currentEval.status !== 'evaluat'
+                      ? currentEval.termenReevaluare
+                      : undefined
+                  }
+                />
+              ) : (
+                <p className="text-corporate-muted text-sm">Nicio evaluare finalizată încă.</p>
+              )}
+            </Card>
+          ) : activeEvals.length === 0 ? (
+            <Card>
+              <h2 className="text-sm font-semibold text-corporate-dark mb-2">Evaluări în curs</h2>
+              <p className="text-corporate-muted text-sm">Nicio evaluare în curs momentan.</p>
+            </Card>
+          ) : null}
+        </div>
       )}
 
       {tab === 'erori' && (
         <Card>
-          <h2 className="text-sm font-semibold text-corporate-dark mb-4">Erori & planuri acțiune</h2>
+          <h2 className="text-sm font-semibold text-corporate-dark mb-1">Erori arhivate</h2>
+          <p className="text-xs text-corporate-muted mb-4">
+            Erorile în curs de re-instruire apar în panoul HR „Erori + re-instruirea lor”, nu aici.
+          </p>
           <ul className="space-y-3">
             {errors.map((err) => (
               <li key={err.id} className="rounded-lg border border-corporate-border px-3 py-2 text-sm">
-                <p className="font-medium">
-                  {ERROR_MOTIV_LABELS[err.motiv]} — {err.data}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="font-medium">
+                    {ERROR_MOTIV_LABELS[err.motiv]} — {err.data}
+                  </p>
+                  {(err.documentId || err.signedDocumentId || err.notaConstatare) && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (err.signedDocumentId) {
+                          void downloadDocument(err.signedDocumentId);
+                          return;
+                        }
+                        if (err.documentId) {
+                          void downloadDocument(err.documentId);
+                          return;
+                        }
+                        void downloadNotaConstatareTemplate();
+                      }}
+                    >
+                      {err.signedDocumentId ? 'Notă semnată' : 'Formular notă constatare'}
+                    </Button>
+                  )}
+                </div>
+                {err.notaConstatare?.deLa && (
+                  <p className="text-xs text-corporate-muted mt-1">
+                    De la: {err.notaConstatare.deLa} · {err.data}
+                  </p>
+                )}
                 <p className="text-corporate-muted text-xs mt-1">{err.descriere}</p>
                 <p className="text-xs mt-2 bg-corporate-surface rounded p-2">
                   <strong>Plan:</strong> {err.planActiune.pasi}

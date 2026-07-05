@@ -1,5 +1,5 @@
 import type { User } from '@/types';
-import type { EmployeeArchiveFolder } from '@/types';
+import type { EmployeeArchiveFolder, ErrorCase } from '@/types';
 import { ingineriPath, INGINERI_ANGAJAT_PANEL_PATH, INGINERI_PLAN_PATH } from '@/data/departments';
 import {
   canManageUsers,
@@ -12,6 +12,7 @@ import { userStore } from '@/lib/userStore';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
 import { getSupervisedEmployeeIds, isSubordinateOf, isSupervisorOf } from '@/lib/supervisor';
+import { canDeleteErrorCase } from '@/lib/errorCaseWorkflow';
 
 /** Poate deschide fișa unui angajat (proprie sau subordonați) */
 export function canViewEmployee(actor: User | null | undefined, targetId: string): boolean {
@@ -20,6 +21,13 @@ export function canViewEmployee(actor: User | null | undefined, targetId: string
   if (hasRole(actor, 'admin') || canViewAllTrainees(actor)) return true;
   if (isMentorUser(actor) && isSubordinateOf(actor.id, targetId)) return true;
   if (isSupervisorOf(actor.id, targetId)) return true;
+  if (
+    trainingSystemStore.getReTrainingSessions({ angajatId: targetId }).some(
+      (s) => s.supervisorId === actor.id,
+    )
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -108,6 +116,22 @@ export function canRegisterErrorCase(actor: User | null | undefined, angajatId: 
   if (!actor || !angajatId) return false;
   if (canManageUsers(actor) || hasRole(actor, 'admin')) return true;
   return isSupervisorOf(actor.id, angajatId);
+}
+
+/** Ștergere înregistrare eroare — blocată după confirmare HR. */
+export function getErrorCaseDeleteBlockReason(
+  actor: User | null | undefined,
+  error: ErrorCase,
+): string | null {
+  if (!actor) return 'Neautorizat.';
+  const isHr = canManageUsers(actor) || hasRole(actor, 'admin');
+  const workflowBlock = canDeleteErrorCase(error, { isHr });
+  if (workflowBlock) return workflowBlock;
+  if (isHr) return null;
+  if (!isSupervisorOf(actor.id, error.angajatId)) {
+    return 'Nu puteți șterge erori pentru acest angajat.';
+  }
+  return null;
 }
 
 /** Subordonați cu alerte active la prag (pentru dashboard mentor) */

@@ -22,6 +22,32 @@ function resolveUserName(users: User[], userId?: string): string {
   return users.find((u) => u.id === userId)?.name ?? '—';
 }
 
+/** Angajat legat de mentor — instruire activă/finalizată, plan săptămânal sau istoric HR */
+export function profileLinkedToMentor(profile: EmployeeProfile, mentorId: string): boolean {
+  const activeEnrollment = userStore.getActiveEnrollmentForAngajat(profile.userId);
+  if (activeEnrollment?.mentorId === mentorId) return true;
+
+  const mentoredBefore = userStore
+    .getEnrollments()
+    .some(
+      (e) =>
+        e.angajatId === profile.userId && e.mentorId === mentorId && e.status === 'completed',
+    );
+  if (mentoredBefore) return true;
+
+  if (profile.managerId === mentorId) return true;
+
+  if ((profile.weeklyEvalMentors ?? []).some((w) => w.mentorId === mentorId)) return true;
+
+  const reTrainer = trainingSystemStore
+    .getReTrainingSessions({ angajatId: profile.userId })
+    .find((s) => isActiveReTraining(s));
+  if (reTrainer && (reTrainer.trainerId ?? reTrainer.mentorId) === mentorId) return true;
+
+  const principalHistory = profile.assignmentHistory?.principalMentor ?? [];
+  return principalHistory.some((h) => h.toUserId === mentorId);
+}
+
 export function getEmployeeMentorAssignments(
   profile: EmployeeProfile,
   users: User[],
@@ -31,6 +57,7 @@ export function getEmployeeMentorAssignments(
   const reSession = trainingSystemStore
     .getReTrainingSessions({ angajatId: profile.userId })
     .find((s) => isActiveReTraining(s));
+  const reTrainerId = reSession ? (reSession.trainerId ?? reSession.mentorId) : undefined;
 
   return {
     supervizor: {
@@ -43,8 +70,8 @@ export function getEmployeeMentorAssignments(
       active: !!enrollment,
     },
     reInstruire: {
-      userId: reSession?.supervisorId,
-      name: reSession ? resolveUserName(users, reSession.supervisorId) : '—',
+      userId: reTrainerId,
+      name: reSession ? resolveUserName(users, reTrainerId) : '—',
       active: !!reSession,
       status: reSession?.status,
     },

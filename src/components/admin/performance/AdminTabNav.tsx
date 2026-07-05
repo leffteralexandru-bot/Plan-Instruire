@@ -22,16 +22,17 @@ export const ADMIN_TABS: { id: AdminTab; label: string; description: string }[] 
   { id: 'instruire', label: 'Instruire', description: 'Plan grupă & export' },
   { id: 'evaluari', label: 'Evaluări', description: 'Cicluri tri-lunale (90 zile)' },
   { id: 'supervizor', label: 'Supervizor', description: 'Re-instruire & confirmări' },
-  { id: 'erori', label: 'Erori & KPI', description: 'Performanță & trend' },
+  { id: 'erori', label: 'Validare erori', description: 'Confirmare HR' },
   { id: 'setari', label: 'Setări', description: 'Profile & organizare' },
 ];
 
 interface AdminTabNavProps {
   active: AdminTab;
   onChange: (tab: AdminTab) => void;
+  pendingHrErrors?: number;
 }
 
-export function AdminTabNav({ active, onChange }: AdminTabNavProps) {
+export function AdminTabNav({ active, onChange, pendingHrErrors = 0 }: AdminTabNavProps) {
   const guide = useTestingStageGuide();
   const tabTheme = guide ? getTestingStageTheme(guide.category) : null;
 
@@ -55,7 +56,14 @@ export function AdminTabNav({ active, onChange }: AdminTabNavProps) {
               : 'text-corporate-muted hover:bg-corporate-surface hover:text-corporate-dark',
           ].join(' ')}
         >
-          <span className="block text-xs font-medium leading-tight">{tab.label}</span>
+          <span className="block text-xs font-medium leading-tight">
+            {tab.label}
+            {tab.id === 'erori' && pendingHrErrors > 0 && (
+              <span className="ml-1 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white">
+                {pendingHrErrors}
+              </span>
+            )}
+          </span>
           <span
             className={[
               'block text-[9px] mt-0.5 leading-tight line-clamp-1',

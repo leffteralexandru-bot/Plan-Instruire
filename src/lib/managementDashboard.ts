@@ -7,6 +7,8 @@ import { normalizeReTrainingStatus } from '@/lib/reTrainingWorkflow';
 import { userStore } from '@/lib/userStore';
 import type { EvaluationScores, KpiSnapshot, TraineeProfile } from '@/types';
 
+export const MANAGEMENT_TREND_MONTHS = 12;
+
 export interface ManagementTrendPoint {
   luna: string;
   eroriLuna: number;
@@ -79,7 +81,7 @@ function buildDevelopmentGaps(): DevelopmentGapRow[] {
 }
 
 function mapTrend(snapshots: KpiSnapshot[]): ManagementTrendPoint[] {
-  return snapshots.slice(-6).map((s) => ({
+  return snapshots.slice(-MANAGEMENT_TREND_MONTHS).map((s) => ({
     luna: s.luna,
     eroriLuna: s.eroriLuna,
     progresMediu: s.progresInstruireMediu,
@@ -142,28 +144,4 @@ export function computeManagementDashboardMetrics(
     trend: mapTrend(hrPerformanceStore.getKpiSnapshots()),
     developmentGaps: buildDevelopmentGaps(),
   };
-}
-
-export function downloadManagementDashboardCsv(metrics: ManagementDashboardMetrics): void {
-  const lines = [
-    'Indicator,Valoare',
-    `Angajați activi,${metrics.totalAngajati}`,
-    `În instruire,${metrics.angajatiInInstruire}`,
-    `Progres instruire mediu (%),${metrics.progresInstruireMediu}`,
-    `Rată finalizare instruire (%),${metrics.rataFinalizareInstruire}`,
-    `Certificate emise,${metrics.certificateEmise}`,
-    `Evaluări la timp,${metrics.evaluariLaTimp}`,
-    `Evaluări întârziate,${metrics.evaluariIntarziate}`,
-    `Rată evaluări la timp (%),${metrics.rataEvaluariLaTimp}`,
-    `Erori luna curentă,${metrics.eroriLunaCurenta}`,
-    `Re-instruiri active,${metrics.reInstruiriActive}`,
-    `Validări mentor pending,${metrics.validariMentorPending}`,
-  ];
-  const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `artgranit-management-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
 }

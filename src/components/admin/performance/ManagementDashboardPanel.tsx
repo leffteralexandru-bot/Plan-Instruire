@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,9 +10,14 @@ import { ingineriPath } from '@/data/departments';
 import { adminPath } from '@/lib/adminRoutes';
 import {
   computeManagementDashboardMetrics,
-  downloadManagementDashboardCsv,
   type ManagementTrendPoint,
 } from '@/lib/managementDashboard';
+import { downloadManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
+
+function formatTrendMonthLabel(luna: string): string {
+  const [year, month] = luna.slice(0, 7).split('-');
+  return `${month}/${year.slice(2)}`;
+}
 
 function TrendBars({
   points,
@@ -38,7 +43,7 @@ function TrendBars({
               style={{ height: `${Math.max(8, (Number(p[field]) / max) * 100)}%` }}
             />
             <span className="text-[9px] text-corporate-muted truncate w-full text-center">
-              {String(p.luna).slice(5)}
+              {formatTrendMonthLabel(String(p.luna))}
             </span>
           </div>
         ))}
@@ -50,11 +55,21 @@ function TrendBars({
 export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: AdminTab) => void }) {
   const { allTrainees } = useUsers();
   const settings = storage.getSettings();
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const metrics = useMemo(
     () => computeManagementDashboardMetrics(allTrainees, settings.programVersion),
     [allTrainees, settings.programVersion],
   );
+
+  const handleExportPdf = async () => {
+    setPdfLoading(true);
+    try {
+      await downloadManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -66,14 +81,20 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
               Retenție instruire · evaluări la timp · trend erori · gap-uri dezvoltare.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => downloadManagementDashboardCsv(metrics)}
-          >
-            Export CSV management
-          </Button>
+          <div className="flex flex-col items-stretch sm:items-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={pdfLoading}
+              onClick={() => void handleExportPdf()}
+            >
+              {pdfLoading ? 'Se generează raportul…' : 'Descarcă raport PDF'}
+            </Button>
+            <p className="text-[10px] text-corporate-muted text-right max-w-[220px] leading-snug">
+              Document executiv branduit — KPI, trend, gap-uri și recomandări. Deschide direct în browser sau Acrobat.
+            </p>
+          </div>
         </div>
       </Card>
 
@@ -120,7 +141,7 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
 
       {metrics.trend.length > 0 && (
         <Card>
-          <h3 className="text-sm font-semibold text-corporate-dark mb-4">Trend lunar (ultimele 6 luni)</h3>
+          <h3 className="text-sm font-semibold text-corporate-dark mb-4">Trend lunar (ultimul an)</h3>
           <div className="grid gap-6 lg:grid-cols-3">
             <TrendBars
               points={metrics.trend}

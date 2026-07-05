@@ -1,5 +1,5 @@
-import { DESIGNER_COMPETENCY_CRITERIA } from '@/data/designerCompetencyMatrix';
 import type { DesignerCompetencyCriterionId, DesignerCompetencyLevel, DesignerCompetencyScores } from '@/types';
+import { useEvaluationSettings } from '@/hooks/useEvaluationSettings';
 
 interface DesignerCompetencyFormProps {
   scores: DesignerCompetencyScores;
@@ -17,6 +17,7 @@ export function DesignerCompetencyForm({
   compact = false,
   perspective = 'employee',
 }: DesignerCompetencyFormProps) {
+  const { criteria } = useEvaluationSettings();
   const setLevel = (id: DesignerCompetencyCriterionId, level: DesignerCompetencyLevel) => {
     if (readOnly) return;
     onChange({ ...scores, [id]: level });
@@ -24,7 +25,7 @@ export function DesignerCompetencyForm({
 
   return (
     <div className="space-y-4">
-      {DESIGNER_COMPETENCY_CRITERIA.map((criterion, idx) => (
+      {criteria.map((criterion, idx) => (
         <fieldset
           key={criterion.id}
           className="rounded-lg border border-corporate-border p-3 sm:p-4"

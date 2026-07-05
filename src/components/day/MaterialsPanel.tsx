@@ -17,7 +17,11 @@ const typeLabels: Record<Material['type'], string> = {
   link: 'Link',
 };
 
-function MaterialRow({ mat }: { mat: Material }) {
+function isImageUrl(url: string): boolean {
+  return /\.(jpe?g|png|gif|webp|bmp|svg)(\?|$)/i.test(url) || url.startsWith('data:image/');
+}
+
+export function MaterialRow({ mat }: { mat: Material }) {
   const { url, loading } = useMaterialUrl(mat);
   const isVideo = mat.type === 'video' && url && !loading;
 
@@ -53,6 +57,21 @@ function MaterialRow({ mat }: { mat: Material }) {
         <video controls className="w-full max-h-80 bg-black" src={url} preload="metadata">
           Browserul nu suportă redarea video.
         </video>
+      </li>
+    );
+  }
+
+  if (isImageUrl(url)) {
+    return (
+      <li className="rounded-xl border border-slate-100 overflow-hidden">
+        <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+          <span className="text-xl" aria-hidden>🖼️</span>
+          <p className="text-sm font-medium text-corporate-dark">{mat.title}</p>
+          <Badge variant="info">Imagine</Badge>
+        </div>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+          <img src={url} alt={mat.title} className="w-full max-h-72 object-contain bg-slate-100" loading="lazy" />
+        </a>
       </li>
     );
   }

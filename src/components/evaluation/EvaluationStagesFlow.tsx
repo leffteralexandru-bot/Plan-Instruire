@@ -4,11 +4,15 @@ import { defaultDesignerCompetencyScores } from '@/data/designerCompetencyMatrix
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
+import { EvaluationDualReviewPanel } from '@/components/evaluation/EvaluationDualReviewPanel';
 import {
   EVALUATION_STAGE_STATUS_LABELS,
   canEmployeeSubmitSelfAssessment,
+  canHrFinalizeEvaluation,
   getActiveStage,
+  getVisibleEvaluationStages,
   isEmployeeSelfAssessmentStageDone,
+  isSupervisorEvaluationStageDone,
   needsEvaluationWorkflowStart,
   validateSelfAssessmentSubmission,
   validateSupervisorAssessmentSubmission,
@@ -16,6 +20,7 @@ import {
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { canViewSalaryCoefficient } from '@/lib/roles';
 import { useAuth } from '@/hooks/useAuth';
+import { useEvaluationSettings } from '@/hooks/useEvaluationSettings';
 import { computeCompetencyOutcome, isCompetencyScoresComplete } from '@/lib/competencyScoring';
 import { DesignerCompetencyForm } from '@/components/competency/DesignerCompetencyForm';
 import { DesignerCompetencySummary } from '@/components/competency/DesignerCompetencySummary';
@@ -34,12 +39,14 @@ export function EvaluationStagesFlow({
   mode,
   actorId,
   actorName,
-  onDownloadDocument,
+  onDownloadDocument: _onDownloadDocument,
   onUpdated,
 }: EvaluationStagesFlowProps) {
   const { user } = useAuth();
+  const { selfAssessment: selfFields } = useEvaluationSettings();
   const showSalary = canViewSalaryCoefficient(user);
   const active = getActiveStage(cycle);
+  const visibleStages = getVisibleEvaluationStages(cycle);
   const assessment = cycle.employeeSelfAssessment ?? {
     realizari: '',
     dificultati: '',
@@ -62,16 +69,6 @@ export function EvaluationStagesFlow({
   );
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const electronicDoc = cycle.electronicDocumentId
-    ? hrPerformanceStore.getDocuments().find((d) => d.id === cycle.electronicDocumentId)
-    : undefined;
-
-  const handleStart = () => {
-    hrPerformanceStore.startEvaluationWorkflow(cycle.id, { id: actorId, name: actorName });
-    setSuccess('Fluxul de evaluare a fost pornit. Angajatul poate completa auto-evaluarea.');
-    onUpdated?.();
-  };
 
   const handleSaveSelfAssessment = () => {
     setError('');
@@ -153,17 +150,8 @@ export function EvaluationStagesFlow({
       subtitle="Auto-evaluare angajat → Evaluare supervizor → Validare HR · Matrice inginer proiectant"
       compact
     >
-      {electronicDoc && onDownloadDocument && (
-        <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-corporate-surface text-sm">
-          <span className="text-corporate-muted">Fișier evaluare:</span>
-          <Button type="button" variant="secondary" size="sm" onClick={() => onDownloadDocument(electronicDoc.id)}>
-            {electronicDoc.nume}
-          </Button>
-        </div>
-      )}
-
       <ol className="space-y-2">
-        {(cycle.stages ?? []).map((stage, idx) => (
+        {visibleStages.map((stage, idx) => (
           <li
             key={stage.id}
             className={[
@@ -203,15 +191,72 @@ export function EvaluationStagesFlow({
         ))}
       </ol>
 
-      {mode === 'hr' && needsEvaluationWorkflowStart(cycle) && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 space-y-2">
+      {mode === 'hr' && !needsEvaluationWorkflowStart(cycle) && active?.id === 'evaluare_mentor' && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
           <p className="text-sm text-amber-900">
-            Evaluarea este planificată dar nu a fost pornită. Apasă butonul pentru a deschide
-            auto-evaluarea angajatului.
+            Așteptați supervizorul să completeze evaluarea oficială. HR vede răspunsurile (doar citire) —
+            nu le poate modifica. După supervizor, folosiți <strong>Finalizează</strong> în tabel.
           </p>
-          <Button type="button" variant="primary" size="sm" onClick={handleStart}>
-            Pornește evaluarea pentru angajat
-          </Button>
+        </div>
+      )}
+
+      {mode === 'hr' && canHrFinalizeEvaluation(cycle) && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+          <p className="text-sm text-emerald-900">
+            Evaluarea supervizorului este înregistrată. Comparați cu auto-evaluarea și folosiți butonul{' '}
+            <strong>Finalizează</strong> din tabel pentru concluzii și confirmare oficială.
+          </p>
+        </div>
+      )}
+
+      {mode === 'hr' && needsEvaluationWorkflowStart(cycle) && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+          <p className="text-sm text-amber-900">
+            Evaluarea nu este pornită. Apăsați <strong>Pornește</strong> în tabelul de evaluări.
+          </p>
+        </div>
+      )}
+
+      {mode === 'hr' && !needsEvaluationWorkflowStart(cycle) && active?.id === 'auto_evaluare' && active.status === 'in_curs' && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
+          <p className="text-sm font-semibold text-emerald-900">Evaluare pornită — așteptați angajatul</p>
+          <p className="text-sm text-emerald-800">
+            Angajatul completează auto-evaluarea în Panou Angajat sau pagina Evaluări. HR nu completează
+            această etapă — doar urmăriți progresul mai jos.
+          </p>
+          <ul className="text-xs text-emerald-900/90 list-disc pl-4 space-y-0.5">
+            <li>Realizări, dificultăți și obiective (minim caractere cerute)</li>
+            <li>Matrice competențe — 10 criterii notate 1–4</li>
+          </ul>
+          {cycle.employeeSelfAssessment && (
+            <div className="mt-2 pt-2 border-t border-emerald-200/80 text-xs text-emerald-800">
+              <p className="font-medium">Progres parțial salvat de angajat</p>
+              {cycle.employeeSelfAssessment.realizari.trim() && (
+                <p className="mt-1 truncate">Realizări: {cycle.employeeSelfAssessment.realizari}</p>
+              )}
+              {cycle.competencySelfScores && (
+                <p className="mt-0.5">
+                  Matrice: {isCompetencyScoresComplete(cycle.competencySelfScores) ? 'completă' : 'în lucru'}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {mode === 'hr' && isEmployeeSelfAssessmentStageDone(cycle) && !isSupervisorEvaluationStageDone(cycle) && (
+        <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 space-y-3">
+          <p className="text-sm font-semibold text-corporate-dark">Auto-evaluare angajat — finalizată (doar citire)</p>
+          {cycle.employeeSelfAssessment && (
+            <div className="text-sm space-y-1 text-corporate-muted">
+              <p><strong className="text-corporate-stone">Realizări:</strong> {cycle.employeeSelfAssessment.realizari}</p>
+              <p><strong className="text-corporate-stone">Dificultăți:</strong> {cycle.employeeSelfAssessment.dificultati}</p>
+              <p><strong className="text-corporate-stone">Obiective:</strong> {cycle.employeeSelfAssessment.obiectiveViitoare}</p>
+            </div>
+          )}
+          {cycle.competencySelfScores && (
+            <DesignerCompetencySummary scores={cycle.competencySelfScores} hideCriteriaTable />
+          )}
         </div>
       )}
 
@@ -225,40 +270,42 @@ export function EvaluationStagesFlow({
         </div>
       )}
 
-      {(mode === 'employee' || mode === 'hr') &&
+      {mode === 'employee' &&
         !employeeStepDone &&
-        (canEmployeeSubmitSelfAssessment(cycle) || mode === 'hr') &&
+        canEmployeeSubmitSelfAssessment(cycle) &&
         active?.id === 'auto_evaluare' && (
           <section className="space-y-3 border-t border-corporate-border pt-4">
             <h4 className="text-sm font-semibold text-corporate-dark">
-              {mode === 'hr' ? 'Editare auto-evaluare angajat' : 'Auto-evaluare — completează și trimite'}
+              Auto-evaluare — completează și trimite
             </h4>
             <p className="text-xs text-corporate-muted">
               Toate câmpurile sunt obligatorii. După trimitere, etapa ta se închide automat.
             </p>
             <label className="block text-sm">
-              <span className="text-corporate-muted">Realizări în perioada evaluată *</span>
+              <span className="text-corporate-muted">{selfFields.realizari.label} *</span>
               <textarea
                 className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm min-h-[72px]"
                 value={form.realizari}
                 onChange={(e) => setForm((f) => ({ ...f, realizari: e.target.value }))}
-                placeholder="Min. 20 caractere — proiecte, competențe dobândite…"
+                placeholder={selfFields.realizari.placeholder}
               />
             </label>
             <label className="block text-sm">
-              <span className="text-corporate-muted">Dificultăți întâmpinate *</span>
+              <span className="text-corporate-muted">{selfFields.dificultati.label} *</span>
               <textarea
                 className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm min-h-[60px]"
                 value={form.dificultati}
                 onChange={(e) => setForm((f) => ({ ...f, dificultati: e.target.value }))}
+                placeholder={selfFields.dificultati.placeholder}
               />
             </label>
             <label className="block text-sm">
-              <span className="text-corporate-muted">Obiective viitoare *</span>
+              <span className="text-corporate-muted">{selfFields.obiectiveViitoare.label} *</span>
               <textarea
                 className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm min-h-[60px]"
                 value={form.obiectiveViitoare}
                 onChange={(e) => setForm((f) => ({ ...f, obiectiveViitoare: e.target.value }))}
+                placeholder={selfFields.obiectiveViitoare.placeholder}
               />
             </label>
             <div>
@@ -268,12 +315,12 @@ export function EvaluationStagesFlow({
               <DesignerCompetencyForm scores={selfCompetency} onChange={setSelfCompetency} compact />
             </div>
             <Button type="button" variant="primary" size="sm" onClick={handleSaveSelfAssessment}>
-              {mode === 'employee' ? 'Trimite auto-evaluarea' : 'Salvează auto-evaluarea'}
+              Trimite auto-evaluarea
             </Button>
           </section>
         )}
 
-      {(mode === 'evaluator' || mode === 'hr') && active?.id === 'evaluare_mentor' && (
+      {mode === 'evaluator' && active?.id === 'evaluare_mentor' && (
         <section className="space-y-3 border-t border-corporate-border pt-4">
           <h4 className="text-sm font-semibold text-corporate-dark">Evaluare supervizor</h4>
           <p className="text-xs text-corporate-muted">
@@ -348,7 +395,18 @@ export function EvaluationStagesFlow({
         </section>
       )}
 
-      {(mode === 'view' || mode === 'hr' || cycle.status === 'evaluat') && previewOutcome && (
+      {mode === 'hr' && canHrFinalizeEvaluation(cycle) && (
+        <section className="border-t border-corporate-border pt-4 space-y-3">
+          <h4 className="text-sm font-semibold text-corporate-dark">Validare HR</h4>
+          <EvaluationDualReviewPanel cycle={cycle} showSalaryCoefficient={showSalary} />
+          <p className="text-xs text-corporate-muted">
+            Deschideți <strong>Finalizează</strong> în tabelul HR pentru concluzii și confirmarea oficială.
+          </p>
+        </section>
+      )}
+
+      {(mode === 'view' || cycle.status === 'evaluat' || (mode === 'hr' && isSupervisorEvaluationStageDone(cycle))) &&
+        previewOutcome && (
         <section className="border-t border-corporate-border pt-4">
           <h4 className="text-sm font-semibold text-corporate-dark mb-3">Rezultat matrice competențe</h4>
           <DesignerCompetencySummary

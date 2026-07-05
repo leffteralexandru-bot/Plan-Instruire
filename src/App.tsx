@@ -21,6 +21,8 @@ import { SupervisorPage } from '@/pages/SupervisorPage';
 import { MyAccountPage } from '@/pages/MyAccountPage';
 import { DocumentatieBazaPage } from '@/pages/DocumentatieBazaPage';
 import { IngineriIndexPage } from '@/pages/IngineriIndexPage';
+import { ReTrainingLessonPage } from '@/pages/ReTrainingLessonPage';
+import { AdministratorDashboardPage } from '@/pages/AdministratorDashboardPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -66,7 +68,9 @@ function AppRoutes() {
 
         <Route path="ingineri">
           <Route index element={<IngineriIndexPage />} />
+          <Route path="re-instruire/:sessionId" element={<ReTrainingLessonPage />} />
           <Route path="plan-instruire" element={<DashboardPage />} />
+          <Route path="dashboard" element={<AdministratorDashboardPage />} />
           <Route path="zi/:dayId" element={<DayPage />} />
           <Route path="mentor" element={<MentorPage />} />
           <Route path="evaluari" element={<EvaluationsPage />} />

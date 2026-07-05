@@ -143,6 +143,15 @@ export function isTraineeInActiveTraining(
   return !isTrainingPlanComplete(report);
 }
 
+/** Apare în Cohortă instruire — înscriere activă, certificat neemis încă */
+export function isInMentorCohort(
+  trainee: Pick<TraineeProfile, 'id'>,
+): boolean {
+  const enrollment = userStore.getActiveEnrollmentForAngajat(trainee.id);
+  if (!enrollment) return false;
+  return !storage.getProgress(trainee.id).certificate;
+}
+
 export function getAngajatTrainingReport(userId: string): TraineeHrReport | null {
   const user = userStore.getUserById(userId);
   if (!user) return null;
@@ -154,6 +163,13 @@ export function getAngajatTrainingReport(userId: string): TraineeHrReport | null
 
   const trainee = toTraineeProfileForReport(user, enrollment);
   return buildTraineeHrReport(trainee, storage.getProgress(userId));
+}
+
+/** Înscriere activă în planul inițial — certificat / zile nefinalizate */
+export function isAngajatInActiveInitialTraining(userId: string): boolean {
+  const report = getAngajatTrainingReport(userId);
+  if (!report) return false;
+  return !isTrainingPlanComplete(report);
 }
 
 function toTraineeProfileForReport(user: User, enrollment: TrainingEnrollment): TraineeProfile {

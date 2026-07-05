@@ -9,12 +9,18 @@ import { DEPARTMENTS, ingineriPath } from '@/data/departments';
 import type { UserRole } from '@/types';
 import { hasRole } from '@/lib/roles';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccessControl } from '@/hooks/useAccessControl';
+import { EmployeeEvaluationSettingsEditor } from '@/components/admin/EmployeeEvaluationSettingsEditor';
 import { EmployeePlanningSettings } from '@/components/admin/EmployeePlanningSettings';
 import { TestingHighlightZone } from '@/components/shared/TestingHighlightZone';
 import { TrainingPlanEditor } from '@/components/admin/TrainingPlanEditor';
+import { OperationalGuideEditor } from '@/components/operational/OperationalGuideEditor';
+import { TechnicalRepositoryEditor } from '@/components/technicalRepository/TechnicalRepositoryEditor';
+import { EquipmentOperationsEditor } from '@/components/equipment/EquipmentOperationsEditor';
 import { DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { EVALUATION_WEEK_LABELS } from '@/lib/evaluationWeekMentors';
+import { PLATFORM_SETTINGS_ADMIN_NAME } from '@/lib/platformSettingsAdmin';
 import { SearchablePersonSelect } from '@/components/shared/SearchablePersonSelect';
 
 type StaffRole = 'angajat' | 'mentor';
@@ -121,6 +127,7 @@ function AdminHrSection() {
 function HrStaffSection() {
   const { mentors, users, mentorCandidates, createUser, createEnrollment } = useUsers();
   const { user } = useAuth();
+  const { canEditTrainingPlan, canViewPlatformSettings } = useAccessControl();
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -128,6 +135,10 @@ function HrStaffSection() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [repoOpen, setRepoOpen] = useState(false);
+  const [equipmentOpen, setEquipmentOpen] = useState(false);
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
   const [editDirty, setEditDirty] = useState(false);
 
   const [wizardName, setWizardName] = useState('');
@@ -176,7 +187,7 @@ function HrStaffSection() {
     setEditDirty(false);
   };
 
-  const closeOtherPanels = (except?: 'new' | 'edit' | 'plan') => {
+  const closeOtherPanels = (except?: 'new' | 'edit' | 'plan' | 'guide' | 'repo' | 'equipment' | 'evaluation') => {
     if (except !== 'new' && wizardOpen) handleCancelWizard();
     if (except !== 'edit' && editOpen) {
       if (editDirty) {
@@ -188,6 +199,10 @@ function HrStaffSection() {
       closeEditPanel();
     }
     if (except !== 'plan' && planOpen) setPlanOpen(false);
+    if (except !== 'guide' && guideOpen) setGuideOpen(false);
+    if (except !== 'repo' && repoOpen) setRepoOpen(false);
+    if (except !== 'equipment' && equipmentOpen) setEquipmentOpen(false);
+    if (except !== 'evaluation' && evaluationOpen) setEvaluationOpen(false);
     return true;
   };
 
@@ -222,6 +237,42 @@ function HrStaffSection() {
     }
     if (!closeOtherPanels('plan')) return;
     setPlanOpen(true);
+  };
+
+  const handleToggleGuide = () => {
+    if (guideOpen) {
+      setGuideOpen(false);
+      return;
+    }
+    if (!closeOtherPanels('guide')) return;
+    setGuideOpen(true);
+  };
+
+  const handleToggleRepo = () => {
+    if (repoOpen) {
+      setRepoOpen(false);
+      return;
+    }
+    if (!closeOtherPanels('repo')) return;
+    setRepoOpen(true);
+  };
+
+  const handleToggleEquipment = () => {
+    if (equipmentOpen) {
+      setEquipmentOpen(false);
+      return;
+    }
+    if (!closeOtherPanels('equipment')) return;
+    setEquipmentOpen(true);
+  };
+
+  const handleToggleEvaluation = () => {
+    if (evaluationOpen) {
+      setEvaluationOpen(false);
+      return;
+    }
+    if (!closeOtherPanels('evaluation')) return;
+    setEvaluationOpen(true);
   };
 
   const handleWizardCreate = (e: React.FormEvent) => {
@@ -266,8 +317,16 @@ function HrStaffSection() {
     <div className="space-y-6">
       <TestingHighlightZone zoneId="zone-hr-planning">
       <Card>
+        {!canEditTrainingPlan && canViewPlatformSettings && (
+          <p className="text-sm text-corporate-muted mb-3 rounded-lg border border-corporate-border bg-corporate-surface/50 px-3 py-2">
+            Puteți consulta planul de instruire, evaluarea și conținutul tehnic (doar vizualizare).
+            Modificările se fac doar din contul{' '}
+            <strong className="text-corporate-dark">{PLATFORM_SETTINGS_ADMIN_NAME}</strong>.
+          </p>
+        )}
         <nav
           aria-label="Acțiuni angajat"
+          id="action-focus-settings"
           className="flex gap-1 overflow-x-auto rounded-xl border border-corporate-border bg-white p-1"
         >
           <button
@@ -290,6 +349,28 @@ function HrStaffSection() {
               Date, mentor & supervizor
             </span>
           </button>
+          {canViewPlatformSettings && (
+          <button
+            type="button"
+            onClick={handleToggleEvaluation}
+            className={[
+              'shrink-0 rounded-lg px-3 py-2 text-left transition-colors min-w-[7rem]',
+              evaluationOpen
+                ? 'bg-corporate-black text-white shadow-sm'
+                : 'text-corporate-muted hover:bg-corporate-surface hover:text-corporate-dark',
+            ].join(' ')}
+          >
+            <span className="block text-sm font-medium">Evaluare angajaților</span>
+            <span
+              className={[
+                'block text-[10px] mt-0.5',
+                evaluationOpen ? 'text-white/60' : 'text-corporate-muted/80',
+              ].join(' ')}
+            >
+              Ciclu & test competențe
+            </span>
+          </button>
+          )}
           <button
             type="button"
             onClick={handleToggleEdit}
@@ -310,6 +391,8 @@ function HrStaffSection() {
               Modificare angajat
             </span>
           </button>
+          {canViewPlatformSettings && (
+          <>
           <button
             type="button"
             onClick={handleTogglePlan}
@@ -330,6 +413,68 @@ function HrStaffSection() {
               Conținut zilnic
             </span>
           </button>
+          <button
+            type="button"
+            onClick={handleToggleGuide}
+            className={[
+              'shrink-0 rounded-lg px-3 py-2 text-left transition-colors min-w-[7rem]',
+              guideOpen
+                ? 'bg-corporate-black text-white shadow-sm'
+                : 'text-corporate-muted hover:bg-corporate-surface hover:text-corporate-dark',
+            ].join(' ')}
+          >
+            <span className="block text-sm font-medium">Ghid Operațional</span>
+            <span
+              className={[
+                'block text-[10px] mt-0.5',
+                guideOpen ? 'text-white/60' : 'text-corporate-muted/80',
+              ].join(' ')}
+            >
+              Pași măsurare teren
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleRepo}
+            className={[
+              'shrink-0 rounded-lg px-3 py-2 text-left transition-colors min-w-[7rem]',
+              repoOpen
+                ? 'bg-corporate-black text-white shadow-sm'
+                : 'text-corporate-muted hover:bg-corporate-surface hover:text-corporate-dark',
+            ].join(' ')}
+          >
+            <span className="block text-sm font-medium">Repository Tehnic</span>
+            <span
+              className={[
+                'block text-[10px] mt-0.5',
+                repoOpen ? 'text-white/60' : 'text-corporate-muted/80',
+              ].join(' ')}
+            >
+              Produse · materiale · garanție
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleEquipment}
+            className={[
+              'shrink-0 rounded-lg px-3 py-2 text-left transition-colors min-w-[7rem]',
+              equipmentOpen
+                ? 'bg-corporate-black text-white shadow-sm'
+                : 'text-corporate-muted hover:bg-corporate-surface hover:text-corporate-dark',
+            ].join(' ')}
+          >
+            <span className="block text-sm font-medium">Mentenanță echipament</span>
+            <span
+              className={[
+                'block text-[10px] mt-0.5',
+                equipmentOpen ? 'text-white/60' : 'text-corporate-muted/80',
+              ].join(' ')}
+            >
+              Curățare · utilizare · CAD
+            </span>
+          </button>
+          </>
+          )}
         </nav>
 
         {wizardOpen && (
@@ -459,7 +604,7 @@ function HrStaffSection() {
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
           </>
         )}
-        {success && !wizardOpen && !editOpen && !planOpen && (
+        {success && !wizardOpen && !editOpen && !planOpen && !guideOpen && !repoOpen && !equipmentOpen && !evaluationOpen && (
           <p className="text-sm text-emerald-600 mt-3">{success}</p>
         )}
 
@@ -471,7 +616,11 @@ function HrStaffSection() {
           />
         )}
 
-        {planOpen && <TrainingPlanEditor embedded />}
+        {planOpen && canViewPlatformSettings && <TrainingPlanEditor embedded />}
+        {guideOpen && canViewPlatformSettings && <OperationalGuideEditor embedded />}
+        {repoOpen && canViewPlatformSettings && <TechnicalRepositoryEditor embedded />}
+        {equipmentOpen && canViewPlatformSettings && <EquipmentOperationsEditor embedded />}
+        {evaluationOpen && canViewPlatformSettings && <EmployeeEvaluationSettingsEditor embedded />}
       </Card>
       </TestingHighlightZone>
 

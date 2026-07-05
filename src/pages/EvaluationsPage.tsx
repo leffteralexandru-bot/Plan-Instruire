@@ -1,11 +1,16 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useProgress } from '@/hooks/useProgress';
-import { useCanSelectStagiar } from '@/context/StagiarContext';
+import { useAccessControl } from '@/hooks/useAccessControl';
+import { useCanSelectStagiar, useStagiarSelection } from '@/context/StagiarContext';
 import { useHrPerformance } from '@/hooks/useHrPerformance';
 import { useStagiarId } from '@/hooks/useStagiarId';
+import { useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useActionFocusEffect } from '@/hooks/useActionFocus';
+import { actionFocusElementId, highlightActionElement } from '@/lib/actionFocus';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { canManageUsers } from '@/lib/roles';
-import { ActConstatareForm } from '@/components/forms/ActConstatareForm';
+import { ReinstruireCerereForm } from '@/components/forms/ReinstruireCerereForm';
 import { FeedbackSummary } from '@/components/mentor/FeedbackForm';
 import { TraineeSelector } from '@/components/mentor/TraineeSelector';
 import { EvaluationStagesFlow } from '@/components/evaluation/EvaluationStagesFlow';
@@ -14,26 +19,55 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 
 export function EvaluationsPage() {
-  const { isInTraining, canAccessMentor, loading, user } = useAuth();
-  const { progress, saveActConstatare } = useProgress();
+  const { canAccessMentor, loading, user } = useAuth();
+  const { canViewEmployee } = useAccessControl();
+  const { progress } = useProgress();
   const { downloadDocument, refresh } = useHrPerformance();
   const canSelect = useCanSelectStagiar();
   const stagiarId = useStagiarId();
+  const { setSelectedStagiarId } = useStagiarSelection();
+  const [searchParams] = useSearchParams();
   const isHrOrAdmin = user && canManageUsers(user);
 
-  const targetAngajatId = isHrOrAdmin && stagiarId ? stagiarId : user?.id;
-  const currentEval = targetAngajatId ? hrPerformanceStore.getCurrentEvaluation(targetAngajatId) : undefined;
+  const viewAsParam = searchParams.get('viewAs') ?? searchParams.get('angajat');
+
+  useEffect(() => {
+    if (viewAsParam && user && canViewEmployee(viewAsParam)) {
+      setSelectedStagiarId(viewAsParam);
+    }
+  }, [viewAsParam, user, canViewEmployee, setSelectedStagiarId]);
+
+  useActionFocusEffect({
+    eval: () => highlightActionElement(actionFocusElementId('eval', 'flow')),
+  });
+
+  const targetAngajatId = useMemo(() => {
+    if (!user) return undefined;
+    if (isHrOrAdmin && (stagiarId || viewAsParam)) {
+      const id = stagiarId ?? viewAsParam;
+      if (id && canViewEmployee(id)) return id;
+    }
+    if (viewAsParam && canViewEmployee(viewAsParam)) return viewAsParam;
+    return user.id;
+  }, [user, isHrOrAdmin, stagiarId, viewAsParam, canViewEmployee]);
+
+  const viewingSubordinate = !!targetAngajatId && !!user && targetAngajatId !== user.id;
   const employeeProfile = targetAngajatId ? hrPerformanceStore.getProfile(targetAngajatId) : undefined;
+  const viewedEmployeeName = employeeProfile
+    ? `${employeeProfile.prenume} ${employeeProfile.nume}`.trim()
+    : targetAngajatId;
+  const currentEval = targetAngajatId ? hrPerformanceStore.getCurrentEvaluation(targetAngajatId) : undefined;
   const supervisorId = employeeProfile?.supervisorId ?? employeeProfile?.managerId;
   const isSupervisorEvaluator =
     !!currentEval &&
     !!user &&
     (user.id === currentEval.evaluatorId || (!!supervisorId && user.id === supervisorId));
+  const canSubmitCerere = targetAngajatId === user?.id;
 
   if (loading || !user) return null;
 
-  const feedbackWeek2 = progress?.feedbacks.find((f) => f.weekNumber === 2);
-  const feedbackWeek4 = progress?.feedbacks.find((f) => f.weekNumber === 4);
+  const feedbackWeek2 = viewingSubordinate ? undefined : progress?.feedbacks.find((f) => f.weekNumber === 2);
+  const feedbackWeek4 = viewingSubordinate ? undefined : progress?.feedbacks.find((f) => f.weekNumber === 4);
 
   return (
     <div className="space-y-6">
@@ -41,6 +75,7 @@ export function EvaluationsPage() {
 
       {currentEval && currentEval.status !== 'evaluat' && (
         <TestingHighlightZone zoneId="zone-supervisor-eval">
+        <div id={actionFocusElementId('eval', 'flow')}>
         <EvaluationStagesFlow
           cycle={currentEval}
           mode={
@@ -57,15 +92,26 @@ export function EvaluationsPage() {
           onDownloadDocument={(id) => void downloadDocument(id)}
           onUpdated={refresh}
         />
+        </div>
         </TestingHighlightZone>
+      )}
+
+      {viewingSubordinate && (
+        <p className="text-sm text-corporate-muted -mt-2">
+          Evaluare pentru: <strong className="text-corporate-dark">{viewedEmployeeName}</strong>
+        </p>
       )}
 
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Evaluări & Rapoarte</h1>
-        <p className="text-corporate-muted mt-1">Acte de constatare și feedback evaluări săptămânale</p>
+        <p className="text-corporate-muted mt-1">
+          Cereri de re-instruire, evaluare tri-lunară și feedback săptămânal
+        </p>
       </div>
 
-      {isInTraining && <ActConstatareForm defaultDayId="day-18" onSubmit={saveActConstatare} />}
+      {canSubmitCerere && targetAngajatId && (
+        <ReinstruireCerereForm angajatId={targetAngajatId} />
+      )}
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-corporate-dark">Feedback Evaluări</h2>
@@ -107,40 +153,6 @@ export function EvaluationsPage() {
           </Card>
         </div>
       </section>
-
-      {progress && progress.acteConstatare.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-corporate-dark">
-            Acte de Constatare ({progress.acteConstatare.length})
-          </h2>
-          <div className="space-y-3">
-            {[...progress.acteConstatare].reverse().map((act) => (
-              <Card key={act.id} padding="sm">
-                <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                  <div>
-                    <h3 className="font-medium text-corporate-dark">{act.proiectNume}</h3>
-                    {act.dayId && (
-                      <p className="text-xs text-corporate-muted">Zi program: {act.dayId}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="info">{new Date(act.dataMasuratoare).toLocaleDateString('ro-RO')}</Badge>
-                  </div>
-                </div>
-                <div className="grid gap-2 text-sm text-slate-600">
-                  <p><strong>Erori:</strong> {act.eroriIdentificate}</p>
-                  <p><strong>Abateri:</strong> {act.abateriMasuratori}</p>
-                  <p><strong>Măsuri corective:</strong> {act.masuriCorective}</p>
-                  {act.observatii && <p><strong>Observații:</strong> {act.observatii}</p>}
-                  <p className="text-xs text-slate-400">
-                    Înregistrat: {new Date(act.createdAt).toLocaleString('ro-RO')}
-                  </p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

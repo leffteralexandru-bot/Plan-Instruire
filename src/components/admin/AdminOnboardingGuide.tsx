@@ -29,17 +29,34 @@ const STEPS = [
   },
 ];
 
-export function AdminOnboardingGuide() {
-  const [open, setOpen] = useState(false);
+export function AdminOnboardingGuide({ embedded }: { embedded?: boolean } = {}) {
+  const [open, setOpen] = useState(embedded);
 
   const visibleSteps = STEPS.filter((s) => !s.show || s.show());
+
+  if (embedded) {
+    return (
+      <div className="mt-4 border-t border-corporate-border pt-5">
+        <h3 className="text-base font-semibold text-corporate-dark">Ghid Operațional HR</h3>
+        <p className="text-sm text-corporate-muted mt-1 mb-4">Pași recomandați pentru operare zilnică</p>
+        <ol className="space-y-3 text-sm text-slate-700 list-decimal list-inside">
+          {visibleSteps.map((s) => (
+            <li key={s.title}>
+              <strong>{s.title}</strong>
+              <p className="ml-5 mt-0.5 text-corporate-muted">{s.body}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  }
 
   return (
     <Card className="border-corporate-gold/30 bg-corporate-gold-light/30">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-corporate-dark">Ghid Admin HR artGRANIT</h2>
-          <p className="text-sm text-corporate-muted">Pași recomandați pentru operare zilnică</p>
+          <h2 className="text-lg font-semibold text-corporate-dark">Ghid tehnic aplicație</h2>
+          <p className="text-sm text-corporate-muted">Backup, export, Supabase — pentru administratori</p>
         </div>
         <Button variant="ghost" size="sm" type="button" onClick={() => setOpen((v) => !v)}>
           {open ? 'Ascunde' : 'Afișează ghid'}

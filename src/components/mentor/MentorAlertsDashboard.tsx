@@ -36,9 +36,9 @@ export function MentorAlertsDashboard() {
     <Card className="border-amber-400/60 bg-amber-50/40">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-corporate-dark">Dashboard Alerte — erori repetate</h2>
+          <h2 className="text-lg font-semibold text-corporate-dark">Dashboard Alerte — re-instruire erori</h2>
           <p className="text-sm text-corporate-muted">
-            Subordonați care au atins pragul de erori de același tip. Re-instruire obligatorie activă.
+            Fiecare eroare declanșează re-instruire. Urmăriți sesiunile active ale subordonaților.
           </p>
         </div>
         <Badge variant="warning">{alertAngajatIds.length} angajați</Badge>
@@ -64,7 +64,8 @@ export function MentorAlertsDashboard() {
                 <div>
                   <p className="font-semibold text-corporate-dark">{name}</p>
                   <p className="text-corporate-muted mt-0.5">
-                    {ERROR_MOTIV_LABELS[alert.errorMotiv]} · {alert.count} apariții în 90 zile
+                    {ERROR_MOTIV_LABELS[alert.errorMotiv]}
+                    {alert.count > 1 ? ` · ${alert.count} erori similare în 90 zile` : ''}
                   </p>
                   {session && (
                     <p className="text-xs text-amber-800 mt-1">

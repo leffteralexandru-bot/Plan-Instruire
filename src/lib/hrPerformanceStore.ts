@@ -28,8 +28,10 @@ import {
   isCompetencyScoresComplete,
 } from '@/lib/competencyScoring';
 import {
+  canHrFinalizeEvaluation,
   createDefaultEvaluationStages,
   ensureEvaluationStages,
+  getHrFinalizeBlockReason,
   isSelfAssessmentComplete,
   isSupervisorAssessmentComplete,
 } from '@/lib/evaluationStages';
@@ -40,6 +42,7 @@ import {
   appendWeeklyMentorHistory,
   createHistoryEntry,
 } from '@/lib/assignmentHistory';
+import { getEvaluationCycleDays } from '@/lib/evaluationSettings';
 
 const PROFILES_KEY = 'artgranit_employee_profiles';
 const EVALUATIONS_KEY = 'artgranit_evaluation_cycles';
@@ -48,8 +51,12 @@ const ERRORS_KEY = 'artgranit_error_cases';
 const DOCS_KEY = 'artgranit_hr_documents';
 const KPI_KEY = 'artgranit_kpi_snapshots';
 const PERF_MIGRATION_FLAG = 'artgranit_perf_migrated_v1';
-
+const PERF_UPDATED_KEY = 'artgranit_hr_perf_updated_at';
 export const EVALUATION_CYCLE_DAYS = 90;
+
+function evaluationCycleDays(): number {
+  return getEvaluationCycleDays();
+}
 export const EVALUATION_ALERT_DAYS = 7;
 /** Reminder angajat/supervizor — evaluare se apropie */
 export const EVALUATION_REMINDER_START_DAYS = 14;
@@ -79,6 +86,22 @@ function readJson<T>(key: string, fallback: T): T {
 
 function writeJson<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function bumpHrPerformanceUpdatedAt(): void {
+  try {
+    localStorage.setItem(PERF_UPDATED_KEY, nowIso());
+  } catch {
+    /* ignore */
+  }
+}
+
+function getHrPerformanceUpdatedAt(): string {
+  try {
+    return localStorage.getItem(PERF_UPDATED_KEY) ?? '1970-01-01T00:00:00.000Z';
+  } catch {
+    return '1970-01-01T00:00:00.000Z';
+  }
 }
 
 function nowIso(): string {
@@ -132,7 +155,7 @@ function revertOrphanAutoStartedCycle(c: EvaluationCycle): EvaluationCycle {
   if (hasWork) return c;
   const stages = c.stages ?? createDefaultEvaluationStages();
   const started = stages.some((s) => s.status === 'in_curs' || s.status === 'completat');
-  if (!started) return c;
+  if (started) return c;
   return {
     ...c,
     status: 'planificat',
@@ -261,6 +284,7 @@ function cleanupPrematureEvaluationCycles(): void {
 /** Elimină profile, evaluări și date HR pentru utilizatori șterși sau inexistenți */
 function pruneOrphanHrData(): void {
   const activeIds = new Set(userStore.getAllUsers().filter((u) => u.active).map((u) => u.id));
+  if (activeIds.size === 0) return;
 
   const filterStore = <T>(key: string, keep: (row: T) => boolean) => {
     const rows = readJson<T[]>(key, []);
@@ -348,8 +372,8 @@ function ensureProfiles(): EmployeeProfile[] {
       angajatId: u.id,
       evaluatorId: profile.supervisorId ?? profile.managerId ?? u.id,
       perioadaStart: profile.dataAngajarii,
-      perioadaEnd: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
-      termenReevaluare: addDays(profile.dataAngajarii, EVALUATION_CYCLE_DAYS),
+      perioadaEnd: addDays(profile.dataAngajarii, evaluationCycleDays()),
+      termenReevaluare: addDays(profile.dataAngajarii, evaluationCycleDays()),
       status: 'planificat',
       stages: createDefaultEvaluationStages(),
       createdAt: nowIso(),
@@ -381,7 +405,7 @@ export const hrPerformanceStore = {
       Pick<
         EmployeeProfile,
         'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'supervisorId' |         'status' | 'tipAngajat' | 'weeklyEvalMentors' | 'assignmentHistory'
-        | 'nivelCompetenta' | 'scorCompetentaTotal' | 'coeficientSalarialPercent'
+        | 'nivelCompetenta' | 'scorCompetentaTotal' | 'coeficientSalarialPercent' | 'photoUrl'
       >
     >,
   ): EmployeeProfile {
@@ -538,8 +562,8 @@ export const hrPerformanceStore = {
       angajatId: input.angajatId,
       evaluatorId: input.evaluatorId,
       perioadaStart: start,
-      perioadaEnd: addDays(start, EVALUATION_CYCLE_DAYS),
-      termenReevaluare: addDays(start, EVALUATION_CYCLE_DAYS),
+      perioadaEnd: addDays(start, evaluationCycleDays()),
+      termenReevaluare: addDays(start, evaluationCycleDays()),
       status: 'planificat',
       stages: createDefaultEvaluationStages(),
       createdAt: nowIso(),
@@ -562,7 +586,7 @@ export const hrPerformanceStore = {
     if (!profile || !isEvaluationSubject(profile)) return null;
 
     const start = trainingCompletedOn.slice(0, 10);
-    const termen = addDays(start, EVALUATION_CYCLE_DAYS);
+    const termen = addDays(start, evaluationCycleDays());
     const evaluatorId = profile.supervisorId ?? profile.managerId ?? angajatId;
 
     const cycles = readJson<EvaluationCycle[]>(EVALUATIONS_KEY, []);
@@ -651,7 +675,6 @@ export const hrPerformanceStore = {
     id: string,
     input: {
       scoruri?: EvaluationScores;
-      competencySupervisorScores?: DesignerCompetencyScores;
       concluzii: string;
       planDezvoltare?: string;
       documentId?: string;
@@ -660,12 +683,13 @@ export const hrPerformanceStore = {
     const existing = hrPerformanceStore.getEvaluations().find((c) => c.id === id);
     if (!existing) throw new Error('Evaluare negăsită.');
 
-    const competencyScores =
-      input.competencySupervisorScores ??
-      existing.competencySupervisorScores ??
-      existing.competencySelfScores;
+    if (!canHrFinalizeEvaluation(existing)) {
+      throw new Error(getHrFinalizeBlockReason(existing) ?? 'Validarea HR nu este disponibilă încă.');
+    }
+
+    const competencyScores = existing.competencySupervisorScores;
     if (!isCompetencyScoresComplete(competencyScores)) {
-      throw new Error('Completați matricea de competențe (10 criterii) înainte de finalizare.');
+      throw new Error('Evaluarea supervizorului (matricea de competențe) trebuie completată înainte de validare HR.');
     }
 
     const competencyResult = computeCompetencyOutcome(competencyScores);
@@ -678,7 +702,6 @@ export const hrPerformanceStore = {
     }));
     const completed = hrPerformanceStore.updateEvaluation(id, {
       scoruri,
-      competencySupervisorScores: competencyScores,
       competencyResult,
       concluzii: input.concluzii,
       planDezvoltare: input.planDezvoltare,
@@ -833,27 +856,63 @@ export const hrPerformanceStore = {
   },
 
   getErrorCases(filters?: { angajatId?: string; luna?: string }): ErrorCase[] {
+    ensureProfiles();
     let cases = readJson<ErrorCase[]>(ERRORS_KEY, []);
     if (filters?.angajatId) cases = cases.filter((c) => c.angajatId === filters.angajatId);
     if (filters?.luna) cases = cases.filter((c) => c.data.startsWith(filters.luna!));
     return cases.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
-  addErrorCase(input: Omit<ErrorCase, 'id' | 'createdAt' | 'updatedAt'>): ErrorCase {
-    const cases = readJson<ErrorCase[]>(ERRORS_KEY, []);
-    const item: ErrorCase = { ...input, id: newId('err'), createdAt: nowIso(), updatedAt: nowIso() };
-    cases.push(item);
-    writeJson(ERRORS_KEY, cases);
-    return item;
+  nextErrorCaseId(): string {
+    return newId('err');
   },
 
-  updateErrorCase(id: string, patch: Partial<Pick<ErrorCase, 'planActiune' | 'descriere' | 'motiv' | 'documentId'>>): ErrorCase {
+  saveErrorCase(item: ErrorCase): ErrorCase {
+    const cases = readJson<ErrorCase[]>(ERRORS_KEY, []);
+    const idx = cases.findIndex((c) => c.id === item.id);
+    const saved = { ...item, updatedAt: nowIso() };
+    if (idx >= 0) cases[idx] = saved;
+    else cases.push(saved);
+    writeJson(ERRORS_KEY, cases);
+    bumpHrPerformanceUpdatedAt();
+    return saved;
+  },
+
+  addErrorCase(input: Omit<ErrorCase, 'id' | 'createdAt' | 'updatedAt'>): ErrorCase {
+    const ts = nowIso();
+    const item: ErrorCase = {
+      ...input,
+      hrStatus: input.hrStatus ?? 'ciorna',
+      id: newId('err'),
+      createdAt: ts,
+      updatedAt: ts,
+    };
+    return hrPerformanceStore.saveErrorCase(item);
+  },
+
+  updateErrorCase(id: string, patch: Partial<Pick<ErrorCase, 'planActiune' | 'descriere' | 'motiv' | 'documentId' | 'notaConstatare' | 'signedDocumentId' | 'reTrainingProposal' | 'hrStatus' | 'hrReviewNote' | 'hrReviewedAt' | 'hrReviewedBy' | 'reTrainingSessionId'>>): ErrorCase {
     const cases = readJson<ErrorCase[]>(ERRORS_KEY, []);
     const idx = cases.findIndex((c) => c.id === id);
     if (idx < 0) throw new Error('Eroare negăsită.');
     cases[idx] = { ...cases[idx], ...patch, updatedAt: nowIso() };
     writeJson(ERRORS_KEY, cases);
+    bumpHrPerformanceUpdatedAt();
     return cases[idx];
+  },
+
+  deleteErrorCase(id: string): boolean {
+    const cases = readJson<ErrorCase[]>(ERRORS_KEY, []);
+    const idx = cases.findIndex((c) => c.id === id);
+    if (idx < 0) return false;
+    cases.splice(idx, 1);
+    writeJson(ERRORS_KEY, cases);
+    bumpHrPerformanceUpdatedAt();
+
+    const docs = readJson<HrDocument[]>(DOCS_KEY, []);
+    const kept = docs.filter((d) => d.errorCaseId !== id);
+    if (kept.length !== docs.length) writeJson(DOCS_KEY, kept);
+
+    return true;
   },
 
   getDocuments(filters?: {
@@ -974,6 +1033,11 @@ export const hrPerformanceStore = {
     return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   },
 
+  /** Actualizează timestamp-ul de sync (ex. după reset flux erori). */
+  touchUpdatedAt(): void {
+    bumpHrPerformanceUpdatedAt();
+  },
+
   exportPayload(): HrPerformancePayload {
     ensureProfiles();
     return {
@@ -983,18 +1047,32 @@ export const hrPerformanceStore = {
       errorCases: readJson<ErrorCase[]>(ERRORS_KEY, []),
       documents: readJson<HrDocument[]>(DOCS_KEY, []),
       kpiSnapshots: readJson<KpiSnapshot[]>(KPI_KEY, []),
-      updatedAt: nowIso(),
+      updatedAt: getHrPerformanceUpdatedAt(),
     };
   },
 
   importPayload(cloud: HrPerformancePayload, mode: 'replace' | 'merge' = 'merge'): void {
+    const cloudErrors = cloud.errorCases ?? [];
+    const cloudProfiles = cloud.profiles ?? [];
+    const cloudEvaluations = cloud.evaluations ?? [];
+    const cloudNotes = cloud.quickNotes ?? [];
+    const cloudDocs = cloud.documents ?? [];
+    const cloudKpi = cloud.kpiSnapshots ?? [];
+
     if (mode === 'replace') {
-      writeJson(PROFILES_KEY, cloud.profiles);
-      writeJson(EVALUATIONS_KEY, cloud.evaluations);
-      writeJson(NOTES_KEY, cloud.quickNotes);
-      writeJson(ERRORS_KEY, cloud.errorCases);
-      writeJson(DOCS_KEY, cloud.documents);
-      writeJson(KPI_KEY, cloud.kpiSnapshots);
+      writeJson(PROFILES_KEY, cloudProfiles);
+      writeJson(EVALUATIONS_KEY, cloudEvaluations);
+      writeJson(NOTES_KEY, cloudNotes);
+      writeJson(ERRORS_KEY, cloudErrors);
+      writeJson(DOCS_KEY, cloudDocs);
+      writeJson(KPI_KEY, cloudKpi);
+      if (cloud.updatedAt) {
+        try {
+          localStorage.setItem(PERF_UPDATED_KEY, cloud.updatedAt);
+        } catch {
+          /* ignore */
+        }
+      }
       return;
     }
 
@@ -1021,12 +1099,19 @@ export const hrPerformanceStore = {
       return [...map.values()];
     };
 
-    writeJson(PROFILES_KEY, mergeProfiles(readJson(PROFILES_KEY, []), cloud.profiles));
-    writeJson(EVALUATIONS_KEY, mergeById(readJson(EVALUATIONS_KEY, []), cloud.evaluations));
-    writeJson(NOTES_KEY, mergeById(readJson(NOTES_KEY, []), cloud.quickNotes));
-    writeJson(ERRORS_KEY, mergeById(readJson(ERRORS_KEY, []), cloud.errorCases));
-    writeJson(DOCS_KEY, mergeById(readJson(DOCS_KEY, []), cloud.documents));
-    writeJson(KPI_KEY, mergeById(readJson(KPI_KEY, []), cloud.kpiSnapshots));
+    writeJson(PROFILES_KEY, mergeProfiles(readJson(PROFILES_KEY, []), cloudProfiles));
+    writeJson(EVALUATIONS_KEY, mergeById(readJson(EVALUATIONS_KEY, []), cloudEvaluations));
+    writeJson(NOTES_KEY, mergeById(readJson(NOTES_KEY, []), cloudNotes));
+    writeJson(ERRORS_KEY, mergeById(readJson(ERRORS_KEY, []), cloudErrors));
+    writeJson(DOCS_KEY, mergeById(readJson(DOCS_KEY, []), cloudDocs));
+    writeJson(KPI_KEY, mergeById(readJson(KPI_KEY, []), cloudKpi));
+
+    const mergedAt = cloud.updatedAt ?? getHrPerformanceUpdatedAt();
+    try {
+      localStorage.setItem(PERF_UPDATED_KEY, mergedAt);
+    } catch {
+      /* ignore */
+    }
   },
 };
 

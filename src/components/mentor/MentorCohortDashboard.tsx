@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { storage } from '@/store/storage';
-import { buildTraineeHrReport, getPendingMentorValidations } from '@/lib/hrReport';
+import { buildTraineeHrReport, getPendingMentorValidations, isInMentorCohort } from '@/lib/hrReport';
 import { getTraineeStatus, getTraineeStatusLabel } from '@/lib/hrAnalytics';
 import { Badge } from '@/components/ui/Badge';
 import { Link } from 'react-router-dom';
@@ -8,6 +8,8 @@ import { ingineriPath } from '@/data/departments';
 import { useUsers } from '@/context/UsersContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useHrPerformance } from '@/hooks/useHrPerformance';
+import { useActionFocusEffect } from '@/hooks/useActionFocus';
+import { actionFocusElementId, highlightActionElement } from '@/lib/actionFocus';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 import { TraineeCohortExpandPanel } from '@/components/mentor/TraineeCohortExpandPanel';
 
@@ -34,9 +36,14 @@ export function MentorCohortDashboard() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [listRefresh, setListRefresh] = useState(0);
 
-  const rows = useMemo(
-    () => visibleTrainees.map((t) => buildTraineeHrReport(t, storage.getProgress(t.id))),
+  const cohortTrainees = useMemo(
+    () => visibleTrainees.filter(isInMentorCohort),
     [visibleTrainees, listRefresh],
+  );
+
+  const rows = useMemo(
+    () => cohortTrainees.map((t) => buildTraineeHrReport(t, storage.getProgress(t.id))),
+    [cohortTrainees, listRefresh],
   );
 
   const profileByUserId = useMemo(
@@ -55,13 +62,39 @@ export function MentorCohortDashboard() {
     });
   };
 
+  useActionFocusEffect(
+    {
+      cohort: () => {
+        const trainee = new URLSearchParams(window.location.search).get('trainee');
+        if (!trainee) return;
+        setExpandedIds((prev) => new Set(prev).add(trainee));
+        highlightActionElement(actionFocusElementId('cohort', trainee));
+      },
+      validations: () => {
+        const trainee = new URLSearchParams(window.location.search).get('trainee');
+        if (!trainee) return;
+        setExpandedIds((prev) => new Set(prev).add(trainee));
+        highlightActionElement(actionFocusElementId('validations', trainee));
+      },
+      feedback: () => {
+        const sp = new URLSearchParams(window.location.search);
+        const trainee = sp.get('trainee');
+        const week = sp.get('week') ?? '2';
+        if (!trainee) return;
+        setExpandedIds((prev) => new Set(prev).add(trainee));
+        highlightActionElement(actionFocusElementId('feedback', trainee, week));
+      },
+    },
+    [cohortTrainees.length],
+  );
+
   return (
     <ProfessionalPanel
       variant="training"
       icon="mentor"
       eyebrow="Cohortă instruire"
       title={canAccessAdmin ? 'Vedere grupă — toți angajații' : 'Angajații mei în instruire'}
-      subtitle={`${visibleTrainees.length} angajat(i) · ${pendingTotal} validări în așteptare · apăsați pe rând pentru detalii`}
+      subtitle={`${cohortTrainees.length} în instruire activă · ${pendingTotal} validări în așteptare · apăsați pe rând pentru detalii`}
       badge={
         pendingTotal > 0 ? (
           <Badge variant="warning">{pendingTotal} validări</Badge>
@@ -80,17 +113,27 @@ export function MentorCohortDashboard() {
         ) : undefined
       }
     >
+      {cohortTrainees.length === 0 ? (
+        <p className="text-sm text-corporate-muted">
+          Nicio instruire activă în acest moment. Angajații finalizați rămân în{' '}
+          <strong className="font-medium text-corporate-stone">Echipa mea — evaluări & dosare</strong>{' '}
+          mai jos.
+        </p>
+      ) : (
       <ul className="space-y-2">
-        {visibleTrainees.map((t) => {
+        {cohortTrainees.map((t) => {
           const row = rows.find((r) => r.userId === t.id)!;
           const profile = profileByUserId.get(t.id);
           const status = getTraineeStatus(row);
           const pending = getPendingMentorValidations(storage.getProgress(t.id));
+          const traineeProgress = storage.getProgress(t.id);
+          const needsCertificate =
+            row.progressPercent >= 100 && row.totalDays > 0 && !traineeProgress.certificate;
           const functie = profile?.functie ?? t.email;
           const expanded = expandedIds.has(t.id);
 
           return (
-            <li key={t.id}>
+            <li key={t.id} id={actionFocusElementId('cohort', t.id)}>
               <button
                 type="button"
                 onClick={() => toggleExpanded(t.id)}
@@ -120,6 +163,9 @@ export function MentorCohortDashboard() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {needsCertificate && (
+                    <Badge variant="warning">Certificat de emis</Badge>
+                  )}
                   <Badge
                     variant={
                       status === 'completed' ? 'success' : status === 'behind' ? 'warning' : 'info'
@@ -140,6 +186,7 @@ export function MentorCohortDashboard() {
           );
         })}
       </ul>
+      )}
     </ProfessionalPanel>
   );
 }

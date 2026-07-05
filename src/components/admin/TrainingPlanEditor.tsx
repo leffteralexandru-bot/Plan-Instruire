@@ -18,12 +18,138 @@ function inferMaterialType(file: File): Material['type'] {
   return 'doc';
 }
 
+function TaskMaterialsEditor({
+  materials,
+  onChange,
+  onUpload,
+  onDownload,
+  readOnly = false,
+}: {
+  materials: Material[];
+  onChange: (materials: Material[]) => void;
+  onUpload: (file: File) => Promise<Material>;
+  onDownload: (documentId: string) => Promise<void>;
+  readOnly?: boolean;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+
+  const handleFile = async (file: File) => {
+    setUploading(true);
+    try {
+      const mat = await onUpload(file);
+      onChange([...materials, mat]);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="ml-1 pl-3 border-l-2 border-corporate-gold/30 space-y-2">
+      <p className="text-[11px] font-medium text-corporate-muted">Materiale task (video, PDF, fișiere)</p>
+      {materials.length > 0 && (
+        <ul className="space-y-1.5">
+          {materials.map((mat, idx) => (
+            <li
+              key={mat.id}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-corporate-border/50 bg-white px-2 py-1.5 text-xs"
+            >
+              <Badge variant="info">{mat.type}</Badge>
+              <input
+                className="flex-1 min-w-[100px] rounded border border-corporate-border px-2 py-1 text-xs"
+                value={mat.title}
+                readOnly={readOnly}
+                onChange={(e) =>
+                  onChange(materials.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x)))
+                }
+              />
+              {mat.documentId ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void onDownload(mat.documentId!)}
+                >
+                  Descarcă
+                </Button>
+              ) : (
+                <span className="text-[10px] text-corporate-muted truncate max-w-[120px]">{mat.url}</span>
+              )}
+              {!readOnly && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-red-600"
+                onClick={() => onChange(materials.filter((_, i) => i !== idx))}
+              >
+                Șterge
+              </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {!readOnly && (
+      <>
+      <div className="flex flex-wrap gap-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.mp4,.webm,video/*,application/pdf"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void handleFile(f);
+            e.target.value = '';
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          disabled={uploading}
+          onClick={() => fileRef.current?.click()}
+        >
+          {uploading ? 'Se încarcă…' : '+ Fișier / video'}
+        </Button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <Input placeholder="Titlu link" value={linkTitle} onChange={(e) => setLinkTitle(e.target.value)} />
+        <Input placeholder="URL" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            if (!linkUrl.trim() || !linkTitle.trim()) return;
+            onChange([
+              ...materials,
+              trainingPlanStore.newLinkMaterial({ title: linkTitle.trim(), url: linkUrl.trim() }),
+            ]);
+            setLinkUrl('');
+            setLinkTitle('');
+          }}
+        >
+          + Link
+        </Button>
+      </div>
+      </>
+      )}
+    </div>
+  );
+}
+
 function DayEditor({
   day,
   onSaved,
+  readOnly = false,
 }: {
   day: DayPlan;
   onSaved: (msg: string) => void;
+  readOnly?: boolean;
 }) {
   const { user } = useAuth();
   const { uploadDocument, downloadDocument } = useHrPerformance();
@@ -80,25 +206,28 @@ function DayEditor({
     onSaved(`Ziua ${day.dayNumber} resetată la versiunea standard.`);
   };
 
-  const handleFileUpload = async (file: File) => {
-    if (!user) return;
+  const handleFileUpload = async (file: File): Promise<Material> => {
+    if (!user) throw new Error('Neautentificat');
+    const doc = await uploadDocument({
+      file,
+      tip: 'material_instruire',
+      uploadedBy: user.id,
+      uploadedByNume: user.name,
+      dayId: day.id,
+      departmentId: 'ingineri',
+      folder: 'documentatie_baza',
+    });
+    return trainingPlanStore.newUploadedMaterial({
+      title: file.name.replace(/\.[^.]+$/, ''),
+      type: inferMaterialType(file),
+      documentId: doc.id,
+    });
+  };
+
+  const uploadTaskMaterial = async (file: File): Promise<Material> => {
     setUploading(true);
     try {
-      const doc = await uploadDocument({
-        file,
-        tip: 'material_instruire',
-        uploadedBy: user.id,
-        uploadedByNume: user.name,
-        dayId: day.id,
-        departmentId: 'ingineri',
-        folder: 'documentatie_baza',
-      });
-      const mat = trainingPlanStore.newUploadedMaterial({
-        title: file.name.replace(/\.[^.]+$/, ''),
-        type: inferMaterialType(file),
-        documentId: doc.id,
-      });
-      setMaterials((prev) => [...prev, mat]);
+      return await handleFileUpload(file);
     } finally {
       setUploading(false);
     }
@@ -125,6 +254,7 @@ function DayEditor({
             <p className="text-xs text-corporate-gold mt-0.5">Modificat de HR</p>
           )}
         </div>
+        {!readOnly && (
         <div className="flex gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={handleReset}>
             Resetare standard
@@ -133,16 +263,18 @@ function DayEditor({
             {saving ? 'Se salvează…' : 'Salvează ziua'}
           </Button>
         </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input label="Titlu zi" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Input label="Subtitlu" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
+        <Input label="Titlu zi" value={title} readOnly={readOnly} onChange={(e) => setTitle(e.target.value)} />
+        <Input label="Subtitlu" value={subtitle} readOnly={readOnly} onChange={(e) => setSubtitle(e.target.value)} />
       </div>
 
       <section>
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-sm font-semibold text-corporate-dark">Task-uri zilnice</h4>
+          {!readOnly && (
           <Button
             type="button"
             size="sm"
@@ -151,27 +283,42 @@ function DayEditor({
           >
             + Task
           </Button>
+          )}
         </div>
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {tasks.map((task, idx) => (
-            <li key={task.id} className="flex gap-2">
-              <input
-                className="flex-1 rounded-lg border border-corporate-border px-3 py-2 text-sm"
-                value={task.label}
-                onChange={(e) =>
-                  setTasks((t) => t.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x)))
+            <li key={task.id} className="rounded-xl border border-corporate-border/70 p-3 space-y-2 bg-corporate-surface/30">
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 rounded-lg border border-corporate-border px-3 py-2 text-sm"
+                  value={task.label}
+                  readOnly={readOnly}
+                  onChange={(e) =>
+                    setTasks((t) => t.map((x, i) => (i === idx ? { ...x, label: e.target.value } : x)))
+                  }
+                  placeholder="Descriere task"
+                />
+                {!readOnly && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-red-600 shrink-0"
+                  onClick={() => setTasks((t) => t.filter((_, i) => i !== idx))}
+                >
+                  Șterge
+                </Button>
+                )}
+              </div>
+              <TaskMaterialsEditor
+                materials={task.materials ?? []}
+                onUpload={uploadTaskMaterial}
+                onDownload={downloadDocument}
+                readOnly={readOnly}
+                onChange={(mats) =>
+                  setTasks((t) => t.map((x, i) => (i === idx ? { ...x, materials: mats } : x)))
                 }
-                placeholder="Descriere task"
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-red-600 shrink-0"
-                onClick={() => setTasks((t) => t.filter((_, i) => i !== idx))}
-              >
-                Șterge
-              </Button>
             </li>
           ))}
         </ul>
@@ -180,6 +327,7 @@ function DayEditor({
       <section>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <h4 className="text-sm font-semibold text-corporate-dark">Materiale (video, PDF, documente)</h4>
+          {!readOnly && (
           <div className="flex gap-2">
             <input
               ref={fileRef}
@@ -188,7 +336,9 @@ function DayEditor({
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                if (f) void handleFileUpload(f);
+                if (f) {
+                  void handleFileUpload(f).then((mat) => setMaterials((prev) => [...prev, mat]));
+                }
                 e.target.value = '';
               }}
             />
@@ -202,6 +352,7 @@ function DayEditor({
               {uploading ? 'Se încarcă…' : 'Încarcă fișier'}
             </Button>
           </div>
+          )}
         </div>
 
         <ul className="space-y-2 mb-4">
@@ -214,6 +365,7 @@ function DayEditor({
               <input
                 className="flex-1 min-w-[120px] rounded border border-corporate-border px-2 py-1"
                 value={mat.title}
+                readOnly={readOnly}
                 onChange={(e) =>
                   setMaterials((m) =>
                     m.map((x, i) => (i === idx ? { ...x, title: e.target.value } : x)),
@@ -232,6 +384,7 @@ function DayEditor({
               ) : (
                 <span className="text-xs text-corporate-muted truncate max-w-[140px]">{mat.url}</span>
               )}
+              {!readOnly && (
               <Button
                 type="button"
                 variant="ghost"
@@ -241,6 +394,7 @@ function DayEditor({
               >
                 Șterge
               </Button>
+              )}
             </li>
           ))}
           {materials.length === 0 && (
@@ -248,6 +402,7 @@ function DayEditor({
           )}
         </ul>
 
+        {!readOnly && (
         <div className="grid gap-2 sm:grid-cols-3 p-3 rounded-xl bg-corporate-surface">
           <Input
             placeholder="Titlu link"
@@ -259,6 +414,7 @@ function DayEditor({
             Adaugă link
           </Button>
         </div>
+        )}
       </section>
     </div>
   );
@@ -266,6 +422,7 @@ function DayEditor({
 
 export function TrainingPlanEditor({ embedded }: { embedded?: boolean } = {}) {
   const { canEditTrainingPlan } = useAccessControl();
+  const readOnly = !canEditTrainingPlan;
   const plan = useTrainingPlan();
   const [expandedWeek, setExpandedWeek] = useState<number | null>(1);
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
@@ -273,14 +430,6 @@ export function TrainingPlanEditor({ embedded }: { embedded?: boolean } = {}) {
 
   const selectedDay = selectedDayId ? trainingPlanStore.getEffectiveDay(selectedDayId) : undefined;
   const overrideCount = trainingPlanStore.getOverrides().length;
-
-  if (!canEditTrainingPlan) {
-    return (
-      <p className="text-sm text-amber-800 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-        Planul de instruire poate fi modificat doar de <strong>Resurse Umane (HR)</strong>.
-      </p>
-    );
-  }
 
   const panelContent = (
     <>
@@ -291,8 +440,17 @@ export function TrainingPlanEditor({ embedded }: { embedded?: boolean } = {}) {
           </h2>
         )}
         <p className="text-sm text-corporate-muted mt-1">
-          Doar <strong>HR</strong> poate modifica conținutul și încărca video/PDF pentru fiecare lecție (zi).
-          Încărcați materialele potrivite zilei, apoi apăsați <strong>Salvează ziua</strong>.
+          {readOnly ? (
+            <>
+              Vizualizare plan instruire — deschideți săptămânile și zilele pentru a consulta conținutul.
+              Modificările se fac doar din contul Alex.
+            </>
+          ) : (
+            <>
+              Doar <strong>HR</strong> poate modifica conținutul. Pentru fiecare task puteți atașa video, PDF sau linkuri;
+              materialele zilei rămân în secțiunea de mai jos.
+            </>
+          )}
           {overrideCount > 0 && (
             <span className="text-corporate-gold ml-1">({overrideCount} zile personalizate)</span>
           )}
@@ -342,7 +500,7 @@ export function TrainingPlanEditor({ embedded }: { embedded?: boolean } = {}) {
       </div>
 
       {selectedDay && (
-        <DayEditor day={selectedDay} onSaved={(msg) => setMessage(msg)} />
+        <DayEditor day={selectedDay} onSaved={(msg) => setMessage(msg)} readOnly={readOnly} />
       )}
 
       {message && <p className="text-sm text-emerald-600 mt-4">{message}</p>}

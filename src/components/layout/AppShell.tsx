@@ -16,6 +16,7 @@ import { isSupabaseConfigured } from '@/store/storage';
 import { useUsers } from '@/context/UsersContext';
 import { isTraineeInActiveTraining } from '@/lib/hrReport';
 import { isOperationalAlertsRoute, needsProgressProvider } from '@/data/departments';
+import { canViewEmployee } from '@/lib/accessControl';
 
 function LoadingScreen() {
   return (
@@ -50,15 +51,23 @@ function ProgressGate({ children }: { children: React.ReactNode }) {
   const { canOpenMentorPanel } = useAccessControl();
   const { visibleTrainees } = useUsers();
   const userId = useStagiarId();
+  const location = useLocation();
 
   const activeTrainees = useMemo(
     () => visibleTrainees.filter(isTraineeInActiveTraining),
     [visibleTrainees],
   );
 
+  const viewAsTraineeId = useMemo(() => {
+    const candidate = new URLSearchParams(location.search).get('viewAs');
+    if (!candidate || !user || !canViewEmployee(user, candidate)) return undefined;
+    return candidate;
+  }, [location.search, user]);
+
   if (loading) return <LoadingScreen />;
 
   const effectiveUserId =
+    viewAsTraineeId ||
     userId ||
     (isInTraining ? user?.id : undefined) ||
     (canOpenMentorPanel ? activeTrainees[0]?.id : undefined);

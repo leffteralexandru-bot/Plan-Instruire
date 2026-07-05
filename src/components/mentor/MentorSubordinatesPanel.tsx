@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useUsers } from '@/context/UsersContext';
 import { useHrPerformance } from '@/hooks/useHrPerformance';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import { Card } from '@/components/ui/Card';
@@ -9,19 +8,17 @@ import { EVALUATION_STATUS_LABELS, hrPerformanceStore } from '@/lib/hrPerformanc
 import { useAuth } from '@/hooks/useAuth';
 import { EVALUATION_WEEK_LABELS } from '@/lib/evaluationWeekMentors';
 import { getEvaluationWorkflowLabel } from '@/lib/evaluationStages';
+import { profileLinkedToMentor } from '@/lib/employeeMentorAssignments';
+import { userStore } from '@/lib/userStore';
+import { storage } from '@/store/storage';
 
 export function MentorSubordinatesPanel() {
   const { user } = useAuth();
-  const { visibleTrainees } = useUsers();
   const { profiles } = useHrPerformance();
   const { filterProfiles } = useAccessControl();
   if (!user) return null;
 
-  const rows = filterProfiles(profiles).filter((p) => {
-    const fromMainEnrollment = visibleTrainees.some((t) => t.id === p.userId);
-    const fromWeeklyPlan = (p.weeklyEvalMentors ?? []).some((w) => w.mentorId === user.id);
-    return fromMainEnrollment || fromWeeklyPlan;
-  });
+  const rows = filterProfiles(profiles).filter((p) => profileLinkedToMentor(p, user.id));
 
   if (!rows.length) return null;
 
@@ -29,7 +26,7 @@ export function MentorSubordinatesPanel() {
     <Card>
       <h2 className="text-lg font-semibold text-corporate-dark mb-1">Echipa mea — evaluări & dosare</h2>
       <p className="text-sm text-corporate-muted mb-4">
-        Accesați fișa fiecărui subordonat: progres instruire, evaluări tri-lunale, erori.
+        Angajații pe care i-ați instruit sau îi urmăriți — dosar, evaluări tri-lunale, istoric instruire.
       </p>
       <ul className="space-y-2">
         {rows.map((p) => {
@@ -37,6 +34,18 @@ export function MentorSubordinatesPanel() {
           const weekTags = (p.weeklyEvalMentors ?? [])
             .filter((w) => w.mentorId === user.id)
             .map((w) => `S${w.weekNumber}`);
+          const activeEnrollment = userStore.getActiveEnrollmentForAngajat(p.userId);
+          const instructedByMe = activeEnrollment?.mentorId === user.id;
+          const trainingFinished =
+            storage.getProgress(p.userId).certificate ||
+            userStore
+              .getEnrollments()
+              .some(
+                (e) =>
+                  e.angajatId === p.userId &&
+                  e.mentorId === user.id &&
+                  e.status === 'completed',
+              );
           return (
             <li
               key={p.userId}
@@ -54,6 +63,12 @@ export function MentorSubordinatesPanel() {
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {instructedByMe && !trainingFinished && (
+                  <Badge variant="info">În instruire</Badge>
+                )}
+                {trainingFinished && instructedByMe && (
+                  <Badge variant="success">Instruire finalizată</Badge>
+                )}
                 {ev && (
                   <>
                     <Badge variant={ev.status === 'intarziat' ? 'warning' : 'default'}>

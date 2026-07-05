@@ -1,6 +1,10 @@
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import type { RoleDashboardMetrics } from '@/lib/roleDashboard';
 import type { ActionInboxRole } from '@/lib/actionInbox';
+import { PROGRAM_AREA_THEMES, type ProgramArea } from '@/lib/programAreaTheme';
+import { INGINERI_PLAN_PATH } from '@/data/departments';
+import { angajatPanelLink, evaluationsLink } from '@/lib/actionFocus';
 
 const ROLE_LABELS: Record<ActionInboxRole, string> = {
   hr: 'Situație generală',
@@ -9,17 +13,25 @@ const ROLE_LABELS: Record<ActionInboxRole, string> = {
   employee: 'Situația mea',
 };
 
+interface SummaryCard {
+  label: string;
+  value: string;
+  highlight?: boolean;
+  link?: string;
+}
+
 interface RoleSummaryCardsProps {
   role: ActionInboxRole;
   metrics: RoleDashboardMetrics;
+  userId?: string;
 }
 
-export function RoleSummaryCards({ role, metrics }: RoleSummaryCardsProps) {
-  const cards: { label: string; value: string; highlight?: boolean }[] = [];
+export function RoleSummaryCards({ role, metrics, userId }: RoleSummaryCardsProps) {
+  const cards: SummaryCard[] = [];
 
   if (role === 'mentor') {
     cards.push(
-      { label: 'Stagieri activi', value: String(metrics.subordinatesCount) },
+      { label: 'În instruire acum', value: String(metrics.subordinatesCount) },
       {
         label: 'Validări pending',
         value: String(metrics.pendingValidations),
@@ -54,11 +66,16 @@ export function RoleSummaryCards({ role, metrics }: RoleSummaryCardsProps) {
         highlight: metrics.errorsThisMonth > 0,
       },
     );
-  } else if (role === 'employee') {
+  } else if (role === 'employee' && userId) {
     if (metrics.trainingProgressPercent != null) {
       cards.push({
-        label: 'Progres instruire',
+        label:
+          metrics.trainingProgressPercent >= 100 ? 'Instruire finalizată' : 'Progres instruire',
         value: `${metrics.trainingProgressPercent}%`,
+        link:
+          metrics.trainingProgressPercent >= 100
+            ? angajatPanelLink({ focus: 'parcurs', section: 'training' })
+            : INGINERI_PLAN_PATH,
       });
     }
     cards.push(
@@ -66,11 +83,22 @@ export function RoleSummaryCards({ role, metrics }: RoleSummaryCardsProps) {
         label: 'Evaluare activă',
         value: metrics.activeEvaluations ? 'Da' : 'Nu',
         highlight: metrics.lateEvaluations > 0,
+        link: metrics.activeEvaluations
+          ? evaluationsLink({ angajatId: userId })
+          : angajatPanelLink({ focus: 'parcurs', section: 'evaluation' }),
       },
       {
         label: 'Re-instruire',
-        value: metrics.activeRetraining ? 'În curs' : '—',
+        value: metrics.activeRetraining
+          ? 'În curs'
+          : metrics.completedRetraining
+            ? `${metrics.completedRetraining} finalizate`
+            : '—',
         highlight: metrics.activeRetraining > 0,
+        link:
+          metrics.activeRetraining || metrics.completedRetraining
+            ? angajatPanelLink({ focus: 'parcurs', section: 'retraining' })
+            : undefined,
       },
       {
         label: 'Acțiuni urgente',
@@ -82,22 +110,71 @@ export function RoleSummaryCards({ role, metrics }: RoleSummaryCardsProps) {
 
   if (!cards.length) return null;
 
+  const cardArea = (label: string): ProgramArea | undefined => {
+    if (label.includes('instruire') || label.includes('Instruire')) return 'training';
+    if (label.includes('Evaluare')) return 'evaluation';
+    if (label.includes('Re-instruire') || label.includes('re-instruire')) return 'retraining';
+    return undefined;
+  };
+
   return (
     <div>
       <h2 className="text-sm font-semibold text-corporate-muted uppercase tracking-wide mb-2">
         {ROLE_LABELS[role]}
       </h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((c) => (
-          <Card key={c.label} padding="sm">
-            <p className="text-[10px] uppercase tracking-wide text-corporate-muted">{c.label}</p>
-            <p
-              className={`text-2xl font-bold mt-1 ${c.highlight ? 'text-amber-600' : 'text-corporate-dark'}`}
+        {cards.map((c) => {
+          const area = cardArea(c.label);
+          const theme = area ? PROGRAM_AREA_THEMES[area] : null;
+          const inner = (
+            <>
+              <p
+                className={`text-[10px] uppercase tracking-wide ${
+                  theme ? theme.summaryLabel : 'text-corporate-muted'
+                }`}
+              >
+                {c.label}
+              </p>
+              <p
+                className={`text-2xl font-bold mt-1 ${
+                  c.highlight
+                    ? area === 'retraining'
+                      ? 'text-orange-700'
+                      : area === 'evaluation'
+                        ? 'text-indigo-800'
+                        : 'text-amber-600'
+                    : 'text-corporate-dark'
+                }`}
+              >
+                {c.value}
+              </p>
+              {c.link && (
+                <p className="text-[10px] text-corporate-gold mt-1 font-medium">Deschide →</p>
+              )}
+            </>
+          );
+
+          return (
+            <Card
+              key={c.label}
+              padding="sm"
+              className={[
+                theme ? `border ${theme.summaryCard}` : undefined,
+                c.link ? 'hover:border-corporate-gold/40 transition-colors' : undefined,
+              ]
+                .filter(Boolean)
+                .join(' ')}
             >
-              {c.value}
-            </p>
-          </Card>
-        ))}
+              {c.link ? (
+                <Link to={c.link} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold rounded">
+                  {inner}
+                </Link>
+              ) : (
+                inner
+              )}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

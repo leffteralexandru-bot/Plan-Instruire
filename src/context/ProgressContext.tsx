@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type {
-  ActConstatare,
   AppProgress,
   Certificate,
   DayPlan,
@@ -40,7 +39,6 @@ export interface ProgressContextValue {
   setMentorValidation: (dayId: string, validated: boolean, notes?: string) => void;
   setMentorUnlock: (dayId: string, unlocked: boolean) => void;
   saveFeedback: (feedback: FeedbackForm) => void;
-  saveActConstatare: (act: Omit<ActConstatare, 'id' | 'createdAt'>) => void;
   saveQuizResult: (dayId: string, result: QuizResult, autoTaskId?: string) => void;
   savePhoto: (photo: Omit<PhotoAttachment, 'createdAt'>) => void;
   saveDevelopmentPlan: (plan: Omit<DevelopmentPlan, 'completedAt'>) => void;
@@ -214,18 +212,6 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
     [progress, persist],
   );
 
-  const saveActConstatare = useCallback(
-    (act: Omit<ActConstatare, 'id' | 'createdAt'>) => {
-      if (!progress) return;
-      const entry: ActConstatare = { ...act, id: `act-${Date.now()}`, createdAt: new Date().toISOString() };
-      persist(
-        { ...progress, acteConstatare: [...progress.acteConstatare, entry] },
-        { action: 'act_constatare', details: act.proiectNume },
-      );
-    },
-    [progress, persist],
-  );
-
   const saveQuizResult = useCallback(
     (dayId: string, result: QuizResult, autoTaskId?: string) => {
       if (!progress) return;
@@ -367,7 +353,6 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
       setMentorValidation,
       setMentorUnlock,
       saveFeedback,
-      saveActConstatare,
       saveQuizResult,
       savePhoto,
       saveDevelopmentPlan,
@@ -386,7 +371,6 @@ export function ProgressProvider({ userId, children }: { userId: string | undefi
       setMentorValidation,
       setMentorUnlock,
       saveFeedback,
-      saveActConstatare,
       saveQuizResult,
       savePhoto,
       saveDevelopmentPlan,

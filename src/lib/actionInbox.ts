@@ -1,11 +1,19 @@
-import { ingineriPath, INGINERI_ANGAJAT_PANEL_PATH, INGINERI_PLAN_PATH, INGINERI_SUPERVISOR_PANEL_PATH } from '@/data/departments';
-import { adminPath } from '@/lib/adminRoutes';
+import { INGINERI_PLAN_PATH } from '@/data/departments';
+import {
+  adminActionLink,
+  evaluationsLink,
+  mentorPanelLink,
+  reTrainingLessonPath,
+  supervisorPanelLink,
+} from '@/lib/actionFocus';
 import { getPendingMentorValidations, buildTraineeHrReport } from '@/lib/hrReport';
 import {
   canEmployeeSubmitSelfAssessment,
   getActiveStage,
   getEvaluationWorkflowLabel,
+  isEmployeeSelfAssessmentStageDone,
   isSelfAssessmentComplete,
+  isSupervisorEvaluationStageDone,
 } from '@/lib/evaluationStages';
 import { isSupervisorOf } from '@/lib/supervisor';
 import {
@@ -16,7 +24,9 @@ import {
   SELF_ASSESSMENT_SUPERVISOR_ESCALATION_DAYS,
 } from '@/lib/hrPerformanceStore';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
-import { normalizeReTrainingStatus, RE_TRAINING_STATUS_LABELS } from '@/lib/reTrainingWorkflow';
+import { pedagogicReTrainingStore } from '@/lib/pedagogicReTraining';
+import { normalizeReTrainingStatus, RE_TRAINING_STATUS_LABELS, canTrainerSubmitReport, canMentorViewAssignedSession, isReTrainingVisibleToTrainee } from '@/lib/reTrainingWorkflow';
+import { ERROR_MOTIV_LABELS } from '@/lib/hrPerformanceStore';
 import { userStore } from '@/lib/userStore';
 import { storage } from '@/store/storage';
 
@@ -74,7 +84,7 @@ function pushEvaluationSupervisorItems(userId: string, items: ActionInboxItem[])
         title: `Evaluare supervizor — ${name}`,
         message: getEvaluationWorkflowLabel(ev),
         actionLabel: 'Deschide evaluarea',
-        link: ingineriPath('/evaluari'),
+        link: evaluationsLink({ angajatId: profile.userId, evalId: ev.id }),
         category: 'evaluation',
         angajatId: profile.userId,
       });
@@ -93,7 +103,7 @@ function pushEvaluationSupervisorItems(userId: string, items: ActionInboxItem[])
           title: `Auto-evaluare lipsă — ${name}`,
           message: `${elapsed} zile de la start · termen ${ev.termenReevaluare}`,
           actionLabel: 'Urmărește angajatul',
-          link: ingineriPath(`/angajat/${profile.userId}`),
+          link: supervisorPanelLink({ focus: 'team', angajatId: profile.userId }),
           category: 'evaluation',
           angajatId: profile.userId,
         });
@@ -114,10 +124,10 @@ function pushReTrainingSupervisorItems(userId: string, items: ActionInboxItem[])
       items.push({
         id: `sup-retrain-plan-${session.id}`,
         severity: 'urgent',
-        title: `Planifică re-instruire — ${name}`,
-        message: session.titlu,
-        actionLabel: 'Panou supervizor',
-        link: INGINERI_SUPERVISOR_PANEL_PATH,
+        title: `Pregătește re-instruire — ${name}`,
+        message: 'Încarcă nota semnată, alege tema și mentorul, trimite la HR',
+        actionLabel: 'Pregătește planul',
+        link: supervisorPanelLink({ focus: 'retrain', sessionId: session.id, angajatId: session.angajatId }),
         category: 'retraining',
         angajatId: session.angajatId,
       });
@@ -128,15 +138,52 @@ function pushReTrainingSupervisorItems(userId: string, items: ActionInboxItem[])
         title: `Confirmă instruirea — ${name}`,
         message: `Raport trainer · ${session.topicTitle ?? session.titlu}`,
         actionLabel: 'Confirmă',
-        link: INGINERI_SUPERVISOR_PANEL_PATH,
+        link: supervisorPanelLink({ focus: 'retrain', sessionId: session.id, angajatId: session.angajatId }),
         category: 'retraining',
         angajatId: session.angajatId,
       });
     }
   }
+
+  for (const cerere of pedagogicReTrainingStore.getCereri({ supervisorId: userId, status: 'trimisa' })) {
+    const name = profileName(cerere.angajatId);
+    items.push({
+      id: `sup-cerere-reinstruire-${cerere.id}`,
+      severity: 'urgent',
+      title: `Cerere re-instruire — ${name}`,
+      message: `${cerere.topicTitle} · ${cerere.motiv}`,
+      actionLabel: 'Răspunde',
+      link: supervisorPanelLink({ focus: 'retrain', angajatId: cerere.angajatId }),
+      category: 'retraining',
+      angajatId: cerere.angajatId,
+    });
+  }
+}
+
+function pushTrainerReTrainingItems(userId: string, items: ActionInboxItem[]): void {
+  for (const session of trainingSystemStore.getReTrainingSessions()) {
+    if (!canMentorViewAssignedSession(session, userId)) continue;
+    const name = profileName(session.angajatId);
+    const ready = canTrainerSubmitReport(session);
+    items.push({
+      id: `trainer-retrain-${session.id}`,
+      severity: ready ? 'urgent' : 'normal',
+      title: ready ? `Confirmă re-instruire — ${name}` : `Re-instruire — ${name}`,
+      message: ready
+        ? 'Angajatul a finalizat lecția — confirmați înțelegerea'
+        : (session.topicTitle ?? session.titlu),
+      actionLabel: ready ? 'Confirmă în panou mentor' : 'Vezi lecția',
+      link: ready
+        ? mentorPanelLink({ focus: 'retrain', sessionId: session.id, traineeId: session.angajatId })
+        : reTrainingLessonPath(session.id),
+      category: 'retraining',
+      angajatId: session.angajatId,
+    });
+  }
 }
 
 function pushMentorValidationItems(userId: string, items: ActionInboxItem[]): void {
+  pushTrainerReTrainingItems(userId, items);
   const trainees = userStore.getTraineeProfiles({ mentorId: userId });
   for (const t of trainees) {
     const pending = getPendingMentorValidations(storage.getProgress(t.id));
@@ -146,8 +193,8 @@ function pushMentorValidationItems(userId: string, items: ActionInboxItem[]): vo
       severity: pending.length >= 2 ? 'urgent' : 'normal',
       title: `Validări pending — ${t.name}`,
       message: `Ziua ${pending.join(', Ziua ')}`,
-      actionLabel: 'Panou mentor',
-      link: ingineriPath('/mentor'),
+      actionLabel: 'Validează zilele',
+      link: mentorPanelLink({ focus: 'validations', traineeId: t.id }),
       category: 'validation',
       angajatId: t.id,
     });
@@ -163,7 +210,7 @@ function pushMentorValidationItems(userId: string, items: ActionInboxItem[]): vo
           title: `Feedback Săpt. ${week === 2 ? 'II' : 'IV'} — ${t.name}`,
           message: 'Formular necompletat în Panou Mentor',
           actionLabel: 'Completează',
-          link: ingineriPath('/mentor'),
+          link: mentorPanelLink({ focus: 'feedback', traineeId: t.id, week }),
           category: 'validation',
           angajatId: t.id,
         });
@@ -183,7 +230,7 @@ function pushHrExceptionItems(items: ActionInboxItem[]): void {
         title: `Fără supervizor — ${name}`,
         message: 'Setați supervizorul în Setări → planificare angajat',
         actionLabel: 'Setări',
-        link: adminPath('setari'),
+        link: adminActionLink('setari', { focus: 'settings', angajatId: profile.userId }),
         category: 'config',
         angajatId: profile.userId,
         hrException: true,
@@ -198,7 +245,7 @@ function pushHrExceptionItems(items: ActionInboxItem[]): void {
         title: `Fără mentor instruire — ${name}`,
         message: 'Asignați mentor principal în Setări',
         actionLabel: 'Setări',
-        link: adminPath('setari'),
+        link: adminActionLink('setari', { focus: 'settings', angajatId: profile.userId }),
         category: 'config',
         angajatId: profile.userId,
         hrException: true,
@@ -215,7 +262,7 @@ function pushHrExceptionItems(items: ActionInboxItem[]): void {
         title: `Evaluare întârziată — ${name}`,
         message: `Termen depășit · ${getEvaluationWorkflowLabel(ev)}`,
         actionLabel: 'Evaluări',
-        link: adminPath('evaluari'),
+        link: adminActionLink('evaluari', { focus: 'eval', angajatId: profile.userId, evalId: ev.id }),
         category: 'evaluation',
         angajatId: profile.userId,
         hrException: true,
@@ -230,7 +277,7 @@ function pushHrExceptionItems(items: ActionInboxItem[]): void {
         title: `Validare HR — ${name}`,
         message: 'Supervizorul a completat evaluarea',
         actionLabel: 'Finalizează',
-        link: adminPath('evaluari'),
+        link: adminActionLink('evaluari', { focus: 'eval', angajatId: profile.userId, evalId: ev.id }),
         category: 'evaluation',
         angajatId: profile.userId,
         hrException: true,
@@ -249,7 +296,7 @@ function pushHrExceptionItems(items: ActionInboxItem[]): void {
         title: `Auto-evaluare necompletată — ${name}`,
         message: `${daysSince(ev.perioadaStart)} zile · escalare HR (supervizor notificat)`,
         actionLabel: 'Vezi fișa',
-        link: ingineriPath(`/angajat/${profile.userId}`),
+        link: supervisorPanelLink({ focus: 'team', angajatId: profile.userId }),
         category: 'evaluation',
         angajatId: profile.userId,
         hrException: true,
@@ -257,21 +304,73 @@ function pushHrExceptionItems(items: ActionInboxItem[]): void {
     }
   }
 
-  for (const session of trainingSystemStore.getReTrainingSessions()) {
-    const st = normalizeReTrainingStatus(session.status);
-    if (st !== 'confirmat_supervizor') continue;
-    const name = profileName(session.angajatId);
+  for (const err of trainingSystemStore.getErrorsPendingHrReview()) {
+    const name = profileName(err.angajatId);
+    const mentor =
+      err.reTrainingProposal?.trainerId &&
+      userStore.getUserById(err.reTrainingProposal.trainerId)?.name;
     items.push({
-      id: `hr-retrain-ok-${session.id}`,
-      severity: 'normal',
-      title: `OK HR re-instruire — ${name}`,
-      message: RE_TRAINING_STATUS_LABELS[st],
-      actionLabel: 'Supervizor',
-      link: adminPath('supervizor'),
+      id: `hr-error-confirm-${err.id}`,
+      severity: 'urgent',
+      title: `Confirmă eroare — ${name}`,
+      message: `${ERROR_MOTIV_LABELS[err.motiv]}${mentor ? ` · mentor: ${mentor}` : ''}`,
+      actionLabel: 'Confirmă eroarea',
+      link: adminActionLink('erori', { focus: 'error', errorId: err.id, angajatId: err.angajatId }),
       category: 'retraining',
-      angajatId: session.angajatId,
+      angajatId: err.angajatId,
       hrException: true,
     });
+  }
+
+  for (const session of trainingSystemStore.getReTrainingSessions()) {
+    const st = normalizeReTrainingStatus(session.status);
+    if (st === 'asteapta_hr') {
+      const name = profileName(session.angajatId);
+      items.push({
+        id: `hr-retrain-approve-${session.id}`,
+        severity: 'urgent',
+        title: `Aprobă re-instruire — ${name}`,
+        message: `${session.topicTitle ?? session.titlu} · trainer: ${userStore.getUserById(session.trainerId ?? session.mentorId)?.name ?? '—'}`,
+        actionLabel: 'Aprobă planul',
+        link: adminActionLink('supervizor', { focus: 'retrain', sessionId: session.id, angajatId: session.angajatId }),
+        category: 'retraining',
+        angajatId: session.angajatId,
+        hrException: true,
+      });
+    }
+    if (st === 'confirmat_supervizor') {
+      const name = profileName(session.angajatId);
+      items.push({
+        id: `hr-retrain-ok-${session.id}`,
+        severity: 'normal',
+        title: `OK HR re-instruire — ${name}`,
+        message: RE_TRAINING_STATUS_LABELS[st],
+        actionLabel: 'Vezi sesiunea',
+        link: adminActionLink('supervizor', { focus: 'retrain', sessionId: session.id, angajatId: session.angajatId }),
+        category: 'retraining',
+        angajatId: session.angajatId,
+        hrException: true,
+      });
+    }
+    if (
+      st === 'finalizat' &&
+      session.trigger === 'cerere_angajat' &&
+      session.hrReportSubmittedAt &&
+      !session.hrConfirmedAt
+    ) {
+      const name = profileName(session.angajatId);
+      items.push({
+        id: `hr-ped-retrain-${session.id}`,
+        severity: 'normal',
+        title: `Raport re-instruire pedagogică — ${name}`,
+        message: session.topicTitle ?? session.titlu,
+        actionLabel: 'Vezi raportul',
+        link: adminActionLink('supervizor', { focus: 'retrain', sessionId: session.id, angajatId: session.angajatId }),
+        category: 'retraining',
+        angajatId: session.angajatId,
+        hrException: true,
+      });
+    }
   }
 }
 
@@ -296,6 +395,21 @@ function pushEmployeeItems(userId: string, items: ActionInboxItem[]): void {
     }
   }
 
+  for (const reSession of trainingSystemStore
+    .getReTrainingSessions({ angajatId: userId })
+    .filter((s) => isReTrainingVisibleToTrainee(s))) {
+    items.push({
+      id: `emp-retrain-${reSession.id}`,
+      severity: 'urgent',
+      title: reSession.trigger === 'cerere_angajat' ? 'Re-instruire planificată' : 'Re-instruire aprobată de HR',
+      message: reSession.topicTitle ?? reSession.titlu,
+      actionLabel: 'Deschide lecția',
+      link: reTrainingLessonPath(reSession.id),
+      category: 'retraining',
+      angajatId: userId,
+    });
+  }
+
   const ev = hrPerformanceStore.getCurrentEvaluation(userId);
   if (!ev || ev.status === 'evaluat') return;
 
@@ -311,8 +425,30 @@ function pushEmployeeItems(userId: string, items: ActionInboxItem[]): void {
           ? `Termen evaluare în ${daysLeft} zile · ${ev.termenReevaluare}`
           : `Etapa curentă: ${getEvaluationWorkflowLabel(ev)}`,
       actionLabel: 'Auto-evaluare',
-      link: INGINERI_ANGAJAT_PANEL_PATH,
+      link: evaluationsLink({ angajatId: userId, evalId: ev.id }),
       category: 'self_assessment',
+      angajatId: userId,
+    });
+  } else if (isEmployeeSelfAssessmentStageDone(ev) && !isSupervisorEvaluationStageDone(ev)) {
+    items.push({
+      id: `emp-self-done-${ev.id}`,
+      severity: 'normal',
+      title: 'Auto-evaluare trimisă',
+      message: 'Așteptați evaluarea supervizorului — revedeți ce ați trimis',
+      actionLabel: 'Vezi evaluarea',
+      link: evaluationsLink({ angajatId: userId, evalId: ev.id }),
+      category: 'evaluation',
+      angajatId: userId,
+    });
+  } else if (isSupervisorEvaluationStageDone(ev)) {
+    items.push({
+      id: `emp-sup-done-${ev.id}`,
+      severity: 'normal',
+      title: 'Evaluare supervizor înregistrată',
+      message: 'HR validează ciclul — consultați statusul evaluării',
+      actionLabel: 'Vezi evaluarea',
+      link: evaluationsLink({ angajatId: userId, evalId: ev.id }),
+      category: 'evaluation',
       angajatId: userId,
     });
   } else if (daysLeft >= 0 && daysLeft <= EVALUATION_REMINDER_START_DAYS) {
@@ -322,7 +458,7 @@ function pushEmployeeItems(userId: string, items: ActionInboxItem[]): void {
       title: 'Evaluare tri-lunară se apropie',
       message: `Termen ${ev.termenReevaluare} · ${getEvaluationWorkflowLabel(ev)}`,
       actionLabel: 'Vezi status',
-      link: ingineriPath('/evaluari'),
+      link: evaluationsLink({ angajatId: userId, evalId: ev.id }),
       category: 'evaluation',
       angajatId: userId,
     });

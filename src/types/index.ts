@@ -65,6 +65,8 @@ export interface Task {
   id: string;
   label: string;
   description?: string;
+  /** Materiale atașate taskului (video, PDF, link) */
+  materials?: Material[];
 }
 
 export interface DayPlan {
@@ -210,6 +212,21 @@ export type ErrorMotiv =
   | 'echipament'
   | 'altul';
 export type ActionPlanStatus = 'deschis' | 'in_lucru' | 'inchis';
+
+export type ErrorCaseHrStatus = 'ciorna' | 'trimis_hr' | 'aprobat_hr' | 'respins_hr';
+
+export interface ErrorReTrainingProposal {
+  topicDayId: string;
+  topicTitle: string;
+  trainerId: string;
+  lessonNotes: string;
+  lessonDocumentIds: string[];
+  /** Data propusă de supervizor pentru începerea re-instruirii */
+  plannedStartDate?: string;
+  submittedAt?: string;
+  submittedBy?: string;
+}
+
 export type HrDocumentType =
   | 'template_evaluare'
   | 'evaluare_semnata'
@@ -307,6 +324,8 @@ export interface EmployeeProfile {
   /** Ultimul nivel competență validat HR (matrice inginer proiectant) */
   nivelCompetenta?: DesignerCompetencyLevel;
   scorCompetentaTotal?: number;
+  /** Poză profil — data URL (JPEG comprimat) */
+  photoUrl?: string;
   /** Doar HR/Admin — coeficient salarial din matrice */
   coeficientSalarialPercent?: number;
   createdAt: string;
@@ -397,6 +416,29 @@ export interface ErrorActionPlan {
   inchisLa?: string;
 }
 
+/** Notă de constatare (sesizare) — comandă material refacere */
+export interface NotaConstatareRefacere {
+  deLa: string;
+  data: string;
+  subsemnatul: string;
+  dataComanda: string;
+  client: string;
+  nrComanda: string;
+  subGarantie: 'da' | 'nu';
+  materialCuloareTip: string;
+  cantitate: string;
+  descriereDefect: string;
+  cauzaDefect: string;
+  persoanaResponsabila: string;
+  incheiatDe: string;
+  angajatConfirmare: string;
+  martorNume?: string;
+  martorFunctie?: string;
+  anexe?: string;
+  masuriCorective1: string;
+  masuriCorective2?: string;
+}
+
 export interface ErrorCase {
   id: string;
   angajatId: string;
@@ -407,6 +449,16 @@ export interface ErrorCase {
   motiv: ErrorMotiv;
   descriere: string;
   documentId?: string;
+  /** Scan notă de constatare semnată de angajat + supervizor */
+  signedDocumentId?: string;
+  notaConstatare?: NotaConstatareRefacere;
+  /** Propunere re-instruire completată de supervizor înainte de trimitere la HR */
+  reTrainingProposal?: ErrorReTrainingProposal;
+  hrStatus?: ErrorCaseHrStatus;
+  hrReviewNote?: string;
+  hrReviewedAt?: string;
+  hrReviewedBy?: string;
+  reTrainingSessionId?: string;
   planActiune: ErrorActionPlan;
   legaturaBiblioteca?: string;
   migratedFromActId?: string;
@@ -456,9 +508,36 @@ export interface PlanArchiveRecord {
   index: PlanArchiveIndexEntry[];
 }
 
-/** Sesiune re-instruire după erori — flux supervizor → trainer → supervizor → HR */
+/** Motiv cerere re-instruire pedagogică (inițiată de angajat) */
+export type ReinstruireCerereMotiv = 'eroare' | 'neintelegere' | 'uitare' | 'altele';
+
+export type ReinstruireCerereStatus = 'trimisa' | 'acceptata' | 'respinsa';
+
+export type ReTrainingTrigger = 'cerere_angajat' | 'eroare';
+
+/** Cerere angajat → supervizor (fără HR la început) */
+export interface ReinstruireCerere {
+  id: string;
+  angajatId: string;
+  supervisorId: string;
+  topicDayId: string;
+  topicTitle: string;
+  topicWeekNumber?: number;
+  topicDayNumber?: number;
+  motiv: ReinstruireCerereMotiv;
+  mesaj?: string;
+  status: ReinstruireCerereStatus;
+  rejectReason?: string;
+  reTrainingSessionId?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  createdAt: string;
+}
+
+/** Sesiune re-instruire după erori — notă semnată → plan supervizor → OK HR → trainer → confirmare */
 export type ReTrainingStatus =
   | 'alerta_supervizor'
+  | 'asteapta_hr'
   | 'planificat'
   | 'in_curs'
   | 'raport_trainer'
@@ -469,6 +548,8 @@ export type ReTrainingStatus =
 
 export interface TrainerReport {
   text: string;
+  /** Confirmare mentor: a înțeles lecția sau nu */
+  comprehension?: 'inteles' | 'neinteles';
   submittedAt: string;
   submittedBy: string;
   submittedByName: string;
@@ -486,6 +567,13 @@ export interface ReTrainingSession {
   mentorId: string;
   errorMotiv: ErrorMotiv;
   errorCaseIds: string[];
+  /** cerere_angajat = flux pedagogic (fără HR la start) */
+  trigger?: ReTrainingTrigger;
+  reinstruireCerereId?: string;
+  cerereMotiv?: ReinstruireCerereMotiv;
+  /** Raport trimis la HR la final (doar flux pedagogic) */
+  hrReportSubmittedAt?: string;
+  hrReportSubmittedBy?: string;
   titlu: string;
   descriere: string;
   /** Temă din planul de instruire de bază (zi) */
@@ -496,10 +584,25 @@ export interface ReTrainingSession {
   trainerReport?: TrainerReport;
   supervisorConfirmedAt?: string;
   supervisorConfirmedBy?: string;
+  supervisorSubmittedAt?: string;
+  supervisorSubmittedBy?: string;
+  hrPlanApprovedAt?: string;
+  hrPlanApprovedBy?: string;
+  hrPlanApprovedByName?: string;
+  hrGroupedAt?: string;
+  hrGroupedBy?: string;
+  hrGroupedByName?: string;
   hrConfirmedAt?: string;
   hrConfirmedBy?: string;
   hrConfirmedByName?: string;
   status: ReTrainingStatus;
+  /** Progres lecție re-instruire (doar ziua aleasă) */
+  lessonProgress?: DayProgress;
+  /** Angajatul a marcat lecția ca parcursă */
+  traineeCompletedAt?: string;
+  traineeCompletedBy?: string;
+  /** Data la care începe re-instruirea (confirmată sau propusă) */
+  plannedStartDate?: string;
   termenLimita: string;
   finalizatLa?: string;
   createdAt: string;

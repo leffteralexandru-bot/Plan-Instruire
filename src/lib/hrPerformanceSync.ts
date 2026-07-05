@@ -40,8 +40,8 @@ export async function pushHrPerformanceToCloud(): Promise<boolean> {
 export async function syncHrPerformanceWithCloud(): Promise<'pushed' | 'pulled' | 'merged' | 'skipped'> {
   if (!isSupabaseConfigured()) return 'skipped';
 
-  const local = hrPerformanceStore.exportPayload();
   const cloud = await pullHrPerformanceFromCloud();
+  const local = hrPerformanceStore.exportPayload();
 
   if (!cloud) {
     const ok = await pushHrPerformanceToCloud();
@@ -66,4 +66,16 @@ export async function syncHrPerformanceWithCloud(): Promise<'pushed' | 'pulled' 
   hrPerformanceStore.importPayload(cloud, 'merge');
   await pushHrPerformanceToCloud();
   return 'merged';
+}
+
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Trimite în cloud după modificări locale (debounced). */
+export function scheduleHrCloudPush(): void {
+  if (!isSupabaseConfigured()) return;
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => {
+    pushTimer = null;
+    void pushHrPerformanceToCloud();
+  }, 800);
 }

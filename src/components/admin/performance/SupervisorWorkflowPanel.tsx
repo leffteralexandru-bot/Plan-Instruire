@@ -9,32 +9,39 @@ import { trainingSystemStore, getBaseTrainingTopics } from '@/lib/trainingSystem
 import { hrPerformanceStore, ERROR_MOTIV_LABELS } from '@/lib/hrPerformanceStore';
 import {
   RE_TRAINING_STATUS_LABELS,
-  canHrConfirm,
+  canHrApprovePlan,
   canSupervisorConfirm,
   canSupervisorPlan,
+  errorCasesHaveSignedNota,
   normalizeReTrainingStatus,
 } from '@/lib/reTrainingWorkflow';
-import { getSupervisedEmployeeIds, isSupervisorOf } from '@/lib/supervisor';
+import { SupervisorCompletedReTrainingPanel } from '@/components/supervisor/SupervisorCompletedReTrainingPanel';
+import { isSupervisorOf } from '@/lib/supervisor';
+import { getSupervisorActiveReTrainingSessions } from '@/lib/supervisorReTraining';
+import { useTrainingSystemVersion } from '@/hooks/useTrainingSystemVersion';
 import { canManageUsers } from '@/lib/roles';
+import { userStore } from '@/lib/userStore';
 import { SupervisorErrorRegistrationPanel } from '@/components/shared/SupervisorErrorRegistrationPanel';
+import { ErrorCaseSignedNotaUpload } from '@/components/shared/ErrorCaseSignedNotaUpload';
+import { RE_TRAINING_FLOW_SHELL } from '@/lib/reTrainingTheme';
+import { useActionFocusEffect } from '@/hooks/useActionFocus';
+import { actionFocusElementId, highlightActionElement } from '@/lib/actionFocus';
 import type { ReTrainingSession } from '@/types';
 
 function SessionCard({
   session,
   users,
-  mentors,
-  isHr,
   currentUserId,
   onRefresh,
 }: {
   session: ReTrainingSession;
   users: { id: string; name: string }[];
-  mentors: { id: string; name: string }[];
-  isHr: boolean;
   currentUserId: string;
   onRefresh: () => void;
 }) {
   const { uploadDocument } = useHrPerformance();
+  const { user } = useAuth();
+  const isHr = !!user && canManageUsers(user);
   const profile = hrPerformanceStore.getProfile(session.angajatId);
   const angajatName = profile ? `${profile.prenume} ${profile.nume}` : session.angajatId;
   const status = normalizeReTrainingStatus(session.status);
@@ -44,27 +51,79 @@ function SessionCard({
 
   const [topicDayId, setTopicDayId] = useState(session.topicDayId ?? '');
   const [trainerId, setTrainerId] = useState(session.trainerId ?? '');
+  const [supplementaryNote, setSupplementaryNote] = useState('');
   const [reportText, setReportText] = useState(session.trainerReport?.text ?? '');
   const [msg, setMsg] = useState('');
 
   const topics = getBaseTrainingTopics(profile?.departamentId ?? 'ingineri');
   const isSupervisor = isSupervisorOf(currentUserId, session.angajatId) || isHr;
   const isTrainer = (session.trainerId ?? session.mentorId) === currentUserId;
+  const signedNotasOk = errorCasesHaveSignedNota(errors);
 
-  const handlePlan = () => {
+  const trainerCandidates = useMemo(() => {
+    const base = userStore.getMentorCandidates(session.angajatId);
+    const supervisor = users.find((u) => u.id === session.supervisorId);
+    if (supervisor && !base.some((u) => u.id === supervisor.id)) {
+      return [userStore.getUserById(supervisor.id)!, ...base].filter(Boolean);
+    }
+    return base;
+  }, [session.angajatId, session.supervisorId, users]);
+
+  const handlePlan = async () => {
     if (!topicDayId || !trainerId) {
-      setMsg('Selectați tema și trainerul.');
+      setMsg('Selectați tema din planul de bază și mentorul/trainerul.');
+      return;
+    }
+    if (!signedNotasOk) {
+      setMsg('Încărcați notele semnate pentru toate erorile legate înainte de trimitere.');
       return;
     }
     const topic = topics.find((t) => t.dayId === topicDayId);
+    const fileInput = document.getElementById(`supp-${session.id}`) as HTMLInputElement;
+    const files = fileInput?.files;
+    const supplementaryDocumentIds: string[] = [];
+    if (files?.length) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file) continue;
+        const doc = await uploadDocument({
+          file,
+          tip: 're_instruire',
+          angajatId: session.angajatId,
+          uploadedBy: currentUserId,
+          uploadedByNume: users.find((u) => u.id === currentUserId)?.name ?? '',
+          reTrainingSessionId: session.id,
+          folder: 'istoric_instruire',
+          dayId: topicDayId,
+        });
+        supplementaryDocumentIds.push(doc.id);
+      }
+    }
     const result = trainingSystemStore.planReTrainingBySupervisor(session.id, {
       topicDayId,
       topicTitle: topic?.title ?? topicDayId,
       trainerId,
       supervisorId: session.supervisorId,
+      supplementaryDocumentIds,
+      supplementaryNote: supplementaryNote.trim() || undefined,
     });
     if (result) {
-      setMsg('Planificare salvată. Trainerul a fost notificat.');
+      setMsg('Re-instruire trimisă la HR pentru aprobare. Mentorul și angajatul vor fi notificați după OK HR.');
+      onRefresh();
+    } else {
+      setMsg('Nu s-a putut trimite. Verificați notele semnate și câmpurile obligatorii.');
+    }
+  };
+
+  const handleHrApprove = () => {
+    const user = users.find((u) => u.id === currentUserId);
+    if (!user) return;
+    const result = trainingSystemStore.approveReTrainingPlanByHr(session.id, {
+      id: user.id,
+      name: user.name,
+    });
+    if (result) {
+      setMsg('Plan aprobat. Mentorul și angajatul pot începe re-instruirea.');
       onRefresh();
     }
   };
@@ -91,6 +150,7 @@ function SessionCard({
     }
     const result = trainingSystemStore.submitTrainerReport(session.id, {
       text: reportText.trim(),
+      comprehension: 'inteles',
       submittedAt: new Date().toISOString(),
       submittedBy: currentUserId,
       submittedByName: users.find((u) => u.id === currentUserId)?.name ?? '',
@@ -105,23 +165,13 @@ function SessionCard({
   const handleSupervisorConfirm = () => {
     const result = trainingSystemStore.confirmBySupervisor(session.id, session.supervisorId);
     if (result) {
-      setMsg('Confirmat. HR va primi notificare pentru validare finală.');
-      onRefresh();
-    }
-  };
-
-  const handleHrConfirm = () => {
-    const user = users.find((u) => u.id === currentUserId);
-    if (!user) return;
-    const result = trainingSystemStore.confirmByHr(session.id, { id: user.id, name: user.name });
-    if (result) {
-      setMsg('Instruire confirmată. Angajatul revine la status normal.');
+      setMsg('Re-instruire finalizată și arhivată.');
       onRefresh();
     }
   };
 
   return (
-    <Card padding="sm" className="space-y-3">
+    <Card padding="sm" className="space-y-3" id={actionFocusElementId('retrain', session.id)}>
       <div className="flex flex-wrap justify-between gap-2">
         <div>
           <p className="font-semibold text-corporate-dark">{angajatName}</p>
@@ -133,6 +183,12 @@ function SessionCard({
       </div>
 
       <div className="text-xs text-corporate-muted space-y-1">
+        {session.hrGroupedByName && (
+          <p>
+            Grupată de HR: {session.hrGroupedByName}
+            {session.errorCaseIds.length > 1 ? ` · ${session.errorCaseIds.length} erori` : ''}
+          </p>
+        )}
         <p>
           Supervizor: {users.find((u) => u.id === session.supervisorId)?.name ?? '—'}
           {session.trainerId && (
@@ -143,26 +199,37 @@ function SessionCard({
       </div>
 
       {errors.length > 0 && (
-        <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-xs">
-          <p className="font-medium text-amber-900 mb-1">Erori relevante ({errors.length})</p>
-          {errors.slice(0, 3).map((e) => (
-            <p key={e.id} className="text-amber-800">
-              {e.data}: {e.descriere.slice(0, 100)}
-            </p>
+        <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 text-xs space-y-2">
+          <p className="font-medium text-amber-900">
+            Erori legate ({errors.length}) — încărcați nota semnată pentru fiecare
+          </p>
+          {errors.map((e) => (
+            <ErrorCaseSignedNotaUpload
+              key={e.id}
+              errorCase={e}
+              angajatName={angajatName}
+              compact
+              onUploaded={onRefresh}
+            />
           ))}
         </div>
       )}
 
       {canSupervisorPlan(session) && isSupervisor && (
         <div className="grid gap-2 sm:grid-cols-2 border-t border-corporate-border pt-3">
+          {!signedNotasOk && (
+            <p className="sm:col-span-2 text-xs text-amber-800 bg-amber-50 rounded-lg px-2 py-1.5">
+              Pas obligatoriu: încărcați scanul notei semnate cu angajatul înainte de trimiterea la HR.
+            </p>
+          )}
           <label className="block text-sm">
-            <span className="text-corporate-muted text-xs">Temă din planul de bază</span>
+            <span className="text-corporate-muted text-xs">Temă din instruirea de bază *</span>
             <select
               className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"
               value={topicDayId}
               onChange={(e) => setTopicDayId(e.target.value)}
             >
-              <option value="">Selectați…</option>
+              <option value="">Selectați ziua / tema…</option>
               {topics.map((t) => (
                 <option key={t.dayId} value={t.dayId}>
                   {t.label}
@@ -171,26 +238,64 @@ function SessionCard({
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-corporate-muted text-xs">Cine instruiește</span>
+            <span className="text-corporate-muted text-xs">Mentor / trainer *</span>
             <select
               className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"
               value={trainerId}
               onChange={(e) => setTrainerId(e.target.value)}
             >
-              <option value="">Selectați trainer…</option>
-              {mentors.map((m) => (
+              <option value="">Selectați mentor…</option>
+              {trainerCandidates.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
               ))}
             </select>
+            {trainerCandidates.length === 0 && (
+              <p className="text-xs text-amber-700 mt-1">
+                Nu există colegi disponibili. Cereți HR să confirme profilele angajaților activi.
+              </p>
+            )}
+          </label>
+          <label className="block text-sm sm:col-span-2">
+            <span className="text-corporate-muted text-xs">
+              Informații suplimentare (dacă tema din plan nu acoperă situația)
+            </span>
+            <textarea
+              className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm min-h-[56px]"
+              value={supplementaryNote}
+              onChange={(e) => setSupplementaryNote(e.target.value)}
+              placeholder="Ex.: accent pe procedura X, material suplimentar…"
+            />
+          </label>
+          <label className="block text-sm sm:col-span-2">
+            <span className="text-corporate-muted text-xs">Materiale adiționale (PDF, imagini)</span>
+            <input
+              type="file"
+              id={`supp-${session.id}`}
+              className="mt-1 block text-xs"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              multiple
+            />
           </label>
           <div className="sm:col-span-2">
-            <Button type="button" variant="primary" size="sm" onClick={handlePlan}>
-              Planifică re-instruirea
+            <Button type="button" variant="primary" size="sm" onClick={() => void handlePlan()}>
+              Înregistrează re-instruire & trimite la HR
             </Button>
           </div>
         </div>
+      )}
+
+      {status === 'asteapta_hr' && (
+        <p className="text-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2">
+          Așteaptă aprobare HR. Mentorul și angajatul vor vedea sesiunea după confirmare.
+        </p>
+      )}
+
+      {canHrApprovePlan(session) && isHr && (
+        <Button type="button" variant="primary" size="sm" onClick={handleHrApprove}>
+          OK HR — aprobă re-instruirea (notifică mentor + angajat)
+        </Button>
       )}
 
       {isTrainer && (status === 'planificat' || status === 'in_curs') && (
@@ -225,13 +330,7 @@ function SessionCard({
 
       {canSupervisorConfirm(session) && isSupervisor && (
         <Button type="button" variant="primary" size="sm" onClick={handleSupervisorConfirm}>
-          Confirmă instruirea (supervizor)
-        </Button>
-      )}
-
-      {canHrConfirm(session) && isHr && (
-        <Button type="button" variant="primary" size="sm" onClick={handleHrConfirm}>
-          OK HR — angajat instruit, revine la normal
+          Confirmă finalizarea re-instruirii
         </Button>
       )}
 
@@ -247,36 +346,40 @@ interface SupervisorWorkflowPanelProps {
 
 export function SupervisorWorkflowPanel({ hideErrorRegistration }: SupervisorWorkflowPanelProps = {}) {
   const { user } = useAuth();
-  const { mentors, users } = useUsers();
+  const { users } = useUsers();
   const { refresh } = useHrPerformance();
+  const trainingVersion = useTrainingSystemVersion();
   const isHr = !!user && canManageUsers(user);
 
   const sessions = useMemo(() => {
-    const all = trainingSystemStore.getReTrainingSessions();
     if (!user) return [];
-    if (isHr) return all.filter((s) => normalizeReTrainingStatus(s.status) !== 'finalizat');
-    const supervised = getSupervisedEmployeeIds(user.id);
-    const asTrainer = all.filter((s) => (s.trainerId ?? s.mentorId) === user.id);
-    const asSupervisor = all.filter(
-      (s) => supervised.includes(s.angajatId) || s.supervisorId === user.id,
-    );
-    const merged = [...asSupervisor, ...asTrainer];
-    const seen = new Set<string>();
-    return merged.filter((s) => {
-      if (seen.has(s.id)) return false;
-      seen.add(s.id);
-      return normalizeReTrainingStatus(s.status) !== 'finalizat';
-    });
-  }, [user, isHr, refresh]);
+    if (isHr) {
+      return trainingSystemStore
+        .getReTrainingSessions()
+        .filter((s) => normalizeReTrainingStatus(s.status) !== 'finalizat');
+    }
+    return getSupervisorActiveReTrainingSessions(user.id);
+  }, [user, isHr, refresh, trainingVersion]);
 
   const pendingHr = useMemo(
     () =>
       isHr
         ? trainingSystemStore
             .getReTrainingSessions()
-            .filter((s) => normalizeReTrainingStatus(s.status) === 'confirmat_supervizor')
+            .filter((s) => normalizeReTrainingStatus(s.status) === 'asteapta_hr')
         : [],
     [isHr, refresh],
+  );
+
+  useActionFocusEffect(
+    {
+      retrain: () => {
+        const sessionId = new URLSearchParams(window.location.search).get('session');
+        if (!sessionId) return;
+        highlightActionElement(actionFocusElementId('retrain', sessionId));
+      },
+    },
+    [sessions.length, pendingHr.length],
   );
 
   if (!user) return null;
@@ -285,11 +388,10 @@ export function SupervisorWorkflowPanel({ hideErrorRegistration }: SupervisorWor
     <div className="space-y-4">
       {!hideErrorRegistration && <SupervisorErrorRegistrationPanel allowAllEmployees={isHr} />}
 
-      <Card>
+      <Card className={RE_TRAINING_FLOW_SHELL}>
         <h2 className="text-lg font-semibold text-corporate-dark mb-1">Flux Supervizor — Re-instruire</h2>
         <p className="text-sm text-corporate-muted mb-4">
-          Eroare repetată → alertă supervizor → planificare temă + trainer → raport → confirmare
-          supervizor → OK HR → istoric angajat.
+          Sesiuni active — dispar de aici când mentorul confirmă finalizarea. Arhiva este mai jos.
         </p>
 
         {sessions.length === 0 ? (
@@ -301,8 +403,6 @@ export function SupervisorWorkflowPanel({ hideErrorRegistration }: SupervisorWor
                 key={s.id}
                 session={s}
                 users={users}
-                mentors={mentors}
-                isHr={isHr}
                 currentUserId={user.id}
                 onRefresh={refresh}
               />
@@ -311,10 +411,12 @@ export function SupervisorWorkflowPanel({ hideErrorRegistration }: SupervisorWor
         )}
       </Card>
 
+      <SupervisorCompletedReTrainingPanel />
+
       {isHr && pendingHr.length > 0 && (
         <Card className="border-corporate-gold/30 bg-corporate-gold-light/20">
           <h3 className="font-semibold text-corporate-dark mb-2">
-            Așteaptă confirmare HR ({pendingHr.length})
+            Re-instruiri de aprobat ({pendingHr.length})
           </h3>
           <div className="space-y-3">
             {pendingHr.map((s) => (
@@ -322,8 +424,6 @@ export function SupervisorWorkflowPanel({ hideErrorRegistration }: SupervisorWor
                 key={s.id}
                 session={s}
                 users={users}
-                mentors={mentors}
-                isHr
                 currentUserId={user.id}
                 onRefresh={refresh}
               />

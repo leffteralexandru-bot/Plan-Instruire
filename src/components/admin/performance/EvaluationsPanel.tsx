@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -6,38 +6,38 @@ import { Badge } from '@/components/ui/Badge';
 import { useHrPerformance } from '@/hooks/useHrPerformance';
 import { useUsers } from '@/context/UsersContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useActionFocusEffect } from '@/hooks/useActionFocus';
+import { actionFocusElementId, highlightActionElement } from '@/lib/actionFocus';
 import {
   EVALUATION_STATUS_LABELS,
   hrPerformanceStore,
 } from '@/lib/hrPerformanceStore';
+import {
+  canHrFinalizeEvaluation,
+  getHrFinalizeBlockReason,
+  needsEvaluationWorkflowStart,
+} from '@/lib/evaluationStages';
 import { EvaluationStagesFlow } from '@/components/evaluation/EvaluationStagesFlow';
-import { DesignerCompetencyForm } from '@/components/competency/DesignerCompetencyForm';
-import { DesignerCompetencySummary } from '@/components/competency/DesignerCompetencySummary';
-import { defaultDesignerCompetencyScores } from '@/data/designerCompetencyMatrix';
-import { computeCompetencyOutcome, isCompetencyScoresComplete } from '@/lib/competencyScoring';
+import { EvaluationDualReviewPanel } from '@/components/evaluation/EvaluationDualReviewPanel';
 import { canViewSalaryCoefficient } from '@/lib/roles';
-import { needsEvaluationWorkflowStart } from '@/lib/evaluationStages';
 import { TestingHighlightZone } from '@/components/shared/TestingHighlightZone';
-import type { DesignerCompetencyScores } from '@/types';
+import { CompletedEvaluationsHrPanel } from '@/components/admin/performance/CompletedEvaluationsHrPanel';
+import { useEvaluationSettings } from '@/hooks/useEvaluationSettings';
+import { isCompetencyScoresComplete } from '@/lib/competencyScoring';
 
 export function EvaluationsPanel() {
   const { evaluations, documents, updateEvaluation, completeEvaluation, uploadDocument, downloadDocument, refresh } =
     useHrPerformance();
   const { users } = useUsers();
   const { user } = useAuth();
-  const templateInputRef = useRef<HTMLInputElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewStagesId, setViewStagesId] = useState<string | null>(null);
   const [concluzii, setConcluzii] = useState('');
   const [planDezvoltare, setPlanDezvoltare] = useState('');
-  const [competencyScores, setCompetencyScores] = useState<DesignerCompetencyScores>(
-    defaultDesignerCompetencyScores(),
-  );
   const showSalary = canViewSalaryCoefficient(user);
+  const { cycleDays } = useEvaluationSettings();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const template = documents.find((d) => d.tip === 'template_evaluare' && !d.angajatId);
 
   const stats = useMemo(() => {
     const active = evaluations.filter((e) => e.status !== 'evaluat');
@@ -63,50 +63,72 @@ export function EvaluationsPanel() {
     [evaluations, users, documents, knownUserIds],
   );
 
+  useActionFocusEffect(
+    {
+      eval: () => {
+        const sp = new URLSearchParams(window.location.search);
+        const evalId = sp.get('eval');
+        const angajatId = sp.get('angajat');
+        if (evalId) {
+          setViewStagesId(evalId);
+          const match = evaluations.find((e) => e.id === evalId);
+          if (match && canHrFinalizeEvaluation(match)) {
+            setSelectedId(evalId);
+          }
+          highlightActionElement(actionFocusElementId('eval', evalId));
+          return;
+        }
+        if (angajatId) {
+          const match = rows.find((r) => r.ev.angajatId === angajatId);
+          if (match) {
+            setViewStagesId(match.ev.id);
+            if (canHrFinalizeEvaluation(match.ev)) {
+              setSelectedId(match.ev.id);
+            }
+            highlightActionElement(actionFocusElementId('eval', match.ev.id));
+          }
+        }
+      },
+    },
+    [rows.length],
+  );
+
   const handleStartEvaluation = (evalId: string) => {
     if (!user) return;
-    hrPerformanceStore.startEvaluationWorkflow(evalId, { id: user.id, name: user.name });
-    setViewStagesId(evalId);
-    refresh();
-    setSuccess('Evaluarea a fost pornită. Angajatul poate completa auto-evaluarea.');
-  };
-
-  const handleTemplateUpload = async (file: File) => {
-    if (!user) return;
-    await uploadDocument({
-      file,
-      tip: 'template_evaluare',
-      uploadedBy: user.id,
-      uploadedByNume: user.name,
-    });
-    setSuccess('Template evaluare încărcat.');
-  };
-
-  const handleElectronicUpload = async (evalId: string, angajatId: string, file: File) => {
-    if (!user) return;
-    const doc = await uploadDocument({
-      file,
-      tip: 'evaluare_electronica',
-      angajatId,
-      uploadedBy: user.id,
-      uploadedByNume: user.name,
-      evaluationCycleId: evalId,
-      folder: 'istoric_evaluari',
-    });
-    hrPerformanceStore.updateEvaluation(evalId, { electronicDocumentId: doc.id });
-    refresh();
-    setSuccess('Fișier evaluare electronică atașat ciclului.');
+    setError('');
+    try {
+      const updated = hrPerformanceStore.startEvaluationWorkflow(evalId, {
+        id: user.id,
+        name: user.name,
+      });
+      if (updated.status !== 'in_curs') {
+        setError('Evaluarea nu a putut fi pornită. Reîncărcați pagina și încercați din nou.');
+        return;
+      }
+      setViewStagesId(evalId);
+      refresh();
+      setSuccess('Evaluarea a fost pornită. Angajatul poate completa auto-evaluarea.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Nu s-a putut porni evaluarea.');
+    }
   };
 
   const handleComplete = async (evalId: string, angajatId: string, file?: File) => {
     if (!user) return;
     setError('');
+    const ev = evaluations.find((e) => e.id === evalId);
+    if (!ev) return;
+    const block = getHrFinalizeBlockReason(ev);
+    if (block) {
+      setError(block);
+      return;
+    }
     if (concluzii.trim().length < 10) {
       setError('Completați concluziile evaluării (min. 10 caractere).');
       return;
     }
-    if (!isCompetencyScoresComplete(competencyScores)) {
-      setError('Completați matricea de competențe (10 criterii) înainte de finalizare.');
+    if (!isCompetencyScoresComplete(ev.competencySupervisorScores)) {
+      setError('Evaluarea supervizorului (matricea de competențe) trebuie completată înainte de validare HR.');
       return;
     }
     let documentId: string | undefined;
@@ -123,7 +145,6 @@ export function EvaluationsPanel() {
       documentId = doc.id;
     }
     completeEvaluation(evalId, {
-      competencySupervisorScores: competencyScores,
       concluzii: concluzii.trim(),
       planDezvoltare,
       documentId,
@@ -131,7 +152,7 @@ export function EvaluationsPanel() {
     setSelectedId(null);
     setConcluzii('');
     setPlanDezvoltare('');
-    setSuccess('Evaluare finalizată. Următorul ciclu de 90 zile a fost creat.');
+    setSuccess(`Evaluare finalizată. Următorul ciclu de ${cycleDays} zile a fost creat.`);
     refresh();
   };
 
@@ -154,33 +175,13 @@ export function EvaluationsPanel() {
       </div>
 
       <Card>
-        <h2 className="text-lg font-semibold text-corporate-dark mb-1">Evaluări tri-lunale (90 zile)</h2>
+        <h2 className="text-lg font-semibold text-corporate-dark mb-1">
+          Evaluări tri-lunale ({cycleDays} zile)
+        </h2>
         <p className="text-sm text-corporate-muted mb-4">
-          Cicluri de evaluare cu termen setat de HR. Încărcați template-ul, atașați fișierul de evaluare per angajat
-          și urmăriți parcurgerea etapelor: auto-evaluare → supervizor → validare HR.
+          Flux digital: auto-evaluare → supervizor → validare HR. La finalizare puteți atașa opțional evaluarea
+          semnată (PDF/scan) în dosar.
         </p>
-
-        <div className="flex flex-wrap gap-2 mb-6 p-3 rounded-xl bg-corporate-surface">
-          <input
-            ref={templateInputRef}
-            type="file"
-            accept=".pdf,.doc,.docx"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void handleTemplateUpload(f);
-              e.target.value = '';
-            }}
-          />
-          <Button type="button" variant="secondary" size="sm" onClick={() => templateInputRef.current?.click()}>
-            {template ? 'Înlocuiește template' : 'Încarcă template evaluare'}
-          </Button>
-          {template && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => void downloadDocument(template.id)}>
-              Descarcă: {template.nume}
-            </Button>
-          )}
-        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -196,7 +197,7 @@ export function EvaluationsPanel() {
             </thead>
             <tbody>
               {rows.map(({ ev, angajat, evaluator }) => (
-                <tr key={ev.id} className="border-b border-corporate-border/60 align-top">
+                <tr key={ev.id} id={actionFocusElementId('eval', ev.id)} className="border-b border-corporate-border/60 align-top">
                   <td className="py-2 pr-3 font-medium">{angajat?.name ?? ev.angajatId}</td>
                   <td className="py-2 pr-3 text-corporate-muted">{evaluator?.name ?? '—'}</td>
                   <td className="py-2 pr-3 text-corporate-muted text-xs">
@@ -227,26 +228,41 @@ export function EvaluationsPanel() {
                           Pornește
                         </Button>
                       )}
-                      <Button type="button" size="sm" variant="ghost" onClick={() => setViewStagesId(ev.id)}>
-                        Etape
-                      </Button>
                       <Button
                         type="button"
                         size="sm"
-                        variant="secondary"
+                        variant="ghost"
                         onClick={() => {
-                          setSelectedId(ev.id);
-                          setCompetencyScores(
-                            ev.competencySupervisorScores ??
-                              ev.competencySelfScores ??
-                              defaultDesignerCompetencyScores(),
-                          );
-                          setConcluzii(ev.concluzii ?? '');
-                          setPlanDezvoltare(ev.planDezvoltare ?? '');
+                          if (needsEvaluationWorkflowStart(ev)) {
+                            handleStartEvaluation(ev.id);
+                          } else {
+                            setViewStagesId(ev.id);
+                          }
                         }}
                       >
-                        Finalizează
+                        Etape
                       </Button>
+                      {canHrFinalizeEvaluation(ev) ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setSelectedId(ev.id);
+                            setConcluzii(ev.concluzii ?? '');
+                            setPlanDezvoltare(ev.planDezvoltare ?? '');
+                          }}
+                        >
+                          Finalizează
+                        </Button>
+                      ) : (
+                        <span
+                          className="text-xs text-corporate-muted max-w-[140px] leading-tight"
+                          title={getHrFinalizeBlockReason(ev) ?? undefined}
+                        >
+                          {getHrFinalizeBlockReason(ev)}
+                        </span>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -259,9 +275,8 @@ export function EvaluationsPanel() {
       {viewStagesId && user && (
         <div className="space-y-3">
           {(() => {
-            const ev = evaluations.find((e) => e.id === viewStagesId);
+            const ev = hrPerformanceStore.getEvaluations().find((e) => e.id === viewStagesId);
             if (!ev) return null;
-            const electronicDoc = documents.find((d) => d.id === ev.electronicDocumentId);
             return (
               <>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -272,27 +287,6 @@ export function EvaluationsPanel() {
                     Închide
                   </Button>
                 </div>
-                <Card padding="sm" className="flex flex-wrap gap-2 items-center">
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    className="text-sm"
-                    id={`electronic-${ev.id}`}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void handleElectronicUpload(ev.id, ev.angajatId, f);
-                      e.target.value = '';
-                    }}
-                  />
-                  {electronicDoc && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => void downloadDocument(electronicDoc.id)}>
-                      {electronicDoc.nume}
-                    </Button>
-                  )}
-                  <span className="text-xs text-corporate-muted">
-                    Încărcați / înlocuiți fișierul de evaluare pentru acest angajat
-                  </span>
-                </Card>
                 <EvaluationStagesFlow
                   cycle={ev}
                   mode="hr"
@@ -307,25 +301,14 @@ export function EvaluationsPanel() {
         </div>
       )}
 
-      {selectedId && (
+      {selectedId && (() => {
+        const ev = evaluations.find((e) => e.id === selectedId);
+        if (!ev) return null;
+        return (
         <Card>
-          <h3 className="font-semibold text-corporate-dark mb-3">Finalizare evaluare — validare HR</h3>
-          {isCompetencyScoresComplete(competencyScores) && (
-            <div className="mb-4">
-              <DesignerCompetencySummary
-                scores={competencyScores}
-                outcome={computeCompetencyOutcome(competencyScores)}
-                showSalaryCoefficient={showSalary}
-              />
-            </div>
-          )}
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-corporate-dark mb-2">
-              Matrice competențe — inginer proiectant
-            </h4>
-            <DesignerCompetencyForm scores={competencyScores} onChange={setCompetencyScores} compact />
-          </div>
-          <div className="space-y-3 mb-4">
+          <h3 className="font-semibold text-corporate-dark mb-3">Validare HR — comparare și confirmare</h3>
+          <EvaluationDualReviewPanel cycle={ev} showSalaryCoefficient={showSalary} />
+          <div className="space-y-3 mb-4 mt-6 border-t border-corporate-border pt-4">
             <label className="block text-sm">
               <span className="text-corporate-muted">Concluzii *</span>
               <textarea
@@ -363,14 +346,27 @@ export function EvaluationsPanel() {
                 void handleComplete(ev.id, ev.angajatId, file);
               }}
             >
-              Salvează evaluarea
+              Salvează și confirmă evaluarea supervizorului
             </Button>
             <Button type="button" variant="ghost" onClick={() => setSelectedId(null)}>
               Anulează
             </Button>
           </div>
         </Card>
-      )}
+        );
+      })()}
+
+      <CompletedEvaluationsHrPanel
+        evaluations={evaluations}
+        users={users}
+        showSalaryCoefficient={showSalary}
+        onDownloadDocument={(id) => void downloadDocument(id)}
+        getSignedDocumentName={(cycleId) => {
+          const ev = evaluations.find((e) => e.id === cycleId);
+          if (!ev?.documentId) return undefined;
+          return documents.find((d) => d.id === ev.documentId)?.nume;
+        }}
+      />
 
       <Card padding="sm">
         <h3 className="text-sm font-semibold text-corporate-dark mb-2">Ierarhie supervizor — angajat</h3>

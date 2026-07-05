@@ -2,8 +2,8 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   INGINERI_ANGAJAT_PANEL_PATH,
+  INGINERI_ADMIN_DASHBOARD_PATH,
   INGINERI_PLAN_PATH,
-  ingineriPath,
 } from '@/data/departments';
 import { hasRole, isAngajatUser } from '@/lib/roles';
 
@@ -18,7 +18,7 @@ export function IngineriIndexPage() {
   }
 
   if (canAccessAdmin) {
-    return <Navigate to={ingineriPath('/admin')} replace />;
+    return <Navigate to={INGINERI_ADMIN_DASHBOARD_PATH} replace />;
   }
 
   return <Navigate to={INGINERI_PLAN_PATH} replace />;

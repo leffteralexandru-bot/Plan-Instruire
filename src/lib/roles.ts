@@ -1,4 +1,5 @@
 import type { UserRole, User } from '@/types';
+import { canEditPlatformSettings } from '@/lib/platformSettingsAdmin';
 
 /** Roluri canonice: admin, hr, angajat, mentor */
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -39,7 +40,9 @@ export function normalizeRoles(input: UserRole[] | string[] | undefined, legacyR
 
 export function hasRole(user: Pick<User, 'roles'> | null | undefined, role: UserRole): boolean {
   if (!user) return false;
-  const roles = user.roles ?? normalizeRoles(undefined, (user as User & { role?: string }).role);
+  const roles = (user.roles ?? normalizeRoles(undefined, (user as User & { role?: string }).role)).map(
+    normalizeRole,
+  );
   return roles.includes(role);
 }
 
@@ -100,9 +103,16 @@ export function canViewAllTrainees(user: Pick<User, 'roles'> | null | undefined)
   return hasAnyRole(user, ['admin', 'hr']);
 }
 
-/** Doar HR editează planul de instruire și încarcă materiale pe zile */
-export function canEditTrainingPlan(user: Pick<User, 'roles'> | null | undefined): boolean {
-  return hasRole(user, 'hr');
+/** Doar Alex (cont dedicat) editează planul, evaluarea și conținutul din Setări HR */
+export function canEditTrainingPlan(
+  user: Pick<User, 'id'> & Partial<Pick<User, 'email'>> | null | undefined,
+): boolean {
+  return canEditPlatformSettings(user);
+}
+
+/** HR și Administrator pot deschide și consulta setările platformei */
+export function canViewPlatformSettings(user: Pick<User, 'roles'> | null | undefined): boolean {
+  return hasAnyRole(user, ['admin', 'hr']);
 }
 
 /** Etichetă afișată în UI (ex: „Angajat · Mentor”) */

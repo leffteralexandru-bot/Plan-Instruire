@@ -8,9 +8,8 @@ import {
   type ReactNode,
 } from 'react';
 import { isSupabaseConfigured } from '@/store/storage';
-import { syncHrPerformanceWithCloud } from '@/lib/hrPerformanceSync';
+import { syncHrPerformanceWithCloud, scheduleHrCloudPush } from '@/lib/hrPerformanceSync';
 import type {
-  DesignerCompetencyScores,
   EmployeeProfile,
   ErrorCase,
   EvaluationCycle,
@@ -26,7 +25,6 @@ import {
   hrPerformanceStore,
   EVALUATION_ALERT_DAYS,
 } from '@/lib/hrPerformanceStore';
-import { trainingSystemStore } from '@/lib/trainingSystemStore';
 
 interface HrPerformanceContextValue {
   profiles: EmployeeProfile[];
@@ -41,7 +39,7 @@ interface HrPerformanceContextValue {
     patch: Partial<
       Pick<
         EmployeeProfile,
-        'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'status' | 'tipAngajat' | 'weeklyEvalMentors'
+        'prenume' | 'nume' | 'functie' | 'departamentId' | 'dataAngajarii' | 'managerId' | 'status' | 'tipAngajat' | 'weeklyEvalMentors' | 'photoUrl'
       >
     >,
   ) => EmployeeProfile;
@@ -49,7 +47,6 @@ interface HrPerformanceContextValue {
     id: string,
     input: {
       scoruri?: EvaluationScores;
-      competencySupervisorScores?: DesignerCompetencyScores;
       concluzii: string;
       planDezvoltare?: string;
       documentId?: string;
@@ -70,8 +67,25 @@ interface HrPerformanceContextValue {
   addErrorCase: (input: Omit<ErrorCase, 'id' | 'createdAt' | 'updatedAt'>) => ErrorCase;
   updateErrorCase: (
     id: string,
-    patch: Partial<Pick<ErrorCase, 'planActiune' | 'descriere' | 'motiv' | 'documentId'>>,
+    patch: Partial<
+      Pick<
+        ErrorCase,
+        | 'planActiune'
+        | 'descriere'
+        | 'motiv'
+        | 'documentId'
+        | 'notaConstatare'
+        | 'signedDocumentId'
+        | 'reTrainingProposal'
+        | 'hrStatus'
+        | 'hrReviewNote'
+        | 'hrReviewedAt'
+        | 'hrReviewedBy'
+        | 'reTrainingSessionId'
+      >
+    >,
   ) => ErrorCase;
+  deleteErrorCase: (id: string) => boolean;
   uploadDocument: (input: {
     file: File;
     tip: HrDocumentType;
@@ -143,14 +157,23 @@ export function HrPerformanceProvider({ children }: { children: ReactNode }) {
       },
       addErrorCase: (input) => {
         const item = hrPerformanceStore.addErrorCase(input);
-        trainingSystemStore.processErrorRepeat(item);
         refresh();
+        scheduleHrCloudPush();
         return item;
       },
       updateErrorCase: (id, patch) => {
         const updated = hrPerformanceStore.updateErrorCase(id, patch);
         refresh();
+        scheduleHrCloudPush();
         return updated;
+      },
+      deleteErrorCase: (id) => {
+        const ok = hrPerformanceStore.deleteErrorCase(id);
+        if (ok) {
+          refresh();
+          scheduleHrCloudPush();
+        }
+        return ok;
       },
       uploadDocument: async (input) => {
         const doc = await hrPerformanceStore.uploadDocument(input);

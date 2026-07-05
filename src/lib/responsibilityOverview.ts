@@ -71,7 +71,7 @@ export function buildResponsibilityRows(profiles: EmployeeProfile[], users: User
       evaluationStatus: evalCurrent ? EVALUATION_STATUS_LABELS[evalCurrent.status] : undefined,
       evaluationStage: evalCurrent ? getEvaluationWorkflowLabel(evalCurrent) : undefined,
       reTrainingLabel: reSession
-        ? RE_TRAINING_STATUS_LABELS[normalizeReTrainingStatus(reSession.status)]
+        ? `${assignments.reInstruire.name} · ${RE_TRAINING_STATUS_LABELS[normalizeReTrainingStatus(reSession.status)]}`
         : undefined,
       pendingValidations,
     };

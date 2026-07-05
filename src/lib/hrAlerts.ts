@@ -1,6 +1,6 @@
 import { userStore } from '@/lib/userStore';
 import { storage } from '@/store/storage';
-import { buildTraineeHrReport } from '@/lib/hrReport';
+import { buildTraineeHrReport, isTrainingPlanComplete } from '@/lib/hrReport';
 import { getTraineeStatus, getTraineeStatusLabel, getMentorWorkload } from '@/lib/hrAnalytics';
 import { hrPerformanceStore, EVALUATION_ALERT_DAYS } from '@/lib/hrPerformanceStore';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
@@ -50,7 +50,7 @@ export function computeHrAlerts(): HrAlert[] {
       });
     }
 
-    if (row.quizPassed === false) {
+    if (row.quizPassed === false && !isTrainingPlanComplete(row)) {
       alerts.push({
         id: `quiz-${t.id}`,
         severity: 'warning',

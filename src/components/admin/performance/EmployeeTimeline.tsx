@@ -1,5 +1,9 @@
 import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { PROGRAM_AREA_THEMES } from '@/lib/programAreaTheme';
 import type { TimelineEvent, TimelineEventType } from '@/types';
+
+export const TIMELINE_PREVIEW_COUNT = 3;
 
 const TYPE_LABELS: Record<TimelineEventType, string> = {
   evaluare: 'Evaluare',
@@ -23,6 +27,24 @@ const FILTER_OPTIONS: { id: TimelineEventType | 'all'; label: string }[] = [
   { id: 'audit', label: 'Activitate' },
 ];
 
+const TIMELINE_TYPE_AREA: Partial<
+  Record<TimelineEventType, keyof typeof PROGRAM_AREA_THEMES>
+> = {
+  instruire: 'training',
+  re_instruire: 'retraining',
+  evaluare: 'evaluation',
+};
+
+function filterChipClass(id: TimelineEventType | 'all', active: boolean): string {
+  if (active) return 'bg-corporate-black text-white border-corporate-black';
+  const area = id === 'all' ? undefined : TIMELINE_TYPE_AREA[id];
+  if (!area) {
+    return 'bg-white text-corporate-muted border-corporate-border hover:border-corporate-gold';
+  }
+  const theme = PROGRAM_AREA_THEMES[area];
+  return `border ${theme.summaryCard} ${theme.summaryLabel} hover:opacity-90`;
+}
+
 const SEVERITY_DOT: Record<NonNullable<TimelineEvent['severity']>, string> = {
   info: 'bg-slate-400',
   warning: 'bg-amber-500',
@@ -45,16 +67,30 @@ function formatDate(iso: string): string {
 interface EmployeeTimelineProps {
   events: TimelineEvent[];
   showFilters?: boolean;
+  /** Câte evenimente se văd înainte de expand (implicit 3 când e setat) */
   maxItems?: number;
 }
 
-export function EmployeeTimeline({ events, showFilters = true, maxItems }: EmployeeTimelineProps) {
+export function EmployeeTimeline({
+  events,
+  showFilters = true,
+  maxItems = TIMELINE_PREVIEW_COUNT,
+}: EmployeeTimelineProps) {
   const [filter, setFilter] = useState<TimelineEventType | 'all'>('all');
+  const [expanded, setExpanded] = useState(false);
 
-  const filtered = useMemo(() => {
-    const list = filter === 'all' ? events : events.filter((e) => e.type === filter);
-    return maxItems ? list.slice(0, maxItems) : list;
-  }, [events, filter, maxItems]);
+  const sourceList = useMemo(
+    () => (filter === 'all' ? events : events.filter((e) => e.type === filter)),
+    [events, filter],
+  );
+
+  const visibleList = useMemo(() => {
+    if (!maxItems || expanded) return sourceList;
+    return sourceList.slice(0, maxItems);
+  }, [sourceList, maxItems, expanded]);
+
+  const hiddenCount =
+    maxItems && !expanded ? Math.max(0, sourceList.length - maxItems) : 0;
 
   const counts = useMemo(() => {
     const map = new Map<TimelineEventType, number>();
@@ -82,12 +118,13 @@ export function EmployeeTimeline({ events, showFilters = true, maxItems }: Emplo
             <button
               key={opt.id}
               type="button"
-              onClick={() => setFilter(opt.id)}
+              onClick={() => {
+                setFilter(opt.id);
+                setExpanded(false);
+              }}
               className={[
                 'rounded-full px-2.5 py-1 text-xs font-medium border transition-colors',
-                filter === opt.id
-                  ? 'bg-corporate-black text-white border-corporate-black'
-                  : 'bg-white text-corporate-muted border-corporate-border hover:border-corporate-gold',
+                filterChipClass(opt.id, filter === opt.id),
               ].join(' ')}
             >
               {opt.label}
@@ -99,22 +136,35 @@ export function EmployeeTimeline({ events, showFilters = true, maxItems }: Emplo
         </div>
       )}
 
-      {!filtered.length ? (
+      {!visibleList.length ? (
         <p className="text-sm text-corporate-muted py-4 text-center">Niciun eveniment în această categorie.</p>
       ) : (
         <ol className="relative border-l border-corporate-border ml-3 space-y-4 pl-6">
-          {filtered.map((ev) => (
+          {visibleList.map((ev) => {
+            const area = TIMELINE_TYPE_AREA[ev.type];
+            const theme = area ? PROGRAM_AREA_THEMES[area] : null;
+            return (
             <li key={ev.id} className="relative">
               <span
                 className={[
                   'absolute -left-[1.65rem] top-1.5 h-2.5 w-2.5 rounded-full ring-2 ring-white',
-                  SEVERITY_DOT[ev.severity ?? 'info'],
+                  theme ? theme.accentBar : SEVERITY_DOT[ev.severity ?? 'info'],
                 ].join(' ')}
                 aria-hidden
               />
-              <div className="rounded-lg border border-corporate-border bg-white px-3 py-2.5">
+              <div
+                className={[
+                  'rounded-lg border px-3 py-2.5',
+                  theme ? theme.itemShell : 'border-corporate-border bg-white',
+                ].join(' ')}
+              >
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <span className="text-[10px] uppercase tracking-wide font-semibold text-corporate-gold">
+                  <span
+                    className={[
+                      'text-[10px] uppercase tracking-wide font-semibold',
+                      theme ? theme.summaryLabel : 'text-corporate-gold',
+                    ].join(' ')}
+                  >
                     {TYPE_LABELS[ev.type]}
                   </span>
                   <span className="text-[10px] text-corporate-muted">{formatDate(ev.createdAt)}</span>
@@ -128,14 +178,25 @@ export function EmployeeTimeline({ events, showFilters = true, maxItems }: Emplo
                 )}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ol>
       )}
 
-      {maxItems && events.length > maxItems && filter === 'all' && (
-        <p className="text-xs text-corporate-muted text-center">
-          Afișate {maxItems} din {events.length} evenimente — deschideți dosarul complet pentru istoric integral.
-        </p>
+      {hiddenCount > 0 && (
+        <div className="text-center pt-1">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setExpanded(true)}>
+            Vezi încă {hiddenCount} {hiddenCount === 1 ? 'eveniment' : 'evenimente'} →
+          </Button>
+        </div>
+      )}
+
+      {expanded && maxItems && sourceList.length > maxItems && (
+        <div className="text-center pt-1">
+          <Button type="button" variant="ghost" size="sm" onClick={() => setExpanded(false)}>
+            Restrânge la {maxItems} evenimente
+          </Button>
+        </div>
       )}
     </div>
   );

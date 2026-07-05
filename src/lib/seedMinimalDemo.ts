@@ -1,5 +1,9 @@
 import { createDefaultEvaluationStages } from '@/lib/evaluationStages';
 import { credentials } from '@/lib/credentials';
+import {
+  PLATFORM_SETTINGS_ADMIN_EMAIL,
+  PLATFORM_SETTINGS_ADMIN_ID,
+} from '@/lib/platformSettingsAdmin';
 import type { EmployeeProfile, EvaluationCycle, TrainingEnrollment, User } from '@/types';
 
 export const DEMO_DATA_VERSION = 'minimal-demo-v1';
@@ -186,6 +190,23 @@ export function resetMinimalDemoScenario(): User[] {
   return MINIMAL_DEMO_USERS.filter((u) => u.active);
 }
 
+/** Alex nu e profil salvat — eliminăm eventuale înregistrări vechi din localStorage */
+export function purgePersistedPlatformSettingsAdmin(): void {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    const users: User[] = raw ? (JSON.parse(raw) as User[]) : [];
+    const next = users.filter(
+      (u) =>
+        u.id !== PLATFORM_SETTINGS_ADMIN_ID &&
+        u.email.toLowerCase() !== PLATFORM_SETTINGS_ADMIN_EMAIL.toLowerCase(),
+    );
+    if (next.length !== users.length) writeJson(USERS_KEY, next);
+    credentials.removePassword(PLATFORM_SETTINGS_ADMIN_ID);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function isMinimalDemoCurrent(): boolean {
   return localStorage.getItem(DEMO_VERSION_KEY) === DEMO_DATA_VERSION;
 }
@@ -197,6 +218,7 @@ export function ensureMinimalDemoIfEmpty(): void {
     if (users.length === 0) {
       resetMinimalDemoScenario();
     }
+    purgePersistedPlatformSettingsAdmin();
   } catch {
     resetMinimalDemoScenario();
   }

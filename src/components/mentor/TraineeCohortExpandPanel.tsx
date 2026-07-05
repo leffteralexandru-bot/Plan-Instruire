@@ -3,19 +3,25 @@ import type { FeedbackForm } from '@/types';
 import { ALL_DAYS } from '@/data/trainingPlan';
 import { useTrainingPlan } from '@/hooks/useTrainingPlan';
 import { useAuth } from '@/hooks/useAuth';
+import { useUsers } from '@/context/UsersContext';
 import { storage } from '@/store/storage';
 import { computeTraineeTrainingStats } from '@/lib/traineeProgressStats';
 import {
+  mentorIssueCertificate,
   mentorSaveTraineeFeedback,
   mentorSetTraineeUnlock,
   mentorSetTraineeValidation,
 } from '@/lib/mentorTraineeProgress';
 import { ValidationList } from '@/components/mentor/ValidationList';
 import { MentorFeedbackForm } from '@/components/mentor/FeedbackForm';
+import { CertificateIssue } from '@/components/certificate/CertificateGenerator';
+import { CertificateModal } from '@/components/certificate/CertificateModal';
 import { ProgressBar } from '@/components/dashboard/ProgressBar';
 import { PanelSubsection } from '@/components/ui/ProfessionalPanel';
+import { actionFocusElementId } from '@/lib/actionFocus';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ViewAsEmployeeBar } from '@/components/shared/ViewAsEmployeeBar';
 
 interface TraineeCohortExpandPanelProps {
   traineeId: string;
@@ -24,8 +30,12 @@ interface TraineeCohortExpandPanelProps {
 
 export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: TraineeCohortExpandPanelProps) {
   const { user } = useAuth();
+  const { visibleTrainees } = useUsers();
   const planWeeks = useTrainingPlan();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [certificateOpen, setCertificateOpen] = useState(false);
+
+  const traineeName = visibleTrainees.find((t) => t.id === traineeId)?.name ?? 'Angajat';
 
   const progress = useMemo(
     () => storage.getProgress(traineeId),
@@ -68,6 +78,8 @@ export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: Traine
 
   const feedbackWeek2 = progress.feedbacks.find((f) => f.weekNumber === 2);
   const feedbackWeek4 = progress.feedbacks.find((f) => f.weekNumber === 4);
+  const trainingComplete = stats.completedDays >= stats.totalDays && stats.totalDays > 0;
+  const day20Validated = stats.getDayProgress('day-20').mentorValidated;
 
   const handleSaveFeedback = useCallback(
     (feedback: FeedbackForm) => {
@@ -80,6 +92,7 @@ export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: Traine
 
   return (
     <div className="mt-2 space-y-4 rounded-lg border border-corporate-border/80 bg-corporate-surface/30 p-4">
+      <ViewAsEmployeeBar angajatId={traineeId} angajatName={traineeName} compact />
       <PanelSubsection label="Progres general">
         <ProgressBar percent={stats.overallPercent} size="lg" label="Completare totală" />
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -113,6 +126,7 @@ export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: Traine
         </PanelSubsection>
       )}
 
+      <div id={actionFocusElementId('validations', traineeId)}>
       <PanelSubsection label="Validări instruire">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-sm font-medium text-corporate-dark">Zile cheie</span>
@@ -126,12 +140,59 @@ export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: Traine
           onValidate={handleValidate}
         />
       </PanelSubsection>
+      </div>
+
+      {(trainingComplete || progress.certificate) && (
+        <PanelSubsection label="Certificat finalizare">
+          {progress.certificate ? (
+            <>
+              <p className="text-xs text-emerald-700 mb-3">
+                Certificat digital emis — angajatul poate descărca PDF-ul din planul de instruire.
+              </p>
+              <Button type="button" size="sm" variant="secondary" onClick={() => setCertificateOpen(true)}>
+                Vizualizează certificat
+              </Button>
+              <CertificateModal
+                certificate={progress.certificate}
+                angajatId={traineeId}
+                open={certificateOpen}
+                onClose={() => setCertificateOpen(false)}
+              />
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-corporate-muted mb-3">
+                Instruirea este finalizată. Emiteți certificatul digital oficial artGRANIT pentru acest angajat.
+              </p>
+              {!day20Validated && (
+                <p className="text-xs text-amber-700 mb-3">
+                  Recomandat: validați mai întâi Ziua 20 în secțiunea „Validări instruire”.
+                </p>
+              )}
+              <CertificateIssue
+                stagiarName={traineeName}
+                mentorName={user?.name ?? 'Mentor'}
+                progress={progress}
+                onIssue={() => {
+                  if (!user) return;
+                  mentorIssueCertificate(traineeId, user, {
+                    mentorName: user.name,
+                    stagiarName: traineeName,
+                  });
+                  refresh();
+                }}
+              />
+            </>
+          )}
+        </PanelSubsection>
+      )}
 
       <PanelSubsection label="Rapoarte feedback">
         <p className="text-xs text-corporate-muted mb-4">
           Evaluare mentor Săpt. 2 și Săpt. 4 — salvate în dosarul acestui angajat și folosite la certificat.
         </p>
         <div className="grid gap-4 lg:grid-cols-2">
+          <div id={actionFocusElementId('feedback', traineeId, '2')}>
           <MentorFeedbackForm
             key={`${traineeId}-s2-${refreshKey}`}
             weekNumber={2}
@@ -140,6 +201,8 @@ export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: Traine
             formIdPrefix={`${traineeId}-`}
             onSave={handleSaveFeedback}
           />
+          </div>
+          <div id={actionFocusElementId('feedback', traineeId, '4')}>
           <MentorFeedbackForm
             key={`${traineeId}-s4-${refreshKey}`}
             weekNumber={4}
@@ -148,6 +211,7 @@ export function TraineeCohortExpandPanel({ traineeId, onProgressChange }: Traine
             formIdPrefix={`${traineeId}-`}
             onSave={handleSaveFeedback}
           />
+          </div>
         </div>
       </PanelSubsection>
     </div>

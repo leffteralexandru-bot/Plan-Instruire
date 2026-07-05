@@ -45,7 +45,11 @@ interface AuditLogViewerProps {
   onExport: () => void;
 }
 
+const AUDIT_LOG_VISIBLE_ROWS = 6;
+
 export function AuditLogViewer({ entries, onExport }: AuditLogViewerProps) {
+  const scrollMaxHeight = `${AUDIT_LOG_VISIBLE_ROWS * 2.5}rem`;
+
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -59,18 +63,28 @@ export function AuditLogViewer({ entries, onExport }: AuditLogViewerProps) {
       {entries.length === 0 ? (
         <p className="text-sm text-corporate-muted">Nicio activitate înregistrată încă.</p>
       ) : (
-        <ul className="text-xs text-slate-600 space-y-1.5 max-h-48 overflow-y-auto">
-          {entries.map((e) => (
-            <li key={e.id} className="border-b border-slate-50 pb-1">
-              <span className="text-corporate-muted">{new Date(e.createdAt).toLocaleString('ro-RO')}</span>
-              {' · '}
-              <strong>{e.traineeName}</strong>
-              {' — '}
-              {e.action} ({e.actorName})
-              {e.details ? `: ${e.details}` : ''}
-            </li>
-          ))}
-        </ul>
+        <>
+          {entries.length > AUDIT_LOG_VISIBLE_ROWS && (
+            <p className="text-xs text-corporate-muted mb-2">
+              Primele {AUDIT_LOG_VISIBLE_ROWS} vizibile — derulați pentru celelalte {entries.length - AUDIT_LOG_VISIBLE_ROWS}.
+            </p>
+          )}
+          <ul
+            className="text-xs text-slate-600 space-y-1.5 overflow-y-auto pr-1"
+            style={{ maxHeight: scrollMaxHeight }}
+          >
+            {entries.map((e) => (
+              <li key={e.id} className="border-b border-slate-50 pb-1 leading-snug">
+                <span className="text-corporate-muted">{new Date(e.createdAt).toLocaleString('ro-RO')}</span>
+                {' · '}
+                <strong>{e.traineeName}</strong>
+                {' — '}
+                {e.action} ({e.actorName})
+                {e.details ? `: ${e.details}` : ''}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </Card>
   );

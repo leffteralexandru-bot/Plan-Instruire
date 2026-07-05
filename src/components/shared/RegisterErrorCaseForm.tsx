@@ -1,199 +1,360 @@
 import { useState } from 'react';
+
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+
 import { useHrPerformance } from '@/hooks/useHrPerformance';
-import { useUsers } from '@/context/UsersContext';
+
 import { useAuth } from '@/hooks/useAuth';
-import { ERROR_MOTIV_LABELS } from '@/lib/hrPerformanceStore';
+
 import { canRegisterErrorCase } from '@/lib/accessControl';
-import type { EmployeeProfile, ErrorMotiv } from '@/types';
+
+import { ERROR_MOTIV_LABELS, hrPerformanceStore } from '@/lib/hrPerformanceStore';
+import { scheduleHrCloudPush } from '@/lib/hrPerformanceSync';
+
+import {
+
+  buildInitialNotaState,
+
+  NotaConstatareRefacereForm,
+
+  validateRegisterErrorSubmission,
+
+} from '@/components/shared/NotaConstatareRefacereForm';
+
+import type { EmployeeProfile, ErrorCase } from '@/types';
+
+
 
 interface RegisterErrorCaseFormProps {
-  /** Angajații pentru care se poate înregistra o eroare */
+
   profiles: EmployeeProfile[];
-  onSuccess?: (message: string) => void;
+
+  onSuccess?: (message: string, createdErrorId?: string) => void;
+
   compact?: boolean;
+
 }
+
+
 
 export function RegisterErrorCaseForm({
+
   profiles,
+
   onSuccess,
+
   compact,
+
 }: RegisterErrorCaseFormProps) {
-  const { addErrorCase, uploadDocument } = useHrPerformance();
-  const { mentors } = useUsers();
+
+  const { uploadDocument, refresh } = useHrPerformance();
+
   const { user } = useAuth();
 
+
+
   const [angajatId, setAngajatId] = useState('');
-  const [motiv, setMotiv] = useState<ErrorMotiv>('neatentie');
-  const [descriere, setDescriere] = useState('');
-  const [proiectNume, setProiectNume] = useState('');
-  const [pasi, setPasi] = useState('');
-  const [termenLimita, setTermenLimita] = useState('');
-  const [responsabilId, setResponsabilId] = useState('');
+
+  const [formState, setFormState] = useState(() => buildInitialNotaState(user?.name ?? ''));
+
   const [error, setError] = useState('');
 
+  const [saving, setSaving] = useState(false);
+
+
+
+  const signedNotaInputId = `signed-nota-register-${compact ? 'compact' : 'full'}`;
+
+  const lessonFilesInputId = `lesson-files-register-${compact ? 'compact' : 'full'}`;
+
+
+
   const resetForm = () => {
+
     setAngajatId('');
-    setMotiv('neatentie');
-    setDescriere('');
-    setProiectNume('');
-    setPasi('');
-    setTermenLimita('');
-    setResponsabilId('');
+
+    setFormState(buildInitialNotaState(user?.name ?? ''));
+
   };
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault();
-    if (!user || !angajatId) return;
+
+    if (!user) return;
+
     setError('');
-    if (!canRegisterErrorCase(user, angajatId)) {
-      setError('Nu puteți înregistra erori pentru acest angajat.');
-      return;
-    }
-    if (pasi.trim().length < 20) {
-      setError('Planul „Cum evităm pe viitor" necesită min. 20 caractere.');
-      return;
-    }
 
-    const fileInput = document.getElementById(`error-doc-${compact ? 'compact' : 'full'}`) as HTMLInputElement;
-    const file = fileInput?.files?.[0];
 
-    const created = addErrorCase({
+
+    const signedInput = document.getElementById(signedNotaInputId) as HTMLInputElement;
+
+    const lessonInput = document.getElementById(lessonFilesInputId) as HTMLInputElement;
+
+    const signedFile = signedInput?.files?.[0];
+
+    const lessonFiles = lessonInput?.files;
+
+    const hasLessonFiles = !!lessonFiles?.length;
+
+
+
+    const validationError = validateRegisterErrorSubmission(
+
+      formState,
+
       angajatId,
-      raportatDe: user.id,
-      raportatDeNume: user.name,
-      data: new Date().toISOString().slice(0, 10),
-      proiectNume: proiectNume || undefined,
-      motiv,
-      descriere: descriere.trim(),
-      planActiune: {
-        pasi: pasi.trim(),
-        responsabilId: responsabilId || user.id,
-        termenLimita:
-          termenLimita || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-        status: 'deschis',
-      },
-    });
 
-    if (file) {
-      await uploadDocument({
-        file,
-        tip: 'nota_constatare',
-        angajatId,
-        uploadedBy: user.id,
-        uploadedByNume: user.name,
-        errorCaseId: created.id,
-      });
+      !!signedFile,
+
+      hasLessonFiles,
+
+    );
+
+    if (validationError) {
+
+      setError(validationError);
+
+      return;
+
     }
 
-    resetForm();
-    if (fileInput) fileInput.value = '';
-    onSuccess?.('Eroare înregistrată. La repetare se poate declanșa re-instruirea.');
+    if (!canRegisterErrorCase(user, angajatId)) {
+
+      setError('Nu puteți înregistra erori pentru acest angajat.');
+
+      return;
+
+    }
+
+
+
+    setSaving(true);
+
+    const errorId = hrPerformanceStore.nextErrorCaseId();
+
+    const now = new Date().toISOString();
+
+    const motivLabel = ERROR_MOTIV_LABELS[formState.motiv];
+
+
+
+    try {
+
+      const signedDoc = await uploadDocument({
+
+        file: signedFile!,
+
+        tip: 'nota_constatare',
+
+        angajatId,
+
+        uploadedBy: user.id,
+
+        uploadedByNume: user.name,
+
+        errorCaseId: errorId,
+
+      });
+
+
+
+      const lessonDocumentIds: string[] = [];
+
+      if (lessonFiles?.length) {
+
+        for (let i = 0; i < lessonFiles.length; i++) {
+
+          const file = lessonFiles[i];
+
+          if (!file) continue;
+
+          const doc = await uploadDocument({
+
+            file,
+
+            tip: 're_instruire',
+
+            angajatId,
+
+            uploadedBy: user.id,
+
+            uploadedByNume: user.name,
+
+            errorCaseId: errorId,
+
+            folder: 'istoric_instruire',
+
+            dayId: formState.topicDayId,
+
+          });
+
+          lessonDocumentIds.push(doc.id);
+
+        }
+
+      }
+
+
+
+      const item: ErrorCase = {
+
+        id: errorId,
+
+        angajatId,
+
+        raportatDe: user.id,
+
+        raportatDeNume: user.name,
+
+        data: formState.dataNota,
+
+        motiv: formState.motiv,
+
+        descriere: motivLabel,
+
+        signedDocumentId: signedDoc.id,
+
+        hrStatus: 'trimis_hr',
+
+        reTrainingProposal: {
+
+          topicDayId: formState.topicDayId,
+
+          topicTitle: formState.topicTitle,
+
+          trainerId: formState.mentorRecomandatId,
+
+          lessonNotes: formState.lessonNotes.trim(),
+
+          lessonDocumentIds,
+
+          plannedStartDate: formState.dataInceputInstruire,
+
+          submittedAt: now,
+
+          submittedBy: user.id,
+
+        },
+
+        planActiune: {
+
+          pasi: `Re-instruire: ${formState.topicTitle} · start ${formState.dataInceputInstruire}`,
+
+          responsabilId: user.id,
+
+          termenLimita: formState.dataInceputInstruire,
+
+          status: 'deschis',
+
+        },
+
+        createdAt: now,
+
+        updatedAt: now,
+
+      };
+
+
+
+      hrPerformanceStore.saveErrorCase(item);
+
+      refresh();
+
+      scheduleHrCloudPush();
+
+      resetForm();
+
+      if (signedInput) signedInput.value = '';
+
+      if (lessonInput) lessonInput.value = '';
+
+      onSuccess?.('Înregistrare trimisă la HR. Așteptați confirmarea.', errorId);
+
+    } catch (err) {
+
+      setError(err instanceof Error ? err.message : 'Eroare la salvare.');
+
+    } finally {
+
+      setSaving(false);
+
+    }
+
   };
 
+
+
   if (!profiles.length) {
+
     return (
+
       <p className="text-sm text-corporate-muted">
+
         Nu aveți angajați desemnați ca supervizor pentru înregistrare erori.
+
       </p>
+
     );
+
   }
 
+
+
   return (
+
     <form
+
       onSubmit={(e) => void handleSubmit(e)}
+
       className={[
+
         'grid gap-3 sm:grid-cols-2',
+
         compact ? 'p-3 rounded-xl bg-corporate-surface/60' : 'p-4 rounded-xl bg-corporate-surface',
+
       ].join(' ')}
+
     >
-      <label className="block text-sm sm:col-span-2">
-        <span className="text-corporate-muted">Angajat *</span>
-        <select
-          className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"
-          value={angajatId}
-          onChange={(e) => setAngajatId(e.target.value)}
-          required
-        >
-          <option value="">Selectează…</option>
-          {profiles.map((p) => (
-            <option key={p.userId} value={p.userId}>
-              {p.prenume} {p.nume} — {p.functie}
-            </option>
-          ))}
-        </select>
-      </label>
-      <Input label="Proiect" value={proiectNume} onChange={(e) => setProiectNume(e.target.value)} />
-      <label className="block text-sm">
-        <span className="text-corporate-muted">Motiv *</span>
-        <select
-          className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"
-          value={motiv}
-          onChange={(e) => setMotiv(e.target.value as ErrorMotiv)}
-        >
-          {Object.entries(ERROR_MOTIV_LABELS).map(([k, v]) => (
-            <option key={k} value={k}>
-              {v}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block text-sm sm:col-span-2">
-        <span className="text-corporate-muted">Descriere *</span>
-        <textarea
-          className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm min-h-[60px]"
-          value={descriere}
-          onChange={(e) => setDescriere(e.target.value)}
-          required
-        />
-      </label>
-      <label className="block text-sm sm:col-span-2">
-        <span className="text-corporate-muted">Cum evităm pe viitor *</span>
-        <textarea
-          className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm min-h-[80px]"
-          value={pasi}
-          onChange={(e) => setPasi(e.target.value)}
-          required
-          placeholder="Pași concreți, responsabilități, proceduri de urmat…"
-        />
-      </label>
-      <label className="block text-sm">
-        <span className="text-corporate-muted">Responsabil plan</span>
-        <select
-          className="mt-1 w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"
-          value={responsabilId}
-          onChange={(e) => setResponsabilId(e.target.value)}
-        >
-          <option value="">Implicit (dvs.)</option>
-          {mentors.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <Input
-        label="Termen plan acțiune"
-        type="date"
-        value={termenLimita}
-        onChange={(e) => setTermenLimita(e.target.value)}
+
+      <NotaConstatareRefacereForm
+
+        profiles={profiles}
+
+        angajatId={angajatId}
+
+        onAngajatIdChange={setAngajatId}
+
+        state={formState}
+
+        onChange={setFormState}
+
+        signedNotaInputId={signedNotaInputId}
+
+        lessonFilesInputId={lessonFilesInputId}
+
       />
-      <label className="block text-sm sm:col-span-2">
-        <span className="text-corporate-muted">Notă constatare (scan PDF/imagine)</span>
-        <input
-          id={`error-doc-${compact ? 'compact' : 'full'}`}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          className="mt-1 block text-sm"
-        />
-      </label>
+
+
+
       <div className="sm:col-span-2">
-        <Button type="submit" variant="primary" size="sm">
-          Salvează eroarea
+
+        <Button type="submit" variant="primary" size="sm" disabled={saving}>
+
+          {saving ? 'Se trimite la HR…' : 'Confirmă înregistrarea și trimite la HR'}
+
         </Button>
+
       </div>
+
       {error && <p className="sm:col-span-2 text-sm text-red-600">{error}</p>}
+
     </form>
+
   );
+
 }
+
+

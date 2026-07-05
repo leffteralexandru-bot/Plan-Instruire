@@ -5,6 +5,7 @@ import type {
   EvaluationStageStatus,
   EmployeeSelfAssessment,
 } from '@/types';
+import { getEvaluationSelfAssessmentFields } from '@/lib/evaluationSettings';
 
 export const EVALUATION_STAGE_LABELS: Record<EvaluationStageId, string> = {
   auto_evaluare: 'Auto-evaluare angajat',
@@ -79,8 +80,10 @@ export function getActiveStage(cycle: EvaluationCycle): EvaluationStage | undefi
 }
 
 export function canEmployeeSubmitSelfAssessment(cycle: EvaluationCycle): boolean {
-  const stage = getActiveStage(cycle);
-  return stage?.id === 'auto_evaluare' && (cycle.status === 'in_curs' || cycle.status === 'intarziat');
+  const withStages = ensureEvaluationStages(cycle);
+  const auto = withStages.stages?.find((s) => s.id === 'auto_evaluare');
+  if (auto?.status !== 'in_curs') return false;
+  return cycle.status === 'in_curs' || cycle.status === 'intarziat';
 }
 
 /** Etapa curentă pentru afișare în tabele / inbox */
@@ -97,10 +100,11 @@ export function getEvaluationWorkflowLabel(cycle: EvaluationCycle): string {
 
 export function isSelfAssessmentComplete(data?: EmployeeSelfAssessment): boolean {
   if (!data) return false;
+  const fields = getEvaluationSelfAssessmentFields();
   return (
-    data.realizari.trim().length >= 20 &&
-    data.dificultati.trim().length >= 10 &&
-    data.obiectiveViitoare.trim().length >= 10
+    data.realizari.trim().length >= fields.realizari.minLength &&
+    data.dificultati.trim().length >= fields.dificultati.minLength &&
+    data.obiectiveViitoare.trim().length >= fields.obiectiveViitoare.minLength
   );
 }
 
@@ -109,14 +113,15 @@ export function validateSelfAssessmentSubmission(
   data: EmployeeSelfAssessment,
   competencyComplete: boolean,
 ): string | null {
-  if (data.realizari.trim().length < 20) {
-    return 'Realizările trebuie să aibă minim 20 caractere.';
+  const fields = getEvaluationSelfAssessmentFields();
+  if (data.realizari.trim().length < fields.realizari.minLength) {
+    return `${fields.realizari.label} trebuie să aibă minim ${fields.realizari.minLength} caractere.`;
   }
-  if (data.dificultati.trim().length < 10) {
-    return 'Dificultățile trebuie să aibă minim 10 caractere.';
+  if (data.dificultati.trim().length < fields.dificultati.minLength) {
+    return `${fields.dificultati.label} trebuie să aibă minim ${fields.dificultati.minLength} caractere.`;
   }
-  if (data.obiectiveViitoare.trim().length < 10) {
-    return 'Obiectivele viitoare trebuie să aibă minim 10 caractere.';
+  if (data.obiectiveViitoare.trim().length < fields.obiectiveViitoare.minLength) {
+    return `${fields.obiectiveViitoare.label} trebuie să aibă minim ${fields.obiectiveViitoare.minLength} caractere.`;
   }
   if (!competencyComplete) {
     return 'Bifează un nivel (1–4) la fiecare din cele 10 criterii.';
@@ -141,19 +146,59 @@ export function isEmployeeSelfAssessmentStageDone(cycle: EvaluationCycle): boole
   return auto?.status === 'completat';
 }
 
-/** Evaluare fără date completate — așteaptă acțiunea HR „Pornește evaluarea” */
-export function needsEvaluationWorkflowStart(cycle: EvaluationCycle): boolean {
+export function isSupervisorEvaluationStageDone(cycle: EvaluationCycle): boolean {
+  const withStages = ensureEvaluationStages(cycle);
+  const mentor = withStages.stages?.find((s) => s.id === 'evaluare_mentor');
+  return mentor?.status === 'completat';
+}
+
+/** Etape vizibile secvențial — următoarea apare doar după finalizarea celei anterioare */
+export function getVisibleEvaluationStages(cycle: EvaluationCycle): EvaluationStage[] {
+  if (needsEvaluationWorkflowStart(cycle)) return [];
+
+  const all = ensureEvaluationStages(cycle).stages ?? [];
+  const visible: EvaluationStage[] = [];
+  for (const stage of all) {
+    visible.push(stage);
+    if (stage.status !== 'completat') break;
+  }
+  return visible;
+}
+
+/** HR poate închide ciclul doar după evaluarea supervizorului */
+export function canHrFinalizeEvaluation(cycle: EvaluationCycle): boolean {
   if (cycle.status === 'evaluat') return false;
   const withStages = ensureEvaluationStages(cycle);
-  const started = withStages.stages?.some(
-    (s) => s.status === 'in_curs' || s.status === 'completat',
-  );
-  if (started) return false;
-  const hasWork =
-    cycle.employeeSelfAssessment?.completedAt ||
-    cycle.competencySelfScores ||
-    cycle.supervisorAssessment?.completedAt ||
-    cycle.scoruri ||
-    cycle.observatiiMentor;
-  return !hasWork;
+  const hrStage = withStages.stages?.find((s) => s.id === 'validare_hr');
+  return hrStage?.status === 'in_curs' && isSupervisorEvaluationStageDone(cycle);
+}
+
+export function getHrFinalizeBlockReason(cycle: EvaluationCycle): string | null {
+  if (cycle.status === 'evaluat') return 'Evaluarea este deja finalizată.';
+  if (needsEvaluationWorkflowStart(cycle)) {
+    return 'Porniți evaluarea (butonul Pornește).';
+  }
+  if (!isEmployeeSelfAssessmentStageDone(cycle)) {
+    return 'Așteptați finalizarea auto-evaluării angajatului.';
+  }
+  if (!isSupervisorEvaluationStageDone(cycle)) {
+    return 'Așteptați evaluarea supervizorului.';
+  }
+  if (!canHrFinalizeEvaluation(cycle)) {
+    return 'Validarea HR nu este încă activă.';
+  }
+  return null;
+}
+
+export function isEvaluationWorkflowStarted(cycle: EvaluationCycle): boolean {
+  if (cycle.status === 'evaluat') return true;
+  const withStages = ensureEvaluationStages(cycle);
+  const auto = withStages.stages?.find((s) => s.id === 'auto_evaluare');
+  return auto?.status === 'in_curs' || auto?.status === 'completat';
+}
+
+/** Evaluare fără flux pornit — așteaptă acțiunea HR „Pornește” */
+export function needsEvaluationWorkflowStart(cycle: EvaluationCycle): boolean {
+  if (cycle.status === 'evaluat') return false;
+  return !isEvaluationWorkflowStarted(cycle);
 }

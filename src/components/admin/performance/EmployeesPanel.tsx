@@ -159,10 +159,15 @@ export function EmployeesPanel() {
                     {evalCurrent ? getEvaluationWorkflowLabel(evalCurrent) : '—'}
                   </td>
                   <td className="py-2.5 pr-3">
-                    {mentors.reInstruire.active && mentors.reInstruire.status ? (
-                      <Badge variant="warning">
-                        {RE_TRAINING_STATUS_LABELS[normalizeReTrainingStatus(mentors.reInstruire.status as 'alerta_supervizor')]}
-                      </Badge>
+                    {mentors.reInstruire.active ? (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-corporate-dark">{mentors.reInstruire.name}</p>
+                        {mentors.reInstruire.status ? (
+                          <Badge variant="warning">
+                            {RE_TRAINING_STATUS_LABELS[normalizeReTrainingStatus(mentors.reInstruire.status as 'alerta_supervizor')]}
+                          </Badge>
+                        ) : null}
+                      </div>
                     ) : (
                       <span className="text-xs text-corporate-muted">—</span>
                     )}

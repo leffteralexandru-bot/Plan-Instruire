@@ -9,6 +9,7 @@ export type ProfessionalPanelVariant =
   | 'inbox'
   | 'activity'
   | 'retraining'
+  | 'retraining-success'
   | 'neutral';
 
 interface PanelTheme {
@@ -119,17 +120,30 @@ const THEMES: Record<ProfessionalPanelVariant, PanelTheme> = {
     footerBorder: 'border-sky-100',
   },
   retraining: {
-    shell: 'border-orange-200/70 bg-white',
+    shell: 'border-orange-200/70 bg-orange-50/20',
     accent: 'bg-orange-500',
-    header: 'bg-orange-50/45',
+    header: 'bg-orange-50/55',
     headerBorder: 'border-orange-100',
     iconWrap: 'bg-orange-100 ring-orange-200/70',
     iconColor: 'text-orange-900',
     eyebrow: 'text-orange-800/85',
     title: 'text-corporate-dark',
     subtitle: 'text-corporate-muted',
-    body: 'bg-white',
+    body: 'bg-orange-50/25',
     footerBorder: 'border-orange-100',
+  },
+  'retraining-success': {
+    shell: 'border-orange-300/75 bg-orange-50/30',
+    accent: 'bg-orange-500',
+    header: 'bg-orange-50/75',
+    headerBorder: 'border-orange-200/80',
+    iconWrap: 'bg-orange-100 ring-orange-300/60',
+    iconColor: 'text-orange-900',
+    eyebrow: 'text-orange-800/90',
+    title: 'text-corporate-dark',
+    subtitle: 'text-corporate-muted',
+    body: 'bg-orange-50/30',
+    footerBorder: 'border-orange-200/70',
   },
   neutral: {
     shell: 'border-corporate-border bg-white',
@@ -238,6 +252,8 @@ export interface ProfessionalPanelProps {
   title: string;
   subtitle?: string;
   icon?: ProfessionalPanelIcon;
+  /** Înlocuiește iconița implicită (ex. poză profil) */
+  headerIcon?: ReactNode;
   badge?: ReactNode;
   headerAction?: ReactNode;
   footer?: ReactNode;
@@ -252,23 +268,10 @@ export interface ProfessionalPanelProps {
   /** Conținut vizibil când panoul e restrâns (ex. bară progres compactă) */
   collapsedPeek?: ReactNode;
   toggleLabels?: { expanded: string; collapsed: string };
-}
-
-function PanelChevron({ expanded, className }: { expanded: boolean; className?: string }) {
-  return (
-    <span
-      className={[
-        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-white/90 shadow-sm transition-transform duration-200',
-        expanded ? 'rotate-180' : '',
-        className,
-      ].join(' ')}
-      aria-hidden
-    >
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
+  /** Doar header-ul rămâne în celulă — conținutul se randă separat de părinte */
+  bodyDetached?: boolean;
+  /** Înălțime egală pentru tile-uri header (ex. rândul cu 3 module) */
+  headerTile?: boolean;
 }
 
 export function ProfessionalPanel({
@@ -277,6 +280,7 @@ export function ProfessionalPanel({
   title,
   subtitle,
   icon,
+  headerIcon,
   badge,
   headerAction,
   footer,
@@ -289,92 +293,163 @@ export function ProfessionalPanel({
   onToggle,
   collapsedPeek,
   toggleLabels,
+  bodyDetached = false,
+  headerTile = false,
 }: ProfessionalPanelProps) {
   const theme = THEMES[variant];
   const pad = compact ? 'p-4' : 'p-5';
 
-  const headerInner = (
-    <>
-      <div className="flex items-center gap-3 min-w-0">
-        {icon && (
-          <div
-            className={[
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1',
-              theme.iconWrap,
-            ].join(' ')}
-          >
-            <PanelIcon name={icon} className={`h-[18px] w-[18px] ${theme.iconColor}`} />
-          </div>
-        )}
-        <div className="min-w-0">
+  const headerTitleBlock = (
+    <div className="flex items-center gap-3 min-w-0 flex-1">
+      {headerIcon ?? (icon && (
+        <div
+          className={[
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1',
+            theme.iconWrap,
+          ].join(' ')}
+        >
+          <PanelIcon name={icon} className={`h-[18px] w-[18px] ${theme.iconColor}`} />
+        </div>
+      ))}
+      <div className="min-w-0">
+        <p
+          className={[
+            'text-[10px] font-semibold uppercase tracking-[0.12em]',
+            headerTile ? 'text-[9px] tracking-[0.08em] truncate whitespace-nowrap' : '',
+            theme.eyebrow,
+          ].join(' ')}
+        >
+          {eyebrow}
+        </p>
+        <h2
+          className={[
+            'font-semibold leading-snug',
+            headerTile
+              ? 'text-[13px] sm:text-sm leading-tight whitespace-nowrap truncate'
+              : 'text-base',
+            theme.title,
+          ].join(' ')}
+        >
+          {title}
+        </h2>
+        {subtitle && (
           <p
             className={[
-              'text-[10px] font-semibold uppercase tracking-[0.12em]',
-              theme.eyebrow,
+              'mt-0.5',
+              headerTile
+                ? 'min-h-[2rem] line-clamp-2 text-[11px] leading-snug'
+                : 'text-xs max-w-prose',
+              theme.subtitle,
             ].join(' ')}
           >
-            {eyebrow}
+            {subtitle}
           </p>
-          <h2 className={['text-base font-semibold leading-snug', theme.title].join(' ')}>
-            {title}
-          </h2>
-          {subtitle && (
-            <p className={['text-xs mt-0.5 max-w-prose', theme.subtitle].join(' ')}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0">
-        {badge}
-        {headerAction}
-        {collapsible && (
-          <PanelChevron expanded={expanded} className="border-corporate-border/70 text-corporate-stone" />
         )}
       </div>
-    </>
+    </div>
+  );
+
+  const headerActionsBlock =
+    badge || headerAction ? (
+      <div
+        className="flex flex-wrap items-center gap-2 shrink-0"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        {badge}
+        {headerAction}
+      </div>
+    ) : null;
+
+  const headerLayout = headerActionsBlock ? (
+    <div
+      className={[
+        'flex items-start justify-between gap-3 w-full',
+        headerTile ? 'h-full' : '',
+      ].join(' ')}
+    >
+      {collapsible && onToggle ? (
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-left"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          aria-label={
+            expanded
+              ? (toggleLabels?.expanded ?? 'Restrânge panoul')
+              : (toggleLabels?.collapsed ?? 'Deschide panoul')
+          }
+        >
+          {headerTitleBlock}
+        </button>
+      ) : (
+        <div className="min-w-0 flex-1">{headerTitleBlock}</div>
+      )}
+      {headerActionsBlock}
+    </div>
+  ) : collapsible && onToggle ? (
+    <button
+      type="button"
+      className="w-full text-left"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-label={
+        expanded
+          ? (toggleLabels?.expanded ?? 'Restrânge panoul')
+          : (toggleLabels?.collapsed ?? 'Deschide panoul')
+      }
+    >
+      {headerTitleBlock}
+    </button>
+  ) : (
+    headerTitleBlock
   );
 
   return (
     <section
       className={[
-        'overflow-hidden rounded-xl border shadow-sm flex',
+        'artgranit-panel overflow-hidden rounded-xl border shadow-sm flex',
+        headerTile ? 'h-full' : '',
         theme.shell,
+        collapsible && headerTile && expanded && bodyDetached
+          ? 'relative z-10 rounded-b-none border-b-0 shadow-md ring-2 ring-corporate-gold/35'
+          : '',
         className,
       ].join(' ')}
     >
       <div className={['w-1 shrink-0', theme.accent].join(' ')} aria-hidden />
 
-      <div className="min-w-0 flex-1">
+      <div className={['min-w-0 flex-1', headerTile ? 'flex flex-col' : ''].join(' ')}>
         {collapsible && onToggle ? (
-          <button
-            type="button"
+          <div
             className={[
-              'w-full border-b px-5 py-4 text-left transition-colors hover:bg-black/[0.02]',
+              'w-full transition-colors hover:bg-black/[0.02]',
+              headerTile ? 'flex-1 min-h-[7.25rem] border-b-0' : 'border-b',
+              'px-5 py-4',
               theme.header,
-              theme.headerBorder,
+              headerTile ? '' : theme.headerBorder,
+              collapsible && headerTile && expanded && bodyDetached ? 'pb-3' : '',
             ].join(' ')}
-            onClick={onToggle}
-            aria-expanded={expanded}
-            aria-label={
-              expanded
-                ? (toggleLabels?.expanded ?? 'Restrânge panoul')
-                : (toggleLabels?.collapsed ?? 'Deschide panoul')
-            }
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">{headerInner}</div>
-          </button>
+            {headerLayout}
+          </div>
         ) : (
           <div className={['border-b px-5 py-4', theme.header, theme.headerBorder].join(' ')}>
-            <div className="flex flex-wrap items-start justify-between gap-3">{headerInner}</div>
+            {headerLayout}
           </div>
         )}
 
-        {collapsible && !expanded && collapsedPeek && (
+        {collapsible && headerTile && expanded && bodyDetached && (
+          <div className="px-5 pb-2" aria-hidden>
+            <div className={['h-1 rounded-full opacity-80', theme.accent].join(' ')} />
+          </div>
+        )}
+
+        {collapsible && !expanded && collapsedPeek && !bodyDetached && (
           <div className={[pad, theme.body, bodyClassName].join(' ')}>{collapsedPeek}</div>
         )}
 
-        {(!collapsible || expanded) && children && (
+        {(!collapsible || expanded) && children && !bodyDetached && (
           <div className={[pad, 'space-y-4', theme.body, bodyClassName].join(' ')}>
             {children}
           </div>
