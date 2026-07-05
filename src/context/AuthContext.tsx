@@ -108,10 +108,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await signOutSupabaseAuth();
     storage.clearAuth();
+    storage.clearSelectedStagiarId();
     setUser(null);
-    window.location.assign('/login');
+    try {
+      await signOutSupabaseAuth();
+    } catch {
+      /* deconectare locală deja aplicată */
+    } finally {
+      window.location.replace('/login');
+    }
   }, []);
 
   const isInTraining = !!user && !!userStore.getEnrollmentForAngajat(user.id);

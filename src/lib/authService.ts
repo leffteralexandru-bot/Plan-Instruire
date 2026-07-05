@@ -39,7 +39,23 @@ export async function signInWithSupabaseAuth(email: string, password: string): P
 
 export async function signOutSupabaseAuth(): Promise<void> {
   const sb = getSupabase();
-  if (sb) await sb.auth.signOut();
+  if (!sb) return;
+  try {
+    // Local first — nu așteaptă rețeaua; curăță sesiunea din browser imediat
+    await sb.auth.signOut({ scope: 'local' });
+  } catch {
+    /* sesiune locală poate lipsi */
+  }
+  try {
+    await Promise.race([
+      sb.auth.signOut(),
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 2500);
+      }),
+    ]);
+  } catch {
+    /* ignorăm — sesiunea locală e deja ștearsă */
+  }
 }
 
 /** Sincronizează întreg progresul cohortei active (admin/mentor) */

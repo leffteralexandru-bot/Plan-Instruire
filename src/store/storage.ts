@@ -48,6 +48,10 @@ export const storage = {
     localStorage.removeItem(AUTH_KEY);
   },
 
+  clearSelectedStagiarId(): void {
+    localStorage.removeItem(SELECTED_STAGIAR_KEY);
+  },
+
   getSelectedStagiarId(): string | null {
     return localStorage.getItem(SELECTED_STAGIAR_KEY);
   },

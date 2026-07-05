@@ -45,10 +45,13 @@ export function Header() {
               <p className="text-xs text-white/60">{formatUserRoles(user)}</p>
             </div>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               className="text-white/80 hover:text-white hover:bg-white/10"
-              onClick={() => void logout()}
+              onClick={() => {
+                void logout();
+              }}
               title="Deconectare și alegere alt profil"
             >
               Ieșire
