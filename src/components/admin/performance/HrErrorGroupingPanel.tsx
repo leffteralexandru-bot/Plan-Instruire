@@ -324,7 +324,7 @@ export function HrErrorGroupingPanel() {
                                 <input
                                   type="date"
                                   min={todayLocalIso()}
-                                  className="mt-1 w-full max-w-xs rounded-lg border border-corporate-border px-2 py-1.5 text-sm"
+                                  className="mt-1 w-full rounded-lg border border-corporate-border px-2 py-1.5 text-sm sm:max-w-xs"
                                   value={ov.plannedStartDate}
                                   onChange={(e) =>
                                     setOverrides((prev) => ({

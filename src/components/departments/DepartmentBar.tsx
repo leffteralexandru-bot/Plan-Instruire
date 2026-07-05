@@ -34,7 +34,7 @@ export function DepartmentBar() {
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-corporate-gold/50 to-transparent"
         aria-hidden
       />
-      <ul className="mx-auto flex max-w-3xl items-stretch justify-between gap-1 sm:gap-2">
+      <ul className="mx-auto flex w-full max-w-6xl items-stretch justify-between gap-1 sm:gap-2">
         {DEPARTMENTS.map((dept) => {
           const isActive = activeDept?.id === dept.id;
           const to = departmentLink(dept.route, dept.planAvailable, isStaffAngajat, isHrStaff, isAdmin);

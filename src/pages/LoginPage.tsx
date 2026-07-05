@@ -145,8 +145,8 @@ export function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="login-hero relative px-4 py-10 sm:py-14 text-center text-white">
+    <div className="min-h-screen w-full min-w-0 flex flex-col">
+      <div className="login-hero relative w-full px-4 py-10 sm:py-14 text-center text-white">
         <div className="relative z-10 mx-auto max-w-lg space-y-4">
           <BrandLogo tone="light" height={32} className="mx-auto" />
           <p className="text-sm text-corporate-gold font-medium tracking-wide uppercase">

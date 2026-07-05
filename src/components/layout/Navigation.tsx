@@ -92,7 +92,7 @@ export function Navigation() {
 
   return (
     <nav className="border-t border-white/10 bg-corporate-black">
-      <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl gap-1 overflow-x-auto px-4 py-2 sm:px-6">
         {links.map((link) => {
           const testTarget = guide && navTheme && isTestingNavTarget(link.to, guide);
           return (

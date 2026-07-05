@@ -315,7 +315,9 @@ export function ProfessionalPanel({
         <p
           className={[
             'text-[10px] font-semibold uppercase tracking-[0.12em]',
-            headerTile ? 'text-[9px] tracking-[0.08em] truncate whitespace-nowrap' : '',
+            headerTile
+              ? 'lg:text-[9px] lg:tracking-[0.08em] lg:truncate lg:whitespace-nowrap'
+              : '',
             theme.eyebrow,
           ].join(' ')}
         >
@@ -325,7 +327,7 @@ export function ProfessionalPanel({
           className={[
             'font-semibold leading-snug',
             headerTile
-              ? 'text-[13px] sm:text-sm leading-tight whitespace-nowrap truncate'
+              ? 'text-sm sm:text-[13px] lg:text-sm lg:leading-tight lg:whitespace-nowrap lg:truncate'
               : 'text-base',
             theme.title,
           ].join(' ')}
@@ -337,7 +339,7 @@ export function ProfessionalPanel({
             className={[
               'mt-0.5',
               headerTile
-                ? 'min-h-[2rem] line-clamp-2 text-[11px] leading-snug'
+                ? 'text-[11px] leading-snug lg:min-h-[2rem] lg:line-clamp-2'
                 : 'text-xs max-w-prose',
               theme.subtitle,
             ].join(' ')}
@@ -424,7 +426,7 @@ export function ProfessionalPanel({
           <div
             className={[
               'w-full transition-colors hover:bg-black/[0.02]',
-              headerTile ? 'flex-1 min-h-[7.25rem] border-b-0' : 'border-b',
+              headerTile ? 'flex-1 min-h-0 lg:min-h-[7.25rem] border-b-0' : 'border-b',
               'px-5 py-4',
               theme.header,
               headerTile ? '' : theme.headerBorder,

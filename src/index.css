@@ -4,16 +4,18 @@
 
 @layer base {
   html {
-    @apply antialiased scroll-smooth;
+    @apply antialiased scroll-smooth w-full;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
-    @apply bg-corporate-surface text-corporate-black min-h-screen;
+    @apply bg-corporate-surface text-corporate-black min-h-screen w-full overflow-x-clip;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
   #root {
-    @apply min-h-screen flex flex-col;
+    @apply min-h-screen flex flex-col w-full min-w-0;
   }
 
   ::selection {
