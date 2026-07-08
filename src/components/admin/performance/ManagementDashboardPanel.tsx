@@ -128,20 +128,23 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
         )}
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Angajați activi" value={String(metrics.totalAngajati)} />
+      <div className={phoneLayout ? 'grid grid-cols-2 gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'}>
+        <Kpi compact={phoneLayout} label="Angajați activi" value={String(metrics.totalAngajati)} />
         <Kpi
+          compact={phoneLayout}
           label="Progres instruire mediu"
           value={`${metrics.progresInstruireMediu}%`}
           sub={`${metrics.angajatiInInstruire} în program`}
         />
         <Kpi
+          compact={phoneLayout}
           label="Finalizare instruire"
           value={`${metrics.rataFinalizareInstruire}%`}
           sub={`${metrics.certificateEmise} certificate`}
           highlight={metrics.rataFinalizareInstruire < 50}
         />
         <Kpi
+          compact={phoneLayout}
           label="Evaluări la timp"
           value={`${metrics.rataEvaluariLaTimp}%`}
           sub={`${metrics.evaluariIntarziate} întârziate`}
@@ -149,19 +152,22 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Erori luna curentă" value={String(metrics.eroriLunaCurenta)} />
+      <div className={phoneLayout ? 'grid grid-cols-2 gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'}>
+        <Kpi compact={phoneLayout} label="Erori luna curentă" value={String(metrics.eroriLunaCurenta)} />
         <Kpi
+          compact={phoneLayout}
           label="Planuri acțiune deschise"
           value={String(metrics.planuriActiuneDeschise)}
           highlight={metrics.planuriActiuneDeschise > 0}
         />
         <Kpi
+          compact={phoneLayout}
           label="Re-instruiri active"
           value={String(metrics.reInstruiriActive)}
           highlight={metrics.reInstruiriActive > 0}
         />
         <Kpi
+          compact={phoneLayout}
           label="Validări mentor"
           value={String(metrics.validariMentorPending)}
           sub="pending"
@@ -334,19 +340,45 @@ function Kpi({
   value,
   sub,
   highlight,
+  compact,
 }: {
   label: string;
   value: string;
   sub?: string;
   highlight?: boolean;
+  compact?: boolean;
 }) {
   return (
-    <Card padding="sm">
-      <p className="text-[10px] uppercase tracking-wide text-corporate-muted">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${highlight ? 'text-amber-600' : 'text-corporate-dark'}`}>
+    <Card padding="sm" className={compact ? '!p-2.5' : ''}>
+      <p
+        className={
+          compact
+            ? 'text-[8px] leading-tight uppercase tracking-wide text-corporate-muted'
+            : 'text-[10px] uppercase tracking-wide text-corporate-muted'
+        }
+      >
+        {label}
+      </p>
+      <p
+        className={[
+          compact ? 'text-lg' : 'text-2xl',
+          'font-bold mt-0.5',
+          highlight ? 'text-amber-600' : 'text-corporate-dark',
+        ].join(' ')}
+      >
         {value}
       </p>
-      {sub && <p className="text-xs text-corporate-muted mt-0.5">{sub}</p>}
+      {sub && (
+        <p
+          className={
+            compact
+              ? 'text-[9px] leading-tight text-corporate-muted mt-0.5'
+              : 'text-xs text-corporate-muted mt-0.5'
+          }
+        >
+          {sub}
+        </p>
+      )}
     </Card>
   );
 }
