@@ -1,4 +1,4 @@
-import { MANAGEMENT_TREND_MONTHS, type ManagementDashboardMetrics } from '@/lib/managementDashboard';
+import { MANAGEMENT_TREND_MONTHS, formatManagementTrendMonth, type ManagementDashboardMetrics } from '@/lib/managementDashboard';
 import {
   PDF_BRAND,
   createPdfLayout,
@@ -12,6 +12,7 @@ import {
   drawSectionTitle,
   drawSignatureBlock,
   drawTwoColumnPanels,
+  formatPdfRoDate,
   generateReportReference,
   loadBrandLogoWhitePng,
   stampFootersOnAllPages,
@@ -24,9 +25,7 @@ export interface ManagementReportOptions {
 }
 
 function formatMonthLabel(luna: string): string {
-  const [year, month] = luna.slice(0, 7).split('-');
-  const d = new Date(Number(year), Number(month) - 1, 1);
-  return d.toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' });
+  return formatManagementTrendMonth(luna, 'full');
 }
 
 function computeOrganizationalHealth(m: ManagementDashboardMetrics): {
@@ -54,7 +53,7 @@ function computeOrganizationalHealth(m: ManagementDashboardMetrics): {
   return { score, label: 'Risc operațional — intervenție prioritară', accent: 'alert' };
 }
 
-function buildExecutiveSummary(m: ManagementDashboardMetrics, health: number): string {
+export function buildExecutiveSummaryText(m: ManagementDashboardMetrics, health: number): string {
   const parts: string[] = [];
   parts.push(
     `La data raportului, organizația înregistrează un indice de sănătate de ${health}/100, cu ${m.totalAngajati} angajați activi și ${m.angajatiInInstruire} participanți la programul de instruire.`,
@@ -178,7 +177,7 @@ function drawKpiGrid(ctx: ReturnType<typeof createPdfLayout>, metrics: Managemen
 }
 
 /** Raport PDF vectorial — text clar, diacritice românești (DejaVu Sans) */
-async function buildManagementDashboardPdfDoc(
+export async function buildManagementDashboardPdfDoc(
   metrics: ManagementDashboardMetrics,
   options?: ManagementReportOptions,
 ) {
@@ -193,14 +192,14 @@ async function buildManagementDashboardPdfDoc(
 
   await drawBrandedReportHeader(ctx, {
     title: 'Raport Management',
-    subtitle: 'Instruire · Evaluări · Calitate · Dezvoltare',
+    subtitle: `Instruire · Evaluări · Calitate · Dezvoltare · Generat ${formatPdfRoDate(new Date().toISOString())}`,
     department: 'Departament Ingineri',
     reportRef,
     logoPng,
   });
 
   drawHealthScoreCard(ctx, health.score, health.label, health.accent);
-  drawExecutiveSummaryBox(ctx, 'Rezumat executiv', buildExecutiveSummary(metrics, health.score));
+  drawExecutiveSummaryBox(ctx, 'Rezumat executiv', buildExecutiveSummaryText(metrics, health.score));
   drawKpiGrid(ctx, metrics);
 
   drawTwoColumnPanels(

@@ -11,7 +11,7 @@ import { adminPath } from '@/lib/adminRoutes';
 import {
   computeManagementDashboardMetrics,
 } from '@/lib/managementDashboard';
-import { downloadManagementDashboardPdf, openManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
+import { openManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
 import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 import { ManagementTrendSection } from '@/components/admin/performance/ManagementTrendSection';
 
@@ -29,23 +29,17 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
   const handleExportPdf = async () => {
     setPdfLoading(true);
     try {
-      if (phoneLayout) {
-        await openManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
-      } else {
-        await downloadManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
-      }
+      await openManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
     } finally {
       setPdfLoading(false);
     }
   };
 
-  const pdfButtonLabel = phoneLayout
-    ? pdfLoading
+  const pdfButtonLabel = pdfLoading
+    ? phoneLayout
       ? 'Se generează…'
-      : 'Raport PDF'
-    : pdfLoading
-      ? 'Se generează raportul…'
-      : 'Descarcă raport PDF';
+      : 'Se generează raportul…'
+    : 'Raport PDF';
 
   return (
     <div className="space-y-4">

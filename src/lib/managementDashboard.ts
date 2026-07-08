@@ -9,6 +9,19 @@ import type { EvaluationScores, KpiSnapshot, TraineeProfile } from '@/types';
 
 export const MANAGEMENT_TREND_MONTHS = 12;
 
+/** Etichetă lună consistentă între dashboard și raport PDF */
+export function formatManagementTrendMonth(
+  luna: string,
+  style: 'compact' | 'full' = 'full',
+): string {
+  const [year, month] = luna.slice(0, 7).split('-');
+  const d = new Date(Number(year), Number(month) - 1, 1);
+  if (style === 'compact') {
+    return d.toLocaleDateString('ro-RO', { month: 'short' });
+  }
+  return d.toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' });
+}
+
 export interface ManagementTrendPoint {
   luna: string;
   eroriLuna: number;

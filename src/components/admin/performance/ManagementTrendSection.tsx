@@ -1,4 +1,4 @@
-import type { ManagementTrendPoint } from '@/lib/managementDashboard';
+import { formatManagementTrendMonth, type ManagementTrendPoint } from '@/lib/managementDashboard';
 
 const SERIES = [
   {
@@ -25,12 +25,7 @@ const SERIES = [
 ];
 
 function formatTrendMonthLabel(luna: string, compact?: boolean): string {
-  const [year, month] = luna.slice(0, 7).split('-');
-  const d = new Date(Number(year), Number(month) - 1, 1);
-  if (compact) {
-    return d.toLocaleDateString('ro-RO', { month: 'short' });
-  }
-  return d.toLocaleDateString('ro-RO', { month: 'short', year: '2-digit' });
+  return formatManagementTrendMonth(luna, compact ? 'compact' : 'full');
 }
 
 function seriesValues(points: ManagementTrendPoint[], key: (typeof SERIES)[number]['key']): number[] {
