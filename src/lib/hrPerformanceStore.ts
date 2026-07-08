@@ -1006,9 +1006,8 @@ export const hrPerformanceStore = {
 
   generateMonthlySnapshot(): KpiSnapshot {
     const luna = new Date().toISOString().slice(0, 7);
-    const snapshots = hrPerformanceStore.getKpiSnapshots();
-    const existing = snapshots.find((s) => s.luna === luna);
-    if (existing) return existing;
+    const snapshots = [...hrPerformanceStore.getKpiSnapshots()];
+    const existingIdx = snapshots.findIndex((s) => s.luna === luna);
 
     const profiles = hrPerformanceStore.getProfiles();
     const evaluations = hrPerformanceStore.getEvaluations();
@@ -1023,7 +1022,7 @@ export const hrPerformanceStore = {
     }
 
     const snap: KpiSnapshot = {
-      id: newId('kpi'),
+      id: existingIdx >= 0 ? snapshots[existingIdx]!.id : newId('kpi'),
       luna,
       totalAngajati: profiles.length,
       eroriLuna: errors.length,
@@ -1032,9 +1031,16 @@ export const hrPerformanceStore = {
         (e) => e.status === 'evaluat' && e.dataEvaluare?.startsWith(luna),
       ).length,
       progresInstruireMediu: progressCount ? Math.round(progressSum / progressCount) : 0,
-      createdAt: nowIso(),
+      createdAt: existingIdx >= 0 ? snapshots[existingIdx]!.createdAt : nowIso(),
     };
-    snapshots.push(snap);
+
+    if (existingIdx >= 0) {
+      snapshots[existingIdx] = snap;
+    } else {
+      snapshots.push(snap);
+    }
+
+    snapshots.sort((a, b) => a.luna.localeCompare(b.luna));
     writeJson(KPI_KEY, snapshots);
     return snap;
   },

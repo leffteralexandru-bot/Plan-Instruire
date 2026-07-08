@@ -93,4 +93,27 @@ describe('managementDashboard', () => {
     const m = computeManagementDashboardMetrics([], '1.0');
     expect(m.developmentGaps.some((g) => g.angajatId === 'u1')).toBe(true);
   });
+
+  it('sincronizează trendul lunii curente cu KPI-urile live', () => {
+    const currentLuna = new Date().toISOString().slice(0, 7);
+    ls['artgranit_kpi_snapshots'] = JSON.stringify([
+      {
+        id: 'kpi-old',
+        luna: currentLuna,
+        totalAngajati: 1,
+        eroriLuna: 99,
+        evaluariIntarziate: 0,
+        evaluariFinalizate: 0,
+        progresInstruireMediu: 99,
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+
+    const m = computeManagementDashboardMetrics([], '1.0');
+    const currentTrend = m.trend.find((p) => p.luna === currentLuna);
+
+    expect(currentTrend).toBeDefined();
+    expect(currentTrend!.eroriLuna).toBe(m.eroriLunaCurenta);
+    expect(currentTrend!.progresMediu).toBe(m.progresInstruireMediu);
+  });
 });

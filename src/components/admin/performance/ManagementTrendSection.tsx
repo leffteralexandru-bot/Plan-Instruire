@@ -193,9 +193,7 @@ export function ManagementTrendSection({ points, compact }: ManagementTrendSecti
               const step = points.length > 1 ? chartW / (points.length - 1) : 0;
               const x = index * step;
               const showLabel =
-                compact
-                  ? index === 0 || index === points.length - 1 || index % 3 === 0
-                  : index % 2 === 0 || index === points.length - 1;
+                index === 0 || index === points.length - 1 || index % (compact ? 3 : 2) === 0;
               if (!showLabel) return null;
               return (
                 <text
@@ -206,7 +204,7 @@ export function ManagementTrendSection({ points, compact }: ManagementTrendSecti
                   className="fill-corporate-muted"
                   fontSize={compact ? 7 : 8}
                 >
-                  {formatTrendMonthLabel(point.luna, compact)}
+                  {formatTrendMonthLabel(point.luna, false)}
                 </text>
               );
             })}
@@ -233,7 +231,7 @@ export function ManagementTrendSection({ points, compact }: ManagementTrendSecti
             </tr>
           </thead>
           <tbody>
-            {[...points].reverse().slice(0, compact ? 6 : 12).map((point) => (
+            {[...points].reverse().map((point) => (
               <tr key={point.luna} className="border-b border-corporate-border/50 text-xs">
                 <td className="px-2 py-1.5 font-medium text-corporate-dark whitespace-nowrap">
                   {formatTrendMonthLabel(point.luna, false)}

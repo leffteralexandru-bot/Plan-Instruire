@@ -102,6 +102,40 @@ function mapTrend(snapshots: KpiSnapshot[]): ManagementTrendPoint[] {
   }));
 }
 
+function syncCurrentMonthTrend(
+  trend: ManagementTrendPoint[],
+  live: {
+    luna: string;
+    eroriLunaCurenta: number;
+    progresInstruireMediu: number;
+    evaluariFinalizateLuna: number;
+  },
+): ManagementTrendPoint[] {
+  const hasCurrent = trend.some((p) => p.luna === live.luna);
+  const synced = trend.map((point) =>
+    point.luna === live.luna
+      ? {
+          ...point,
+          eroriLuna: live.eroriLunaCurenta,
+          progresMediu: live.progresInstruireMediu,
+          evaluariFinalizate: live.evaluariFinalizateLuna,
+        }
+      : point,
+  );
+
+  if (!hasCurrent) {
+    synced.push({
+      luna: live.luna,
+      eroriLuna: live.eroriLunaCurenta,
+      progresMediu: live.progresInstruireMediu,
+      evaluariFinalizate: live.evaluariFinalizateLuna,
+    });
+    synced.sort((a, b) => a.luna.localeCompare(b.luna));
+  }
+
+  return synced.slice(-MANAGEMENT_TREND_MONTHS);
+}
+
 export function computeManagementDashboardMetrics(
   trainees: TraineeProfile[],
   programVersion: string,
@@ -136,25 +170,39 @@ export function computeManagementDashboardMetrics(
       ? Math.round((report.summary.fullyCompleted / report.summary.totalTrainees) * 100)
       : 0;
 
+  const progresInstruireMediu = report.trainees.length
+    ? Math.round(
+        report.trainees.reduce((s, t) => s + t.progressPercent, 0) / report.trainees.length,
+      )
+    : 0;
+
+  const eroriLunaCurenta = errorCases.filter((e) => e.data.startsWith(luna)).length;
+  const evaluariFinalizateLuna = evaluations.filter(
+    (e) => e.status === 'evaluat' && e.dataEvaluare?.startsWith(luna),
+  ).length;
+
+  const trend = syncCurrentMonthTrend(mapTrend(hrPerformanceStore.getKpiSnapshots()), {
+    luna,
+    eroriLunaCurenta,
+    progresInstruireMediu,
+    evaluariFinalizateLuna,
+  });
+
   return {
     totalAngajati: profiles.length,
     angajatiInInstruire: report.summary.totalTrainees,
-    progresInstruireMediu: report.trainees.length
-      ? Math.round(
-          report.trainees.reduce((s, t) => s + t.progressPercent, 0) / report.trainees.length,
-        )
-      : 0,
+    progresInstruireMediu,
     rataFinalizareInstruire,
     certificateEmise: report.summary.certificatesIssued,
     evaluariLaTimp,
     evaluariIntarziate,
     evaluariInCurs,
     rataEvaluariLaTimp,
-    eroriLunaCurenta: errorCases.filter((e) => e.data.startsWith(luna)).length,
+    eroriLunaCurenta,
     planuriActiuneDeschise: errorCases.filter((e) => e.planActiune.status !== 'inchis').length,
     reInstruiriActive,
     validariMentorPending,
-    trend: mapTrend(hrPerformanceStore.getKpiSnapshots()),
+    trend,
     developmentGaps: buildDevelopmentGaps(),
   };
 }
