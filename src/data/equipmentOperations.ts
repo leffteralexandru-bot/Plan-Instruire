@@ -28,6 +28,20 @@ export interface EquipmentChapterFigure {
   videoLabel?: string;
 }
 
+export interface EquipmentManualPageHotspot {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface EquipmentManualPage {
+  id: string;
+  imageUrl: string;
+  videoUrl?: string;
+  hotspot?: EquipmentManualPageHotspot;
+}
+
 export type EquipmentChapterCalloutVariant = 'warning' | 'attention' | 'tip' | 'note';
 
 export type EquipmentChapterBlock =
@@ -60,7 +74,9 @@ export interface EquipmentChapter {
   summary: string;
   content: string;
   steps: string[];
-  /** Blocuri ordonate — conținut complet ca în PDF (text, imagini, callout-uri). */
+  /** Pagini manual (doar imagine + hotspot video) — prioritar la afișare. */
+  pages?: EquipmentManualPage[];
+  /** Blocuri ordonate — fallback pentru alte echipamente. */
   blocks?: EquipmentChapterBlock[];
   videoUrl?: string;
   /** @deprecated folosiți blocks cu type figure */
