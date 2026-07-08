@@ -18,11 +18,34 @@ export interface EquipmentGuideSection {
   attachments: EquipmentAttachment[];
 }
 
+/** Capitol ghid tip manual (ex. Proliner) — layout responsive pe 4 ecrane. */
+export interface EquipmentChapter {
+  id: string;
+  number: number;
+  title: string;
+  summary: string;
+  content: string;
+  steps: string[];
+  videoUrl?: string;
+  images: { id: string; url: string; alt?: string }[];
+  pdfUrl?: string;
+  pdfFileName?: string;
+}
+
+export interface EquipmentSafetyWarning {
+  title: string;
+  content: string;
+}
+
 export interface EquipmentDevice {
   id: string;
   name: string;
   category: string;
   description?: string;
+  /** Ghid pe capitole (prioritar față de secțiunile legacy). */
+  chapters?: EquipmentChapter[];
+  safetyWarning?: EquipmentSafetyWarning;
+  manualPdfUrl?: string;
   curatare: EquipmentGuideSection;
   utilizare: EquipmentGuideSection;
   cad: EquipmentGuideSection;
@@ -57,6 +80,12 @@ export const EQUIPMENT_GUIDE_SECTIONS: {
   },
 ];
 
+import {
+  PROLINER_CHAPTERS,
+  PROLINER_MANUAL_URL,
+  PROLINER_SAFETY_WARNING,
+} from '@/data/prolinerChapters';
+
 function deviceId(): string {
   return `eq-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
@@ -79,8 +108,30 @@ function section(
 
 export const DEFAULT_EQUIPMENT_OPERATIONS: EquipmentOperationsData = {
   intro:
-    'Ghiduri pentru aparatele de măsurat utilizate în teren. Selectați aparatul, apoi secțiunea: curățare, utilizare sau integrare CAD.',
+    'Ghiduri pentru aparatele de măsurat utilizate în teren. Selectați aparatul, apoi parcurgeți capitolele sau secțiunile: curățare, utilizare, integrare CAD.',
   devices: [
+    {
+      id: 'eq-proliner',
+      name: 'Proliner',
+      category: 'Măsurare digitală',
+      description: 'Ghid de pornire rapidă — hardware, software, măsurare și întreținere',
+      chapters: PROLINER_CHAPTERS,
+      safetyWarning: PROLINER_SAFETY_WARNING,
+      manualPdfUrl: PROLINER_MANUAL_URL,
+      curatare: section(
+        '## Protocol curățare Proliner\n\nVezi Capitolul 11 — Întreținere din ghidul complet.',
+        ['Curățare cablu cu cârpă fără praf', 'Fără lubrifianți sau detergenți'],
+      ),
+      utilizare: section(
+        '## Mod de lucru\n\nParcurgeți capitolele 1–10 din ghidul Proliner pentru fluxul complet de măsurare.',
+        [],
+        [{ type: 'pdf', label: 'Ghid complet Proliner (PDF)', url: PROLINER_MANUAL_URL }],
+      ),
+      cad: section(
+        '## Integrare CAD\n\n- Export DXF din Proliner (Capitol 9)\n- Import în proiectul CAD artGRANIT\n- Verificați compensarea și planul de proiecție',
+        [],
+      ),
+    },
     {
       id: deviceId(),
       name: 'Stație totală / teodolit',
@@ -180,6 +231,10 @@ export const DEFAULT_EQUIPMENT_OPERATIONS: EquipmentOperationsData = {
 
 export function isEquipmentGuideSectionId(v: string): v is EquipmentGuideSectionId {
   return EQUIPMENT_GUIDE_SECTIONS.some((s) => s.id === v);
+}
+
+export function isEquipmentChapterGuide(device: EquipmentDevice): boolean {
+  return (device.chapters?.length ?? 0) > 0;
 }
 
 export function getDeviceSection(

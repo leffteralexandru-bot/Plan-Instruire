@@ -4,10 +4,12 @@ import { Badge } from '@/components/ui/Badge';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 import {
   EQUIPMENT_GUIDE_SECTIONS,
+  isEquipmentChapterGuide,
   type EquipmentDevice,
   type EquipmentGuideSectionId,
 } from '@/data/equipmentOperations';
 import { useEquipmentOperations } from '@/hooks/useEquipmentOperations';
+import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import { EquipmentOperationsSectionView } from '@/components/equipment/EquipmentOperationsSectionView';
 
 type EquipmentDisplay = 'inline' | 'header' | 'body';
@@ -78,6 +80,10 @@ function EquipmentOperationsContent() {
   }
 
   if (!sectionId) {
+    if (isEquipmentChapterGuide(device)) {
+      return <EquipmentGuideDeviceView device={device} onBack={() => setDeviceId(null)} />;
+    }
+
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
@@ -165,7 +171,7 @@ export function EquipmentOperationsPanel({
       icon="activity"
       eyebrow="Utilaje teren"
       title="Mentenanță și operare echipament"
-      subtitle="Curățare · utilizare · integrare CAD"
+      subtitle="Ghiduri capitole · PDF offline · siguranță · media"
       collapsible
       expanded={expanded}
       onToggle={handleToggle}

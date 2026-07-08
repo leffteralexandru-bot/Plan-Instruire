@@ -74,7 +74,7 @@ export function OperationalGuideVideo({ url, title }: OperationalGuideVideoProps
           <Badge variant="info">Video</Badge>
           <p className="text-sm font-medium text-corporate-dark">{title ?? 'Demonstrație măsurare'}</p>
         </div>
-        <video controls className={`${VIDEO_EMBED} max-h-96 bg-black`} src={trimmed} preload="metadata">
+        <video controls className={`${VIDEO_EMBED} max-h-96 bg-black object-contain`} src={trimmed} preload="metadata">
           Browserul nu suportă redarea video.
         </video>
       </Card>
