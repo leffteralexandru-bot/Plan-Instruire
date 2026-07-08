@@ -1,24 +1,28 @@
 import { formatManagementTrendMonth, type ManagementTrendPoint } from '@/lib/managementDashboard';
+import {
+  getManagementTrendTableRows,
+  MANAGEMENT_TREND_COLUMNS,
+} from '@/lib/managementDashboardPresentation';
 
 const SERIES = [
   {
     key: 'eroriLuna' as const,
-    label: 'Erori',
-    fullLabel: 'Erori / lună',
+    label: MANAGEMENT_TREND_COLUMNS[0]!.shortLabel,
+    fullLabel: MANAGEMENT_TREND_COLUMNS[0]!.label,
     stroke: '#f87171',
     fill: 'rgba(248, 113, 113, 0.12)',
   },
   {
     key: 'progresMediu' as const,
-    label: 'Progres %',
-    fullLabel: 'Progres instruire',
+    label: MANAGEMENT_TREND_COLUMNS[1]!.shortLabel,
+    fullLabel: MANAGEMENT_TREND_COLUMNS[1]!.label,
     stroke: '#b38f55',
     fill: 'rgba(179, 143, 85, 0.12)',
   },
   {
     key: 'evaluariFinalizate' as const,
-    label: 'Evaluări',
-    fullLabel: 'Evaluări finalizate',
+    label: MANAGEMENT_TREND_COLUMNS[2]!.shortLabel,
+    fullLabel: MANAGEMENT_TREND_COLUMNS[2]!.label,
     stroke: '#10b981',
     fill: 'rgba(16, 185, 129, 0.12)',
   },
@@ -71,6 +75,7 @@ export function ManagementTrendSection({ points, compact }: ManagementTrendSecti
 
   const latest = points[points.length - 1]!;
   const previous = points.length > 1 ? points[points.length - 2]! : latest;
+  const trendTableRows = getManagementTrendTableRows(points);
   const chartW = 300;
   const chartH = compact ? 88 : 112;
   const hasActivity = points.some(
@@ -231,14 +236,14 @@ export function ManagementTrendSection({ points, compact }: ManagementTrendSecti
             </tr>
           </thead>
           <tbody>
-            {[...points].reverse().map((point) => (
-              <tr key={point.luna} className="border-b border-corporate-border/50 text-xs">
+            {trendTableRows.map((row) => (
+              <tr key={row.luna} className="border-b border-corporate-border/50 text-xs">
                 <td className="px-2 py-1.5 font-medium text-corporate-dark whitespace-nowrap">
-                  {formatTrendMonthLabel(point.luna, false)}
+                  {row.luna}
                 </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{point.eroriLuna}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{point.progresMediu}%</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{point.evaluariFinalizate}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums">{row.erori}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums">{row.progres}</td>
+                <td className="px-2 py-1.5 text-right tabular-nums">{row.evaluari}</td>
               </tr>
             ))}
           </tbody>

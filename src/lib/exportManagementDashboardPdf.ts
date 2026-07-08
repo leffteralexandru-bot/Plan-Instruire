@@ -1,4 +1,9 @@
-import { MANAGEMENT_TREND_MONTHS, formatManagementTrendMonth, type ManagementDashboardMetrics } from '@/lib/managementDashboard';
+import { MANAGEMENT_TREND_MONTHS, type ManagementDashboardMetrics } from '@/lib/managementDashboard';
+import {
+  getManagementKpiRows,
+  getManagementTrendTableRows,
+  MANAGEMENT_TREND_COLUMNS,
+} from '@/lib/managementDashboardPresentation';
 import {
   PDF_BRAND,
   createPdfLayout,
@@ -22,10 +27,6 @@ import { registerPdfUnicodeFonts } from '@/lib/pdfUnicodeFont';
 
 export interface ManagementReportOptions {
   programVersion?: string;
-}
-
-function formatMonthLabel(luna: string): string {
-  return formatManagementTrendMonth(luna, 'full');
 }
 
 function computeOrganizationalHealth(m: ManagementDashboardMetrics): {
@@ -106,49 +107,28 @@ function buildExpertRecommendations(m: ManagementDashboardMetrics): string[] {
 function drawKpiGrid(ctx: ReturnType<typeof createPdfLayout>, metrics: ManagementDashboardMetrics) {
   drawSectionTitle(ctx, 'Indicatori cheie (KPI)', 'Situație operațională la momentul generării');
 
-  const kpis: Array<{
-    label: string;
-    value: string;
-    sub?: string;
-    accent?: PdfAccent;
-  }> = [
-    { label: 'Angajați activi', value: String(metrics.totalAngajati) },
-    {
-      label: 'Progres instruire mediu',
-      value: `${metrics.progresInstruireMediu}%`,
-      sub: `${metrics.angajatiInInstruire} în program`,
-      accent: metrics.progresInstruireMediu >= 60 ? 'ok' : 'warn',
-    },
-    {
-      label: 'Finalizare instruire',
-      value: `${metrics.rataFinalizareInstruire}%`,
-      sub: `${metrics.certificateEmise} certificate`,
-      accent: metrics.rataFinalizareInstruire >= 60 ? 'ok' : 'alert',
-    },
-    {
-      label: 'Evaluări la timp',
-      value: `${metrics.rataEvaluariLaTimp}%`,
-      sub: `${metrics.evaluariIntarziate} întârziate`,
-      accent: metrics.evaluariIntarziate === 0 ? 'ok' : 'warn',
-    },
-    {
-      label: 'Erori luna curentă',
-      value: String(metrics.eroriLunaCurenta),
-      accent: metrics.eroriLunaCurenta === 0 ? 'ok' : 'warn',
-    },
-    {
-      label: 'Planuri acțiune',
-      value: String(metrics.planuriActiuneDeschise),
-      accent: metrics.planuriActiuneDeschise === 0 ? 'ok' : 'warn',
-    },
-    { label: 'Re-instruiri active', value: String(metrics.reInstruiriActive) },
-    {
-      label: 'Validări mentor',
-      value: String(metrics.validariMentorPending),
-      sub: 'în așteptare',
-      accent: metrics.validariMentorPending === 0 ? 'ok' : 'warn',
-    },
-  ];
+  const kpis = getManagementKpiRows(metrics).map((row) => ({
+    ...row,
+    accent: ((): PdfAccent | undefined => {
+      if (row.label === 'Progres instruire mediu') {
+        return metrics.progresInstruireMediu >= 60 ? 'ok' : 'warn';
+      }
+      if (row.label === 'Finalizare instruire') {
+        return metrics.rataFinalizareInstruire >= 60 ? 'ok' : 'alert';
+      }
+      if (row.label === 'Evaluări la timp') {
+        return metrics.evaluariIntarziate === 0 ? 'ok' : 'warn';
+      }
+      if (
+        row.label === 'Erori luna curentă' ||
+        row.label === 'Planuri acțiune deschise' ||
+        row.label === 'Validări mentor'
+      ) {
+        return row.highlight ? 'warn' : 'ok';
+      }
+      return undefined;
+    })(),
+  }));
 
   const cardW = (ctx.contentW - 4) / 2;
   const cardH = 20;
@@ -220,12 +200,13 @@ export async function buildManagementDashboardPdfDoc(
     (right) => {
       drawMetricRow(right, 'Re-instruiri active', String(metrics.reInstruiriActive));
       drawMetricRow(right, 'Validări mentor', String(metrics.validariMentorPending));
-      drawMetricRow(right, 'Planuri acțiune', String(metrics.planuriActiuneDeschise));
+      drawMetricRow(right, 'Planuri acțiune deschise', String(metrics.planuriActiuneDeschise));
       drawMetricRow(right, 'Erori luna curentă', String(metrics.eroriLunaCurenta));
     },
   );
 
   if (metrics.trend.length > 0) {
+    const trendRows = getManagementTrendTableRows(metrics.trend);
     drawSectionTitle(
       ctx,
       'Trend lunar',
@@ -235,16 +216,11 @@ export async function buildManagementDashboardPdfDoc(
       ctx,
       [
         { label: 'Lună', width: 40 },
-        { label: 'Erori', width: 22 },
-        { label: 'Progres %', width: 28 },
-        { label: 'Evaluări finalizate', width: ctx.contentW - 90 },
+        { label: MANAGEMENT_TREND_COLUMNS[0]!.shortLabel, width: 22 },
+        { label: MANAGEMENT_TREND_COLUMNS[1]!.shortLabel, width: 28 },
+        { label: MANAGEMENT_TREND_COLUMNS[2]!.label, width: ctx.contentW - 90 },
       ],
-      metrics.trend.map((p) => [
-        formatMonthLabel(p.luna),
-        String(p.eroriLuna),
-        `${p.progresMediu}%`,
-        String(p.evaluariFinalizate),
-      ]),
+      trendRows.map((row) => [row.luna, row.erori, row.progres, row.evaluari]),
       'Nu există date istorice.',
     );
   }

@@ -11,6 +11,12 @@ import { adminPath } from '@/lib/adminRoutes';
 import {
   computeManagementDashboardMetrics,
 } from '@/lib/managementDashboard';
+import {
+  getManagementKpiRows,
+  MANAGEMENT_DASHBOARD_SUBTITLE,
+  MANAGEMENT_DASHBOARD_TITLE,
+  MANAGEMENT_PDF_HELPER,
+} from '@/lib/managementDashboardPresentation';
 import { openManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
 import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 import { ManagementTrendSection } from '@/components/admin/performance/ManagementTrendSection';
@@ -35,100 +41,78 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
     }
   };
 
-  const pdfButtonLabel = pdfLoading
-    ? phoneLayout
-      ? 'Se generează…'
-      : 'Se generează raportul…'
-    : 'Raport PDF';
+  const pdfButtonLabel = pdfLoading ? 'Se generează…' : 'Raport PDF';
+  const kpiRows = getManagementKpiRows(metrics);
 
   return (
     <div className="space-y-4">
       <Card padding="sm">
-        {phoneLayout ? (
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="min-w-0 text-base font-semibold text-corporate-dark">Dashboard Management</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h2
+              className={[
+                'font-semibold text-corporate-dark',
+                phoneLayout ? 'text-base' : 'text-lg',
+              ].join(' ')}
+            >
+              {MANAGEMENT_DASHBOARD_TITLE}
+            </h2>
+            <p
+              className={[
+                'text-corporate-muted mt-0.5',
+                phoneLayout ? 'text-[10px] leading-snug' : 'text-sm mt-1',
+              ].join(' ')}
+            >
+              {MANAGEMENT_DASHBOARD_SUBTITLE}
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
             <Button
               type="button"
               variant="secondary"
               size="sm"
               disabled={pdfLoading}
               onClick={() => void handleExportPdf()}
-              className="!min-h-0 shrink-0 !px-2 !py-1.5 !text-[10px] !leading-tight"
+              className={phoneLayout ? '!min-h-0 !px-2 !py-1.5 !text-[10px] !leading-tight' : undefined}
             >
               {pdfButtonLabel}
             </Button>
+            <p
+              className={[
+                'text-corporate-muted leading-snug',
+                phoneLayout ? 'text-[9px]' : 'text-[10px] text-right max-w-[220px]',
+              ].join(' ')}
+            >
+              {MANAGEMENT_PDF_HELPER}
+            </p>
           </div>
-        ) : (
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold text-corporate-dark">Dashboard Management</h2>
-              <p className="text-sm text-corporate-muted mt-1">
-                Retenție instruire · evaluări la timp · trend erori · gap-uri dezvoltare.
-              </p>
-            </div>
-            <div className="flex flex-col items-stretch sm:items-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={pdfLoading}
-                onClick={() => void handleExportPdf()}
-              >
-                {pdfButtonLabel}
-              </Button>
-              <p className="text-[10px] text-corporate-muted text-right max-w-[220px] leading-snug">
-                Document executiv branduit — KPI, trend, gap-uri și recomandări. Deschide direct în browser sau Acrobat.
-              </p>
-            </div>
-          </div>
-        )}
+        </div>
       </Card>
 
       <div className={phoneLayout ? 'grid grid-cols-2 gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'}>
-        <Kpi compact={phoneLayout} label="Angajați activi" value={String(metrics.totalAngajati)} />
-        <Kpi
-          compact={phoneLayout}
-          label="Progres instruire mediu"
-          value={`${metrics.progresInstruireMediu}%`}
-          sub={`${metrics.angajatiInInstruire} în program`}
-        />
-        <Kpi
-          compact={phoneLayout}
-          label="Finalizare instruire"
-          value={`${metrics.rataFinalizareInstruire}%`}
-          sub={`${metrics.certificateEmise} certificate`}
-          highlight={metrics.rataFinalizareInstruire < 50}
-        />
-        <Kpi
-          compact={phoneLayout}
-          label="Evaluări la timp"
-          value={`${metrics.rataEvaluariLaTimp}%`}
-          sub={`${metrics.evaluariIntarziate} întârziate`}
-          highlight={metrics.evaluariIntarziate > 0}
-        />
+        {kpiRows.slice(0, 4).map((row) => (
+          <Kpi
+            key={row.label}
+            compact={phoneLayout}
+            label={row.label}
+            value={row.value}
+            sub={row.sub}
+            highlight={row.highlight}
+          />
+        ))}
       </div>
 
       <div className={phoneLayout ? 'grid grid-cols-2 gap-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4'}>
-        <Kpi compact={phoneLayout} label="Erori luna curentă" value={String(metrics.eroriLunaCurenta)} />
-        <Kpi
-          compact={phoneLayout}
-          label="Planuri acțiune deschise"
-          value={String(metrics.planuriActiuneDeschise)}
-          highlight={metrics.planuriActiuneDeschise > 0}
-        />
-        <Kpi
-          compact={phoneLayout}
-          label="Re-instruiri active"
-          value={String(metrics.reInstruiriActive)}
-          highlight={metrics.reInstruiriActive > 0}
-        />
-        <Kpi
-          compact={phoneLayout}
-          label="Validări mentor"
-          value={String(metrics.validariMentorPending)}
-          sub="pending"
-          highlight={metrics.validariMentorPending > 0}
-        />
+        {kpiRows.slice(4).map((row) => (
+          <Kpi
+            key={row.label}
+            compact={phoneLayout}
+            label={row.label}
+            value={row.value}
+            sub={row.sub}
+            highlight={row.highlight}
+          />
+        ))}
       </div>
 
       {metrics.trend.length > 0 && (

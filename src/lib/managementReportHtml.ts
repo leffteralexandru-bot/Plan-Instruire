@@ -1,5 +1,9 @@
 import type { ManagementDashboardMetrics } from '@/lib/managementDashboard';
 import { MANAGEMENT_TREND_MONTHS } from '@/lib/managementDashboard';
+import {
+  getManagementKpiRows,
+  getManagementTrendTableRows,
+} from '@/lib/managementDashboardPresentation';
 
 function formatRoDate(iso: string): string {
   return new Date(iso).toLocaleDateString('ro-RO', {
@@ -7,12 +11,6 @@ function formatRoDate(iso: string): string {
     month: 'long',
     year: 'numeric',
   });
-}
-
-function formatMonthLabel(luna: string): string {
-  const [year, month] = luna.slice(0, 7).split('-');
-  const d = new Date(Number(year), Number(month) - 1, 1);
-  return d.toLocaleDateString('ro-RO', { month: 'short', year: 'numeric' });
 }
 
 function escapeHtml(text: string): string {
@@ -37,32 +35,7 @@ export function buildManagementReportHtml(
 ): string {
   const generated = formatRoDate(new Date().toISOString());
 
-  const kpiCards = [
-    { label: 'Angajați activi', value: String(metrics.totalAngajati) },
-    {
-      label: 'Progres instruire mediu',
-      value: `${metrics.progresInstruireMediu}%`,
-      sub: `${metrics.angajatiInInstruire} în program`,
-    },
-    {
-      label: 'Finalizare instruire',
-      value: `${metrics.rataFinalizareInstruire}%`,
-      sub: `${metrics.certificateEmise} certificate`,
-    },
-    {
-      label: 'Evaluări la timp',
-      value: `${metrics.rataEvaluariLaTimp}%`,
-      sub: `${metrics.evaluariIntarziate} întârziate`,
-    },
-    { label: 'Erori luna curentă', value: String(metrics.eroriLunaCurenta) },
-    { label: 'Planuri acțiune', value: String(metrics.planuriActiuneDeschise) },
-    { label: 'Re-instruiri active', value: String(metrics.reInstruiriActive) },
-    {
-      label: 'Validări mentor',
-      value: String(metrics.validariMentorPending),
-      sub: 'în așteptare',
-    },
-  ];
+  const kpiCards = getManagementKpiRows(metrics);
 
   const gapRows =
     metrics.developmentGaps.length === 0
@@ -80,13 +53,13 @@ export function buildManagementReportHtml(
   const trendRows =
     metrics.trend.length === 0
       ? `<tr><td colspan="4" class="empty">Nu exista date istorice.</td></tr>`
-      : metrics.trend
+      : getManagementTrendTableRows(metrics.trend)
           .map(
-            (p) => `<tr>
-        <td>${escapeHtml(formatMonthLabel(p.luna))}</td>
-        <td>${p.eroriLuna}</td>
-        <td>${p.progresMediu}%</td>
-        <td>${p.evaluariFinalizate}</td>
+            (row) => `<tr>
+        <td>${escapeHtml(row.luna)}</td>
+        <td>${row.erori}</td>
+        <td>${row.progres}</td>
+        <td>${row.evaluari}</td>
       </tr>`,
           )
           .join('');
@@ -310,7 +283,7 @@ export function buildManagementReportHtml(
       <h3>Operațiuni deschise</h3>
       <div class="row"><span>Re-instruiri active</span><strong>${metrics.reInstruiriActive}</strong></div>
       <div class="row"><span>Validări mentor pending</span><strong>${metrics.validariMentorPending}</strong></div>
-      <div class="row"><span>Planuri acțiune</span><strong>${metrics.planuriActiuneDeschise}</strong></div>
+      <div class="row"><span>Planuri acțiune deschise</span><strong>${metrics.planuriActiuneDeschise}</strong></div>
       <div class="row"><span>Erori luna curentă</span><strong>${metrics.eroriLunaCurenta}</strong></div>
     </div>
   </div>
