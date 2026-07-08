@@ -12,7 +12,8 @@ import {
   computeManagementDashboardMetrics,
   type ManagementTrendPoint,
 } from '@/lib/managementDashboard';
-import { downloadManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
+import { downloadManagementDashboardPdf, openManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 
 function formatTrendMonthLabel(luna: string): string {
   const [year, month] = luna.slice(0, 7).split('-');
@@ -54,6 +55,7 @@ function TrendBars({
 
 export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: AdminTab) => void }) {
   const { allTrainees } = useUsers();
+  const phoneLayout = usePhoneLayout();
   const settings = storage.getSettings();
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -65,37 +67,65 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
   const handleExportPdf = async () => {
     setPdfLoading(true);
     try {
-      await downloadManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
+      if (phoneLayout) {
+        await openManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
+      } else {
+        await downloadManagementDashboardPdf(metrics, { programVersion: settings.programVersion });
+      }
     } finally {
       setPdfLoading(false);
     }
   };
 
+  const pdfButtonLabel = phoneLayout
+    ? pdfLoading
+      ? 'Se generează…'
+      : 'Raport PDF'
+    : pdfLoading
+      ? 'Se generează raportul…'
+      : 'Descarcă raport PDF';
+
   return (
     <div className="space-y-4">
       <Card padding="sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-corporate-dark">Dashboard Management</h2>
-            <p className="text-sm text-corporate-muted mt-1">
-              Retenție instruire · evaluări la timp · trend erori · gap-uri dezvoltare.
-            </p>
-          </div>
-          <div className="flex flex-col items-stretch sm:items-end gap-2">
+        {phoneLayout ? (
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="min-w-0 text-base font-semibold text-corporate-dark">Dashboard Management</h2>
             <Button
               type="button"
               variant="secondary"
               size="sm"
               disabled={pdfLoading}
               onClick={() => void handleExportPdf()}
+              className="!min-h-0 shrink-0 !px-2 !py-1.5 !text-[10px] !leading-tight"
             >
-              {pdfLoading ? 'Se generează raportul…' : 'Descarcă raport PDF'}
+              {pdfButtonLabel}
             </Button>
-            <p className="text-[10px] text-corporate-muted text-right max-w-[220px] leading-snug">
-              Document executiv branduit — KPI, trend, gap-uri și recomandări. Deschide direct în browser sau Acrobat.
-            </p>
           </div>
-        </div>
+        ) : (
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-corporate-dark">Dashboard Management</h2>
+              <p className="text-sm text-corporate-muted mt-1">
+                Retenție instruire · evaluări la timp · trend erori · gap-uri dezvoltare.
+              </p>
+            </div>
+            <div className="flex flex-col items-stretch sm:items-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={pdfLoading}
+                onClick={() => void handleExportPdf()}
+              >
+                {pdfButtonLabel}
+              </Button>
+              <p className="text-[10px] text-corporate-muted text-right max-w-[220px] leading-snug">
+                Document executiv branduit — KPI, trend, gap-uri și recomandări. Deschide direct în browser sau Acrobat.
+              </p>
+            </div>
+          </div>
+        )}
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

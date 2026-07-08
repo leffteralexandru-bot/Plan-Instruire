@@ -178,10 +178,10 @@ function drawKpiGrid(ctx: ReturnType<typeof createPdfLayout>, metrics: Managemen
 }
 
 /** Raport PDF vectorial — text clar, diacritice românești (DejaVu Sans) */
-export async function downloadManagementDashboardPdf(
+async function buildManagementDashboardPdfDoc(
   metrics: ManagementDashboardMetrics,
   options?: ManagementReportOptions,
-): Promise<void> {
+) {
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   await registerPdfUnicodeFonts(doc);
@@ -275,7 +275,35 @@ export async function downloadManagementDashboardPdf(
   drawSignatureBlock(ctx);
   stampFootersOnAllPages(doc, 'Raport Management');
 
-  doc.save(`raport-management-artgranit-${new Date().toISOString().slice(0, 10)}.pdf`);
+  return doc;
+}
+
+function pdfFileName(): string {
+  return `raport-management-artgranit-${new Date().toISOString().slice(0, 10)}.pdf`;
+}
+
+export async function openManagementDashboardPdf(
+  metrics: ManagementDashboardMetrics,
+  options?: ManagementReportOptions,
+): Promise<void> {
+  const doc = await buildManagementDashboardPdfDoc(metrics, options);
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const opened = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!opened) {
+    doc.save(pdfFileName());
+    URL.revokeObjectURL(url);
+    return;
+  }
+  window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+}
+
+export async function downloadManagementDashboardPdf(
+  metrics: ManagementDashboardMetrics,
+  options?: ManagementReportOptions,
+): Promise<void> {
+  const doc = await buildManagementDashboardPdfDoc(metrics, options);
+  doc.save(pdfFileName());
 }
 
 export { computeOrganizationalHealth, buildExpertRecommendations, MANAGEMENT_TREND_MONTHS };
