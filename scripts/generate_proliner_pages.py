@@ -14,17 +14,16 @@ SVG = ROOT / "public/brand/artgranit-logo.svg"
 RENDER_SCALE = 4
 LOGO_COLOR = "#B38F55"
 
-# Panou header din PDF (măsurători pe paginile de capitol)
-BLACK_PANEL_X0_PCT = 4.8
+# Panou header din PDF
 BLACK_PANEL_X1_PCT = 70.8
+BLUE_PANEL_X0_PCT = 71.2
 HEADER_Y0_PCT = 3.2
 HEADER_Y1_PCT = 9.9
 
-# Logo compact — încape în panoul negru fără a acoperi titlul sau PRODIM
 LOGO_MAX_HEIGHT_PCT = 2.15
 LOGO_GAP_AFTER_TITLE_PCT = 1.8
-LOGO_MARGIN_BLACK_RIGHT_PCT = 1.0
-LOGO_ASPECT = 213 / 30
+# Margine față de panoul albastru PRODIM — logo rămâne strict în negru
+LOGO_MARGIN_BEFORE_BLUE_PCT = 1.4
 
 
 def load_artgranit_logo(target_height: int) -> Image.Image:
@@ -38,7 +37,6 @@ def load_artgranit_logo(target_height: int) -> Image.Image:
 
 
 def chapter_title_end_x_pct(page: fitz.Page) -> float:
-    """Capătul drept al titlului din panoul negru (% lățime pagină)."""
     width = page.rect.width
     max_x = 0.0
     for block in page.get_text("dict")["blocks"]:
@@ -55,40 +53,46 @@ def chapter_title_end_x_pct(page: fitz.Page) -> float:
     return max_x
 
 
-def logo_placement(page: fitz.Page) -> tuple[float, float, float]:
-    """Returnează (x%, y%, height%) pentru logo în panoul negru."""
-    title_end = chapter_title_end_x_pct(page)
-    logo_h = LOGO_MAX_HEIGHT_PCT
-    logo_w = logo_h * LOGO_ASPECT
-
-    # Aliniat la dreapta panoului negru, dar nu peste titlu
-    x_right = BLACK_PANEL_X1_PCT - LOGO_MARGIN_BLACK_RIGHT_PCT
-    x = x_right - logo_w
-    x_min = title_end + LOGO_GAP_AFTER_TITLE_PCT
-    if x < x_min:
-        x = x_min
-        # Micșorăm dacă nu încape între titlu și marginea albastră
-        max_w = x_right - x_min
-        if max_w < logo_w:
-            logo_h = max(1.6, max_w / LOGO_ASPECT)
-            logo_w = logo_h * LOGO_ASPECT
-            x = x_right - logo_w
-
-    header_mid = (HEADER_Y0_PCT + HEADER_Y1_PCT) / 2
-    y = header_mid - logo_h / 2
-    return x, y, logo_h
-
-
-def add_artgranit_logo(page_img: Image.Image, page: fitz.Page) -> Image.Image:
+def place_logo_on_page(page_img: Image.Image, page: fitz.Page) -> tuple[Image.Image, int, int, int]:
+    """Plasează logo în panoul negru; returnează imagine + x,y,lățime logo (px)."""
     width, height = page_img.size
-    x_pct, y_pct, h_pct = logo_placement(page)
-    logo_h = max(1, int(height * h_pct / 100))
-    logo = load_artgranit_logo(logo_h)
-    x = int(width * x_pct / 100)
-    y = int(height * y_pct / 100)
+
+    # Limita dreaptă = înainte de panoul albastru PRODIM
+    black_right_px = int(width * (BLUE_PANEL_X0_PCT - LOGO_MARGIN_BEFORE_BLUE_PCT) / 100)
+    title_min_x_px = int(width * (chapter_title_end_x_pct(page) + LOGO_GAP_AFTER_TITLE_PCT) / 100)
+
+    header_y0_px = int(height * HEADER_Y0_PCT / 100)
+    header_y1_px = int(height * HEADER_Y1_PCT / 100)
+
+    logo_h_px = max(1, int(height * LOGO_MAX_HEIGHT_PCT / 100))
+    logo = load_artgranit_logo(logo_h_px)
+
+    for _ in range(16):
+        available_w = black_right_px - title_min_x_px
+        if available_w <= 0:
+            return page_img, 0, 0, 0
+
+        if logo.width > available_w:
+            logo_h_px = max(1, int(logo_h_px * available_w / logo.width * 0.98))
+            logo = load_artgranit_logo(logo_h_px)
+
+        x = black_right_px - logo.width
+        if x < title_min_x_px:
+            x = title_min_x_px
+
+        if x + logo.width <= black_right_px:
+            break
+
+        logo_h_px = max(1, int(logo_h_px * 0.9))
+        logo = load_artgranit_logo(logo_h_px)
+    else:
+        x = title_min_x_px
+
+    y = header_y0_px + max(0, (header_y1_px - header_y0_px - logo.height) // 2)
+
     composed = page_img.convert("RGBA")
     composed.paste(logo, (x, y), logo)
-    return composed.convert("RGB")
+    return composed.convert("RGB"), x, y, logo.width
 
 
 def render_pages() -> None:
@@ -100,11 +104,12 @@ def render_pages() -> None:
         pixmap = page.get_pixmap(matrix=matrix, alpha=False)
         image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
         image = image.filter(ImageFilter.UnsharpMask(radius=1.0, percent=110, threshold=2))
-        image = add_artgranit_logo(image, page)
+        image, x, _y, lw = place_logo_on_page(image, page)
         out_path = OUT_DIR / f"page-{index + 1:02d}.png"
         image.save(out_path, "PNG", optimize=True)
-        x_pct, y_pct, h_pct = logo_placement(page)
-        print(f"Wrote {out_path.name} logo@{x_pct:.1f}%,{y_pct:.1f}% h={h_pct:.2f}%")
+        w = image.width
+        end_pct = (x + lw) / w * 100 if lw else 0
+        print(f"Wrote {out_path.name} logo end={end_pct:.1f}% (blue@{BLUE_PANEL_X0_PCT}%)")
 
     doc.close()
 
