@@ -10,48 +10,10 @@ import { ingineriPath } from '@/data/departments';
 import { adminPath } from '@/lib/adminRoutes';
 import {
   computeManagementDashboardMetrics,
-  type ManagementTrendPoint,
 } from '@/lib/managementDashboard';
 import { downloadManagementDashboardPdf, openManagementDashboardPdf } from '@/lib/exportManagementDashboardPdf';
 import { usePhoneLayout } from '@/hooks/usePhoneLayout';
-
-function formatTrendMonthLabel(luna: string): string {
-  const [year, month] = luna.slice(0, 7).split('-');
-  return `${month}/${year.slice(2)}`;
-}
-
-function TrendBars({
-  points,
-  field,
-  colorClass,
-  label,
-}: {
-  points: ManagementTrendPoint[];
-  field: keyof ManagementTrendPoint;
-  colorClass: string;
-  label: string;
-}) {
-  const max = Math.max(...points.map((p) => Number(p[field]) || 0), 1);
-  return (
-    <div>
-      <p className="text-xs font-medium text-corporate-muted mb-2">{label}</p>
-      <div className="flex items-end gap-2 h-28">
-        {points.map((p) => (
-          <div key={p.luna} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-            <span className="text-[10px] font-medium text-corporate-dark">{String(p[field])}</span>
-            <div
-              className={`w-full max-w-[2.5rem] rounded-t ${colorClass}`}
-              style={{ height: `${Math.max(8, (Number(p[field]) / max) * 100)}%` }}
-            />
-            <span className="text-[9px] text-corporate-muted truncate w-full text-center">
-              {formatTrendMonthLabel(String(p.luna))}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { ManagementTrendSection } from '@/components/admin/performance/ManagementTrendSection';
 
 export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: AdminTab) => void }) {
   const { allTrainees } = useUsers();
@@ -176,28 +138,8 @@ export function ManagementDashboardPanel({ onOpenTab }: { onOpenTab?: (tab: Admi
       </div>
 
       {metrics.trend.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-corporate-dark mb-4">Trend lunar (ultimul an)</h3>
-          <div className="grid gap-6 lg:grid-cols-3">
-            <TrendBars
-              points={metrics.trend}
-              field="eroriLuna"
-              colorClass="bg-red-400/80"
-              label="Erori / lună"
-            />
-            <TrendBars
-              points={metrics.trend}
-              field="progresMediu"
-              colorClass="bg-corporate-gold/80"
-              label="Progres instruire mediu %"
-            />
-            <TrendBars
-              points={metrics.trend}
-              field="evaluariFinalizate"
-              colorClass="bg-emerald-500/80"
-              label="Evaluări finalizate"
-            />
-          </div>
+        <Card padding={phoneLayout ? 'sm' : 'md'}>
+          <ManagementTrendSection points={metrics.trend} compact={phoneLayout} />
         </Card>
       )}
 
