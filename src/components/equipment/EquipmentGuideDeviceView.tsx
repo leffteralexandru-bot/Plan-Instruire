@@ -148,7 +148,6 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
     <div ref={containerRef} className={['@container equipment-guide', EQUIPMENT_PHONE_BOTTOM_PAD].join(' ')}>
       {device.safetyWarning && (
         <EquipmentSafetyWarningCard
-          deviceId={device.id}
           warning={device.safetyWarning}
           onAcknowledged={() => setSafetyReady(true)}
         />

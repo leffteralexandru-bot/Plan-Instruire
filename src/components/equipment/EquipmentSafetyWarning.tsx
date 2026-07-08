@@ -1,37 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TechnicalCard } from '@/components/equipment/TechnicalCard';
 import type { EquipmentSafetyWarning } from '@/data/equipmentOperations';
-import {
-  acknowledgeEquipmentSafety,
-  hasAcknowledgedEquipmentSafety,
-} from '@/lib/equipmentSafetyAck';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
 
 interface EquipmentSafetyWarningCardProps {
-  deviceId: string;
   warning: EquipmentSafetyWarning;
   onAcknowledged?: () => void;
 }
 
-/**
- * Afișat obligatoriu la prima accesare a ghidului unui echipament.
- */
+/** Afișat obligatoriu la fiecare intrare în ghidul echipamentului. */
 export function EquipmentSafetyWarningCard({
-  deviceId,
   warning,
   onAcknowledged,
 }: EquipmentSafetyWarningCardProps) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    setVisible(!hasAcknowledgedEquipmentSafety(deviceId));
-  }, [deviceId]);
+  const [visible, setVisible] = useState(true);
 
   if (!visible) return null;
 
   const handleAck = () => {
-    acknowledgeEquipmentSafety(deviceId);
     setVisible(false);
     onAcknowledged?.();
   };
