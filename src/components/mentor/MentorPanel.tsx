@@ -18,6 +18,8 @@ import { isMentorUser } from '@/lib/roles';
 import { Card } from '@/components/ui/Card';
 import { INGINERI_SUPERVISOR_PANEL_PATH } from '@/data/departments';
 import { useStagiarSelection } from '@/context/StagiarContext';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
+import { DesktopPageIntro } from '@/components/layout/DesktopPageIntro';
 
 export function MentorPanel() {
   const { user, canAccessAdmin } = useAuth();
@@ -50,12 +52,14 @@ export function MentorPanel() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Mentor</h1>
-          <p className="text-corporate-muted mt-1">
+          <DesktopPageHeader>
+            <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Mentor</h1>
+          </DesktopPageHeader>
+          <DesktopPageIntro>
             {canAccessAdmin
               ? 'Vedere HR: mentori, responsabilități, progres angajați'
               : 'Monitorizare progres · Validări · Feedback'}
-          </p>
+          </DesktopPageIntro>
         </div>
         {canOpenSupervisorPanel && (
           <Link

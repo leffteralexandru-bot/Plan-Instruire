@@ -171,6 +171,7 @@ export function EquipmentOperationsPanel({
       onToggle={handleToggle}
       bodyDetached={display === 'header'}
       headerTile={display === 'header'}
+      tileTitle={display === 'header' ? 'Operarea echipament' : undefined}
       toggleLabels={{
         expanded: 'Restrânge mentenanța',
         collapsed: 'Deschide mentenanță echipament',

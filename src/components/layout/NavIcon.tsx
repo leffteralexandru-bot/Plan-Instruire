@@ -1,102 +1,78 @@
-import type { NavIconId } from '@/lib/appNavigation';
+export type NavIconId =
+  | 'dashboard'
+  | 'hr'
+  | 'angajat'
+  | 'plan'
+  | 'mentor'
+  | 'supervisor'
+  | 'evaluations'
+  | 'competencies';
 
-interface NavIconProps {
-  id: NavIconId | 'more' | 'menu';
-  className?: string;
-}
+const stroke = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
 
-export function NavIcon({ id, className = 'h-6 w-6' }: NavIconProps) {
-  const sw = 1.75;
-  const common = { className, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, 'aria-hidden': true as const };
-
+export function NavIcon({ id, className = 'h-5 w-5' }: { id: NavIconId; className?: string }) {
   switch (id) {
-    case 'home':
+    case 'dashboard':
       return (
-        <svg {...common}>
-          <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" strokeLinejoin="round" />
-        </svg>
-      );
-    case 'plan':
-      return (
-        <svg {...common}>
-          <path d="M4 5h16v14H4z" strokeLinejoin="round" />
-          <path d="M8 9h8M8 13h5" strokeLinecap="round" />
-        </svg>
-      );
-    case 'evaluations':
-      return (
-        <svg {...common}>
-          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-          <rect x="9" y="3" width="6" height="4" rx="1" />
-          <path d="M9 14l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case 'competency':
-      return (
-        <svg {...common}>
-          <path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.3L12 14.8 7.2 16.8l.9-5.3L4.2 7.7l5.4-.8z" strokeLinejoin="round" />
-        </svg>
-      );
-    case 'mentor':
-      return (
-        <svg {...common}>
-          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" />
-          <circle cx="9" cy="7" r="4" />
-          <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" strokeLinecap="round" />
-        </svg>
-      );
-    case 'supervisor':
-      return (
-        <svg {...common}>
-          <path d="M12 3v18M3 12h18" strokeLinecap="round" />
-          <circle cx="12" cy="12" r="9" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <path {...stroke} d="M4 19V5M4 19h16M8 19V11M12 19V7M16 19v-5" />
         </svg>
       );
     case 'hr':
       return (
-        <svg {...common}>
-          <rect x="3" y="4" width="18" height="16" rx="2" />
-          <path d="M7 8h10M7 12h6M7 16h8" strokeLinecap="round" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <rect {...stroke} x="5" y="3" width="14" height="18" rx="2" />
+          <path {...stroke} d="M9 7h6M9 11h6M9 15h4" />
         </svg>
       );
-    case 'dashboard':
+    case 'angajat':
       return (
-        <svg {...common}>
-          <path d="M3 3v18h18" strokeLinecap="round" />
-          <path d="M7 16V9M12 16V5M17 16v-3" strokeLinecap="round" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <circle {...stroke} cx="12" cy="8" r="3.5" />
+          <path {...stroke} d="M5 20v-1a5 5 0 0 1 10 0v1" />
+          <rect {...stroke} x="3" y="3" width="18" height="18" rx="3" strokeOpacity="0.35" />
         </svg>
       );
-    case 'account':
+    case 'plan':
       return (
-        <svg {...common}>
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 20c1.5-3.5 5-5 8-5s6.5 1.5 8 5" strokeLinecap="round" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <path {...stroke} d="M7 4h10a2 2 0 0 1 2 2v14H5V6a2 2 0 0 1 2-2z" />
+          <path {...stroke} d="M9 8h6M9 12h6M9 16h4" />
         </svg>
       );
-    case 'departments':
+    case 'mentor':
       return (
-        <svg {...common}>
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <circle {...stroke} cx="9" cy="8" r="2.5" />
+          <circle {...stroke} cx="16" cy="9" r="2" />
+          <path {...stroke} d="M4 19v-1a4 4 0 0 1 4-4h2M14 14a3.5 3.5 0 0 1 3.5 3.5V19" />
         </svg>
       );
-    case 'more':
+    case 'supervisor':
       return (
-        <svg {...common}>
-          <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-          <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <path {...stroke} d="M12 3l2.2 4.5 5 .7-3.6 3.5.9 5L12 14.8 7.5 16.7l.9-5L4.8 8.2l5-.7L12 3z" />
         </svg>
       );
-    case 'menu':
+    case 'evaluations':
       return (
-        <svg {...common}>
-          <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <rect {...stroke} x="5" y="3" width="14" height="18" rx="2" />
+          <path {...stroke} d="M9 12l2 2 4-4" />
         </svg>
       );
-    default:
-      return null;
+    case 'competencies':
+      return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden>
+          <circle {...stroke} cx="12" cy="9" r="5" />
+          <path {...stroke} d="M8.5 14.5 7 21l5-2.5L17 21l-1.5-6.5" />
+        </svg>
+      );
   }
 }

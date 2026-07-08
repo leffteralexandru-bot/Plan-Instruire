@@ -6,7 +6,6 @@ import { ingineriPath, INGINERI_PLAN_PATH } from '@/data/departments';
 import { useProgress } from '@/hooks/useProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { useStagiarName } from '@/hooks/useStagiarId';
-import { useFieldMode } from '@/context/FieldModeContext';
 import { TaskChecklist } from './TaskChecklist';
 import { MaterialsPanel } from './MaterialsPanel';
 import { TheoreticalTest } from './TheoreticalTest';
@@ -28,7 +27,6 @@ interface DayViewProps {
 export function DayView({ day, readOnly }: DayViewProps) {
   const { user, isMentor } = useAuth();
   const stagiarName = useStagiarName();
-  const { fieldMode } = useFieldMode();
   const {
     progress,
     getDayProgress,
@@ -43,14 +41,14 @@ export function DayView({ day, readOnly }: DayViewProps) {
   const week = getWeekForDay(day.id);
   const tasksPercent = Math.round((dayProgress.completedTasks.length / day.tasks.length) * 100);
   const complete = isDayComplete(day.id);
-  const showField = fieldMode || FIELD_DAYS.includes(day.dayNumber);
+  const showField = FIELD_DAYS.includes(day.dayNumber);
 
   useEffect(() => {
     if (!readOnly) visitDay(day.id);
   }, [day.id, readOnly, visitDay]);
 
   return (
-    <div className={`space-y-6 ${fieldMode ? 'field-mode-active' : ''}`}>
+    <div className="space-y-6">
       <div>
         <Link to={INGINERI_PLAN_PATH} className="text-sm text-corporate-accent-blue hover:underline mb-3 inline-block">
           ← Înapoi la Dashboard

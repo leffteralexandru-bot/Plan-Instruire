@@ -13,6 +13,8 @@ import { formatEvaluationRoDate } from '@/lib/evaluationDisplay';
 import { canViewSalaryCoefficient } from '@/lib/roles';
 import { Card } from '@/components/ui/Card';
 import type { DesignerCompetencyLevel } from '@/types';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
+import { DesktopPageIntro } from '@/components/layout/DesktopPageIntro';
 
 export function CompetencyPage() {
   const { progress } = useProgress();
@@ -65,10 +67,12 @@ export function CompetencyPage() {
     <div className="space-y-6">
       {canSelect && <TraineeSelector />}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Matrice Competențe</h1>
-        <p className="text-corporate-muted mt-1">
+        <DesktopPageHeader>
+          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Matrice Competențe</h1>
+        </DesktopPageHeader>
+        <DesktopPageIntro>
           Inginer proiectant — Proliner & AutoCAD · evaluare tri-lunară și progres instruire
-        </p>
+        </DesktopPageIntro>
       </div>
 
       {!evalContext?.latestCycle &&

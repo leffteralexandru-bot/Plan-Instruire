@@ -72,22 +72,14 @@ export function ActionInboxPanel({
     expanded,
     onToggle: collapsible ? () => setExpanded((v) => !v) : undefined,
     toggleLabels: collapsible
-      ? { expanded: 'Restrânge inbox-ul', collapsed: 'Deschide inbox-ul' }
+      ? roles.length === 1 && roles[0] === 'employee'
+        ? { expanded: 'Restrânge lista', collapsed: 'Deschide ce am de făcut' }
+        : { expanded: 'Restrânge inbox-ul', collapsed: 'Deschide inbox-ul' }
       : undefined,
   };
 
   if (!items.length) {
-    if (compact) return null;
-    return (
-      <ProfessionalPanel
-        variant="training-success"
-        icon="inbox"
-        eyebrow="Acțiuni"
-        title="Totul la zi"
-        subtitle="Nicio acțiune pending în acest moment"
-        {...panelProps}
-      />
-    );
+    return null;
   }
 
   return (

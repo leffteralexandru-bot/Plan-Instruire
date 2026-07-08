@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { VIDEO_EMBED } from '@/lib/responsiveLayout';
 
 function youtubeEmbedUrl(url: string): string | null {
   try {
@@ -53,7 +54,7 @@ export function OperationalGuideVideo({ url, title }: OperationalGuideVideoProps
           <Badge variant="info">Video</Badge>
           <p className="text-sm font-medium text-corporate-dark">{title ?? 'Demonstrație măsurare'}</p>
         </div>
-        <div className="relative w-full aspect-video bg-black">
+        <div className={`relative bg-black ${VIDEO_EMBED}`}>
           <iframe
             src={embed}
             title={title ?? 'Video măsurare'}
@@ -73,7 +74,7 @@ export function OperationalGuideVideo({ url, title }: OperationalGuideVideoProps
           <Badge variant="info">Video</Badge>
           <p className="text-sm font-medium text-corporate-dark">{title ?? 'Demonstrație măsurare'}</p>
         </div>
-        <video controls className="w-full max-h-96 bg-black" src={trimmed} preload="metadata">
+        <video controls className={`${VIDEO_EMBED} max-h-96 bg-black`} src={trimmed} preload="metadata">
           Browserul nu suportă redarea video.
         </video>
       </Card>

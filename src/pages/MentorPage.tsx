@@ -7,6 +7,7 @@ import { ingineriPath } from '@/data/departments';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import { Card } from '@/components/ui/Card';
 import { Link } from 'react-router-dom';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
 
 export function MentorPage() {
   const { loading, user } = useAuth();
@@ -19,7 +20,9 @@ export function MentorPage() {
   if (visibleTrainees.length === 0) {
     return (
       <Card className="border-amber-200 bg-amber-50/50">
-        <h1 className="text-xl font-semibold text-corporate-dark mb-2">Panou Mentor</h1>
+        <DesktopPageHeader>
+          <h1 className="text-xl font-semibold text-corporate-dark mb-2">Panou Mentor</h1>
+        </DesktopPageHeader>
         <p className="text-sm text-amber-900">
           Nu există angajați în instruire asignați ție sau în sistem.
         </p>

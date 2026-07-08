@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 import type { RoleDashboardMetrics } from '@/lib/roleDashboard';
 import type { ActionInboxRole } from '@/lib/actionInbox';
 import { PROGRAM_AREA_THEMES, type ProgramArea } from '@/lib/programAreaTheme';
@@ -27,6 +28,7 @@ interface RoleSummaryCardsProps {
 }
 
 export function RoleSummaryCards({ role, metrics, userId }: RoleSummaryCardsProps) {
+  const phoneLayout = usePhoneLayout();
   const cards: SummaryCard[] = [];
 
   if (role === 'mentor') {
@@ -119,37 +121,60 @@ export function RoleSummaryCards({ role, metrics, userId }: RoleSummaryCardsProp
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-corporate-muted uppercase tracking-wide mb-2">
+      <h2
+        className={[
+          'mb-2 font-semibold',
+          phoneLayout
+            ? 'text-sm leading-snug text-corporate-dark'
+            : 'text-sm uppercase tracking-wide text-corporate-muted @md:text-base',
+        ].join(' ')}
+      >
         {ROLE_LABELS[role]}
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        className={[
+          'grid gap-2',
+          phoneLayout ? 'grid-cols-2' : 'gap-3 sm:grid-cols-2 lg:grid-cols-4',
+        ].join(' ')}
+      >
         {cards.map((c) => {
           const area = cardArea(c.label);
           const theme = area ? PROGRAM_AREA_THEMES[area] : null;
           const inner = (
             <>
               <p
-                className={`text-[10px] uppercase tracking-wide ${
-                  theme ? theme.summaryLabel : 'text-corporate-muted'
-                }`}
+                className={[
+                  'uppercase tracking-wide',
+                  phoneLayout ? 'text-[9px] leading-tight' : 'text-[10px]',
+                  theme ? theme.summaryLabel : 'text-corporate-muted',
+                ].join(' ')}
               >
                 {c.label}
               </p>
               <p
-                className={`text-2xl font-bold mt-1 ${
+                className={[
+                  'mt-1 font-bold',
+                  phoneLayout ? 'text-lg leading-none' : 'text-2xl',
                   c.highlight
                     ? area === 'retraining'
                       ? 'text-orange-700'
                       : area === 'evaluation'
                         ? 'text-indigo-800'
                         : 'text-amber-600'
-                    : 'text-corporate-dark'
-                }`}
+                    : 'text-corporate-dark',
+                ].join(' ')}
               >
                 {c.value}
               </p>
               {c.link && (
-                <p className="text-[10px] text-corporate-gold mt-1 font-medium">Deschide →</p>
+                <p
+                  className={[
+                    'mt-1 font-medium text-corporate-gold',
+                    phoneLayout ? 'text-[9px]' : 'text-[10px]',
+                  ].join(' ')}
+                >
+                  Deschide →
+                </p>
               )}
             </>
           );

@@ -50,8 +50,8 @@ export function QuickNoteButton() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-4 shadow-neural-lg space-y-3">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-0 transition-all duration-300 @md:items-center @md:p-4">
+      <div className="h-[100dvh] w-full overflow-y-auto rounded-none bg-white p-4 shadow-neural-lg transition-all duration-300 space-y-3 @md:h-auto @md:max-w-md @md:rounded-xl">
         <h3 className="font-semibold text-corporate-dark">Observație rapidă</h3>
         <select
           className="w-full rounded-lg border border-corporate-border px-3 py-2 text-sm"

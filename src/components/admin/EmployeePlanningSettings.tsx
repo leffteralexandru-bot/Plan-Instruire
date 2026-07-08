@@ -19,6 +19,8 @@ import { DEPARTMENTS, type DepartmentId } from '@/data/departments';
 import { isMentorUser } from '@/lib/roles';
 import { EVALUATION_WEEK_LABELS } from '@/lib/evaluationWeekMentors';
 import type { EmployeeProfile, TrainingEnrollment, User } from '@/types';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
 
 const supabaseAuthActive = isSupabaseAuthEnabled();
 
@@ -66,6 +68,13 @@ function personalDataEqual(a: PersonalDataDraft, b: PersonalDataDraft): boolean 
     a.programStart === b.programStart &&
     a.grantMentor === b.grantMentor
   );
+}
+
+type PersonalDataAutoDraft = Omit<PersonalDataDraft, 'newPassword'>;
+
+function stripPassword(d: PersonalDataDraft): PersonalDataAutoDraft {
+  const { newPassword: _pw, ...rest } = d;
+  return rest;
 }
 
 interface PlanningDraft {
@@ -412,7 +421,7 @@ function EmployeePlanningEditor({
     onCancel();
   }, [baseline, personalBaseline, onCancel]);
 
-  const savePersonalData = () => {
+  const savePersonalData = useCallback(() => {
     if (!personalDataDirty) return;
 
     if (!personalDraft.name.trim()) throw new Error('Introduceți numele angajatului.');
@@ -472,7 +481,76 @@ function EmployeePlanningEditor({
     if (personalDraft.grantMentor !== personalBaseline.grantMentor) {
       setMentorStatus(profile.userId, personalDraft.grantMentor);
     }
-  };
+  }, [
+    enrollment,
+    personalBaseline,
+    personalDataDirty,
+    personalDraft,
+    profile.userId,
+    resetUserPassword,
+    setMentorStatus,
+    updateEnrollment,
+    updateUser,
+  ]);
+
+  const savePlanningData = useCallback(
+    (planning: PlanningDraft, planBaseline: PlanningDraft) => {
+      if (!enrollment) return;
+      if (planning.principalMentorId !== planBaseline.principalMentorId) {
+        assignMentor(enrollment.id, planning.principalMentorId);
+      }
+      if (planning.supervisorId !== planBaseline.supervisorId) {
+        hrPerformanceStore.setSupervisor(profile.userId, planning.supervisorId, changedBy);
+      }
+      for (const { weekNumber } of EVALUATION_WEEK_LABELS) {
+        if (planning.weeklyMentors[weekNumber] !== planBaseline.weeklyMentors[weekNumber]) {
+          hrPerformanceStore.setWeeklyEvalMentor(
+            profile.userId,
+            weekNumber,
+            planning.weeklyMentors[weekNumber],
+            changedBy,
+          );
+        }
+      }
+    },
+    [assignMentor, changedBy, enrollment, profile.userId],
+  );
+
+  const syncBaselinesAfterSave = useCallback(() => {
+    setBaseline(draft);
+    const nextPersonal = { ...personalDraft, newPassword: '' };
+    setPersonalBaseline(nextPersonal);
+    setPersonalDraft(nextPersonal);
+  }, [draft, personalDraft]);
+
+  const personalAutoDraft = useMemo(() => stripPassword(personalDraft), [personalDraft]);
+  const personalAutoBaseline = useMemo(() => stripPassword(personalBaseline), [personalBaseline]);
+
+  const planningAutoEnabled =
+    !!enrollment && !!draft.principalMentorId && !!draft.supervisorId && planningDirty;
+
+  useAutoSave({
+    draft: personalAutoDraft,
+    baseline: personalAutoBaseline,
+    enabled: personalDataOpen && !personalDataEqual(personalDraft, personalBaseline),
+    save: () => {
+      if (!personalDraft.name.trim() || !personalDraft.functie.trim() || !personalDraft.email.trim()) {
+        return;
+      }
+      savePersonalData();
+      syncBaselinesAfterSave();
+    },
+  });
+
+  useAutoSave({
+    draft,
+    baseline,
+    enabled: planningAutoEnabled,
+    save: (planning) => {
+      savePlanningData(planning, baseline);
+      setBaseline(planning);
+    },
+  });
 
   const handleSave = () => {
     setError('');
@@ -495,24 +573,9 @@ function EmployeePlanningEditor({
     try {
       savePersonalData();
       if (planningDirty && enrollment) {
-        if (draft.principalMentorId !== baseline.principalMentorId) {
-          assignMentor(enrollment.id, draft.principalMentorId);
-        }
-        if (draft.supervisorId !== baseline.supervisorId) {
-          hrPerformanceStore.setSupervisor(profile.userId, draft.supervisorId, changedBy);
-        }
-        for (const { weekNumber } of EVALUATION_WEEK_LABELS) {
-          if (draft.weeklyMentors[weekNumber] !== baseline.weeklyMentors[weekNumber]) {
-            hrPerformanceStore.setWeeklyEvalMentor(
-              profile.userId,
-              weekNumber,
-              draft.weeklyMentors[weekNumber],
-              changedBy,
-            );
-          }
-        }
+        savePlanningData(draft, baseline);
       }
-
+      syncBaselinesAfterSave();
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Eroare la salvare.');
@@ -901,7 +964,7 @@ function EmployeePlanningEditor({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex flex-wrap gap-2 pt-2 border-t border-corporate-border">
+      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-corporate-border">
         <Button
           type="button"
           variant="primary"
@@ -913,6 +976,7 @@ function EmployeePlanningEditor({
         <Button type="button" variant="ghost" onClick={handleCancel} disabled={saving}>
           Anulează
         </Button>
+        <AutoSaveStatusText className="hidden @md:block ml-auto" />
       </div>
     </div>
   );

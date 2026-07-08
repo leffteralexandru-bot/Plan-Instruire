@@ -15,6 +15,8 @@ import { CompletedEvaluationsHrPanel } from '@/components/admin/performance/Comp
 import { getRoleDashboardMetrics } from '@/lib/roleDashboard';
 import { getSupervisedEmployeeIds } from '@/lib/supervisor';
 import { ingineriPath } from '@/data/departments';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
+import { DesktopPageIntro } from '@/components/layout/DesktopPageIntro';
 
 export function SupervisorPanel() {
   const { user } = useAuth();
@@ -39,10 +41,12 @@ export function SupervisorPanel() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Supervizor</h1>
-          <p className="text-corporate-muted mt-1">
+          <DesktopPageHeader>
+            <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Supervizor</h1>
+          </DesktopPageHeader>
+          <DesktopPageIntro>
             Erori · evaluări · re-instruire — responsabilitățile tale ca supervizor direct.
-          </p>
+          </DesktopPageIntro>
         </div>
         {canOpenMentorPanel && (
           <Link

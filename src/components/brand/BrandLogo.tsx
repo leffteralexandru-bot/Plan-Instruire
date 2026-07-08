@@ -5,7 +5,7 @@ interface BrandLogoProps {
   height?: number;
 }
 
-export function BrandLogo({ className = '', tone = 'light', height = 28 }: BrandLogoProps) {
+export function BrandLogo({ className = '', tone = 'light', height }: BrandLogoProps) {
   return (
     <img
       src="/brand/artgranit-logo.svg"
@@ -13,9 +13,10 @@ export function BrandLogo({ className = '', tone = 'light', height = 28 }: Brand
       className={[
         'w-auto object-contain',
         tone === 'light' ? 'brightness-0 invert' : '',
+        height == null ? 'h-7' : '',
         className,
       ].join(' ')}
-      style={{ height }}
+      style={height != null ? { height } : undefined}
     />
   );
 }

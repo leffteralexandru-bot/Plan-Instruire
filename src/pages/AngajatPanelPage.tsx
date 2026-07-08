@@ -7,6 +7,8 @@ import { AngajatPanelView } from '@/components/angajat/AngajatPanelView';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
+import { DesktopPageIntro } from '@/components/layout/DesktopPageIntro';
 import {
   ingineriPath,
   INGINERI_ADMIN_DASHBOARD_PATH,
@@ -66,11 +68,13 @@ export function AngajatPanelPage() {
           <Badge variant="info" className="mb-2">
             Vedere ca angajat
           </Badge>
-          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Angajat — {name}</h1>
-          <p className="text-corporate-muted mt-1">
+          <DesktopPageHeader>
+            <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Angajat — {name}</h1>
+          </DesktopPageHeader>
+          <DesktopPageIntro>
             Aceeași interfață pe care o vede angajatul în contul său — doar citire, fără acțiuni în
             numele lui.
-          </p>
+          </DesktopPageIntro>
         </div>
         <AngajatPanelView viewAsId={viewAs} />
       </div>
@@ -81,7 +85,9 @@ export function AngajatPanelPage() {
     return (
       <div className="space-y-6">
         <Card padding="md">
-          <h1 className="text-xl font-bold text-corporate-dark">Panou Angajat</h1>
+          <DesktopPageHeader>
+            <h1 className="text-xl font-bold text-corporate-dark">Panou Angajat</h1>
+          </DesktopPageHeader>
           <p className="text-sm text-corporate-muted mt-2 leading-relaxed">
             Această pagină este pentru conturile cu rol <strong>Angajat</strong>. Sunteți conectat ca{' '}
             <strong>{isAdmin ? 'Administrator' : isHr ? 'HR' : hasRole(user, 'mentor') ? 'Mentor' : 'utilizator staff'}</strong>.
@@ -128,10 +134,12 @@ export function AngajatPanelPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Angajat</h1>
-        <p className="text-corporate-muted mt-1">
+        <DesktopPageHeader>
+          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Angajat</h1>
+        </DesktopPageHeader>
+        <DesktopPageIntro>
           Datele dvs. personale, progres instruire și evaluări — vizibile doar pentru contul dvs.
-        </p>
+        </DesktopPageIntro>
       </div>
       <AngajatPanelView />
     </div>

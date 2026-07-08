@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { AdministratorCommandCenter } from '@/components/admin/AdministratorCommandCenter';
 import { useAuth } from '@/hooks/useAuth';
 import { ingineriPath } from '@/data/departments';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
 
 /** Centru de comandă — exclusiv Administrator */
 export function AdministratorDashboardPage() {
@@ -13,7 +14,9 @@ export function AdministratorDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Dashboard</h1>
+        <DesktopPageHeader>
+          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Dashboard</h1>
+        </DesktopPageHeader>
         <p className="text-corporate-muted mt-1">
           Comandă centralizată — toate departamentele și modulele HR într-o singură interfață.
         </p>

@@ -1,23 +1,12 @@
 import type { ReactNode } from 'react';
-import { LAYOUT_PAGE } from '@/lib/appNavigation';
+import { SHELL_INNER } from '@/lib/responsiveLayout';
 
 interface PageContainerProps {
   children: ReactNode;
   className?: string;
-  /** Lățime mai îngustă pentru pagini centrate (login, hub) */
-  narrow?: boolean;
+  as?: 'div' | 'section' | 'article';
 }
 
-export function PageContainer({ children, className = '', narrow = false }: PageContainerProps) {
-  return (
-    <div
-      className={[
-        LAYOUT_PAGE,
-        narrow ? 'max-w-3xl' : 'max-w-screen-xl',
-        className,
-      ].join(' ')}
-    >
-      {children}
-    </div>
-  );
+export function PageContainer({ children, className = '', as: Tag = 'div' }: PageContainerProps) {
+  return <Tag className={[SHELL_INNER, className].join(' ')}>{children}</Tag>;
 }

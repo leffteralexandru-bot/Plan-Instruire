@@ -17,6 +17,8 @@ import { EvaluationStagesFlow } from '@/components/evaluation/EvaluationStagesFl
 import { TestingHighlightZone } from '@/components/shared/TestingHighlightZone';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
+import { DesktopPageIntro } from '@/components/layout/DesktopPageIntro';
 
 export function EvaluationsPage() {
   const { canAccessMentor, loading, user } = useAuth();
@@ -103,10 +105,12 @@ export function EvaluationsPage() {
       )}
 
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Evaluări & Rapoarte</h1>
-        <p className="text-corporate-muted mt-1">
+        <DesktopPageHeader>
+          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Evaluări & Rapoarte</h1>
+        </DesktopPageHeader>
+        <DesktopPageIntro>
           Cereri de re-instruire, evaluare tri-lunară și feedback săptămânal
-        </p>
+        </DesktopPageIntro>
       </div>
 
       {canSubmitCerere && targetAngajatId && (

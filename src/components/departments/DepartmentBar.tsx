@@ -3,6 +3,13 @@ import { DEPARTMENTS, getDepartmentFromPath, INGINERI_ANGAJAT_PANEL_PATH, INGINE
 import { DepartmentGlyph, DEPT_SHORT_LABELS } from '@/components/departments/DepartmentGlyph';
 import { useAuth } from '@/hooks/useAuth';
 import { isAngajatUser, hasRole, isHrOnly } from '@/lib/roles';
+import {
+  BAR_NAV_ACTIVE,
+  BAR_NAV_INACTIVE,
+  BAR_NAV_LABEL_DEPT,
+  BAR_NAV_LABEL_DEPT_DESKTOP,
+  BAR_NAV_LABEL_DEPT_MOBILE,
+} from '@/lib/responsiveLayout';
 
 function departmentLink(
   deptRoute: string,
@@ -19,8 +26,6 @@ function departmentLink(
   return deptRoute;
 }
 
-import { LAYOUT_SHELL } from '@/lib/appNavigation';
-
 export function DepartmentBar() {
   const { pathname } = useLocation();
   const { user } = useAuth();
@@ -31,12 +36,12 @@ export function DepartmentBar() {
   const isAdmin = !!user && hasRole(user, 'admin');
 
   return (
-    <nav aria-label="Planuri departamente" className="dept-bar relative py-3">
+    <nav aria-label="Planuri departamente" className="dept-bar relative px-2 py-2 @md:px-6 @md:py-3">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-corporate-gold/50 to-transparent"
         aria-hidden
       />
-      <ul className={`${LAYOUT_SHELL} flex w-full items-stretch justify-between gap-1 sm:gap-2 px-3 sm:px-6`}>
+      <ul className="mx-auto flex w-full max-w-none items-stretch justify-between gap-1 @md:gap-2 @xl:max-w-screen-xl">
         {DEPARTMENTS.map((dept) => {
           const isActive = activeDept?.id === dept.id;
           const to = departmentLink(dept.route, dept.planAvailable, isStaffAngajat, isHrStaff, isAdmin);
@@ -47,25 +52,25 @@ export function DepartmentBar() {
                 to={to}
                 title={`${dept.label}${dept.planAvailable ? '' : ' — în pregătire'}`}
                 className={[
-                  'group relative flex flex-col items-center gap-1.5 rounded-lg px-0.5 py-1 no-underline transition-all duration-200',
-                  isActive ? 'text-corporate-gold' : 'text-white/45 hover:text-white/85',
+                  'group relative flex min-h-0 flex-col items-center justify-center gap-1 rounded-md px-0 py-1 no-underline transition-all duration-200 @md:min-h-0 @md:gap-1.5 @md:rounded-lg @md:px-0.5 @md:py-1',
+                  isActive ? BAR_NAV_ACTIVE : BAR_NAV_INACTIVE,
                 ].join(' ')}
               >
                 <span
                   className={[
-                    'relative flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-lg border transition-all duration-200',
+                    'relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-all duration-200 @md:h-12 @md:w-12 @md:rounded-lg',
                     isActive
-                      ? 'border-corporate-gold/80 bg-corporate-gold/[0.12] shadow-gold'
+                      ? 'border-corporate-gold/60 bg-corporate-gold/[0.08] shadow-gold'
                       : dept.planAvailable
-                        ? 'border-white/12 bg-white/[0.04] group-hover:border-corporate-gold/45 group-hover:bg-corporate-gold/[0.06]'
-                        : 'border-white/[0.08] border-dashed bg-transparent group-hover:border-corporate-gold/30',
+                        ? 'border-white/10 bg-white/[0.03] group-hover:border-corporate-gold/35 group-hover:bg-corporate-gold/[0.05]'
+                        : 'border-white/[0.08] border-dashed bg-transparent group-hover:border-corporate-gold/25',
                   ].join(' ')}
                 >
                   <DepartmentGlyph
                     id={dept.id}
                     className={[
-                      'h-[18px] w-[18px] sm:h-5 sm:w-5 transition-colors',
-                      isActive ? 'text-corporate-gold' : 'text-white/70 group-hover:text-corporate-gold/90',
+                      'h-3 w-3 transition-colors @md:h-5 @md:w-5',
+                      isActive ? 'text-corporate-gold' : 'text-white/75 group-hover:text-white/90',
                     ].join(' ')}
                   />
                   {!dept.planAvailable && (
@@ -77,8 +82,18 @@ export function DepartmentBar() {
                 </span>
                 <span
                   className={[
-                    'w-full truncate text-center text-[8px] sm:text-[9px] font-medium uppercase tracking-[0.14em] leading-tight',
-                    isActive ? 'text-corporate-gold' : 'text-white/40 group-hover:text-white/70',
+                    BAR_NAV_LABEL_DEPT,
+                    BAR_NAV_LABEL_DEPT_DESKTOP,
+                    isActive ? 'text-corporate-gold' : '',
+                  ].join(' ')}
+                >
+                  {DEPT_SHORT_LABELS[dept.id]}
+                </span>
+                <span
+                  className={[
+                    BAR_NAV_LABEL_DEPT,
+                    BAR_NAV_LABEL_DEPT_MOBILE,
+                    isActive ? 'text-corporate-gold' : '',
                   ].join(' ')}
                 >
                   {DEPT_SHORT_LABELS[dept.id]}

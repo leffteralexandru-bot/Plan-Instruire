@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 
 export type ProfessionalPanelVariant =
   | 'training'
@@ -272,6 +273,8 @@ export interface ProfessionalPanelProps {
   bodyDetached?: boolean;
   /** Înălțime egală pentru tile-uri header (ex. rândul cu 3 module) */
   headerTile?: boolean;
+  /** Etichetă scurtă pe tile mobil (ex. „Operarea echipament”) */
+  tileTitle?: string;
 }
 
 export function ProfessionalPanel({
@@ -295,9 +298,50 @@ export function ProfessionalPanel({
   toggleLabels,
   bodyDetached = false,
   headerTile = false,
+  tileTitle,
 }: ProfessionalPanelProps) {
   const theme = THEMES[variant];
   const pad = compact ? 'p-4' : 'p-5';
+  const phoneLayout = usePhoneLayout();
+  const tileLabel = tileTitle ?? title;
+
+  const compactTileButton =
+    headerTile && collapsible && onToggle && phoneLayout ? (
+      <button
+        type="button"
+        className={[
+          'relative flex h-full w-full min-h-[5.25rem] flex-col items-center justify-center gap-1.5 px-1.5 py-2 text-center transition-colors',
+          'hover:bg-black/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold focus-visible:ring-inset',
+          theme.header,
+        ].join(' ')}
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-label={
+          expanded
+            ? (toggleLabels?.expanded ?? `Restrânge ${tileLabel}`)
+            : (toggleLabels?.collapsed ?? `Deschide ${tileLabel}`)
+        }
+      >
+        {headerIcon ?? (icon ? (
+          <div
+            className={[
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1',
+              theme.iconWrap,
+            ].join(' ')}
+          >
+            <PanelIcon name={icon} className={`h-4 w-4 ${theme.iconColor}`} />
+          </div>
+        ) : null)}
+        <span
+          className={[
+            'w-full px-0.5 text-[9px] font-semibold leading-tight text-corporate-dark',
+            'line-clamp-2 @md:text-[10px]',
+          ].join(' ')}
+        >
+          {tileLabel}
+        </span>
+      </button>
+    ) : null;
 
   const headerTitleBlock = (
     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -315,9 +359,7 @@ export function ProfessionalPanel({
         <p
           className={[
             'text-[10px] font-semibold uppercase tracking-[0.12em]',
-            headerTile
-              ? 'lg:text-[9px] lg:tracking-[0.08em] lg:truncate lg:whitespace-nowrap'
-              : '',
+            headerTile ? 'text-[10px] tracking-wide line-clamp-2 @md:line-clamp-1' : '',
             theme.eyebrow,
           ].join(' ')}
         >
@@ -327,7 +369,7 @@ export function ProfessionalPanel({
           className={[
             'font-semibold leading-snug',
             headerTile
-              ? 'text-sm sm:text-[13px] lg:text-sm lg:leading-tight lg:whitespace-nowrap lg:truncate'
+              ? 'text-sm leading-snug line-clamp-2 @md:line-clamp-1'
               : 'text-base',
             theme.title,
           ].join(' ')}
@@ -339,7 +381,7 @@ export function ProfessionalPanel({
             className={[
               'mt-0.5',
               headerTile
-                ? 'text-[11px] leading-snug lg:min-h-[2rem] lg:line-clamp-2'
+                ? 'min-h-[2rem] line-clamp-2 text-[11px] leading-snug'
                 : 'text-xs max-w-prose',
               theme.subtitle,
             ].join(' ')}
@@ -363,7 +405,9 @@ export function ProfessionalPanel({
       </div>
     ) : null;
 
-  const headerLayout = headerActionsBlock ? (
+  const headerLayout = compactTileButton
+    ? compactTileButton
+    : headerActionsBlock ? (
     <div
       className={[
         'flex items-start justify-between gap-3 w-full',
@@ -423,11 +467,15 @@ export function ProfessionalPanel({
 
       <div className={['min-w-0 flex-1', headerTile ? 'flex flex-col' : ''].join(' ')}>
         {collapsible && onToggle ? (
+          compactTileButton ? (
+            headerLayout
+          ) : (
           <div
             className={[
               'w-full transition-colors hover:bg-black/[0.02]',
-              headerTile ? 'flex-1 min-h-0 lg:min-h-[7.25rem] border-b-0' : 'border-b',
-              'px-5 py-4',
+              headerTile
+                ? 'flex-1 min-h-[6.5rem] border-b-0 px-3 py-3 @md:min-h-[7.25rem] @md:px-5 @md:py-4'
+                : 'border-b px-5 py-4',
               theme.header,
               headerTile ? '' : theme.headerBorder,
               collapsible && headerTile && expanded && bodyDetached ? 'pb-3' : '',
@@ -435,6 +483,7 @@ export function ProfessionalPanel({
           >
             {headerLayout}
           </div>
+          )
         ) : (
           <div className={['border-b px-5 py-4', theme.header, theme.headerBorder].join(' ')}>
             {headerLayout}

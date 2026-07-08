@@ -21,12 +21,12 @@ export function DepartmentHubPage() {
     <>
       <AngajatAutoRedirect />
 
-      <div className="w-full max-w-screen-xl mx-auto space-y-6">
-        <div className="text-center space-y-3 pt-2">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-corporate-dark">
+      <div className="space-y-6 w-full">
+        <div className="space-y-3 pt-2 text-center">
+          <h1 className="text-2xl font-semibold text-corporate-dark @md:text-3xl">
             Plan Instruire & Adaptare Profesională
           </h1>
-          <p className="text-corporate-muted text-sm sm:text-base">
+          <p className="text-sm text-corporate-muted @md:text-base">
             Bine ai venit{user ? `, ${user.name.split(' ')[0]}` : ''}! Alege departamentul din bara de
             sus pentru a accesa planul de instruire.
           </p>

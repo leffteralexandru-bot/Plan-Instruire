@@ -13,6 +13,8 @@ import { INGINERI_ANGAJAT_PANEL_PATH } from '@/data/departments';
 import { normalizeReTrainingStatus } from '@/lib/reTrainingWorkflow';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
 import type { TestingZoneId } from '@/lib/testingStageGuide';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
+import { DesktopPageIntro } from '@/components/layout/DesktopPageIntro';
 
 interface DashboardViewProps {
   title?: string;
@@ -46,18 +48,20 @@ export function DashboardView({
     <TestingHighlightZone zoneId={zoneId}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark tracking-tight">
-            {title}
-          </h1>
+          <DesktopPageHeader>
+            <h1 className="text-2xl font-bold tracking-tight text-corporate-dark @md:text-3xl">
+              {title}
+            </h1>
+          </DesktopPageHeader>
           {showActiveInitialPlan ? (
-            <p className="text-corporate-muted mt-1">
+            <DesktopPageIntro>
               {stats.completedDays} din {stats.totalDays} zile finalizate · {stats.completedTasks}{' '}
               activități bifate
-            </p>
+            </DesktopPageIntro>
           ) : (
-            <p className="text-corporate-muted mt-1">
+            <DesktopPageIntro>
               Doar instruirile în curs — parcursul finalizat este în Panou Angajat.
-            </p>
+            </DesktopPageIntro>
           )}
         </div>
 

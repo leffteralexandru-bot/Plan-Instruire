@@ -23,6 +23,10 @@ import { DocumentatieBazaPage } from '@/pages/DocumentatieBazaPage';
 import { IngineriIndexPage } from '@/pages/IngineriIndexPage';
 import { ReTrainingLessonPage } from '@/pages/ReTrainingLessonPage';
 import { AdministratorDashboardPage } from '@/pages/AdministratorDashboardPage';
+import { ViewportPreviewProvider } from '@/context/ViewportPreviewContext';
+import { AutoSaveProvider } from '@/context/AutoSaveContext';
+import { ViewportFrame } from '@/components/layout/ViewportFrame';
+import { PhoneLayoutClassEffect } from '@/components/layout/PhoneLayoutClassEffect';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -99,14 +103,21 @@ function AppRoutes() {
 
 export function App() {
   return (
-    <AuthProvider>
-      <UsersProvider>
-        <HrPerformanceProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </HrPerformanceProvider>
-      </UsersProvider>
-    </AuthProvider>
+    <ViewportPreviewProvider>
+      <PhoneLayoutClassEffect />
+      <AuthProvider>
+        <UsersProvider>
+          <HrPerformanceProvider>
+            <BrowserRouter>
+              <AutoSaveProvider>
+                <ViewportFrame>
+                  <AppRoutes />
+                </ViewportFrame>
+              </AutoSaveProvider>
+            </BrowserRouter>
+          </HrPerformanceProvider>
+        </UsersProvider>
+      </AuthProvider>
+    </ViewportPreviewProvider>
   );
 }

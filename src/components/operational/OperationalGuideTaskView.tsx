@@ -10,6 +10,7 @@ import { OperationalGuideVideo } from '@/components/operational/OperationalGuide
 import { OperationalGuideChecklist } from '@/components/operational/OperationalGuideChecklist';
 import { OperationalGuidePreMeasurementRules } from '@/components/operational/OperationalGuidePreMeasurementRules';
 import { PanelSubsection } from '@/components/ui/ProfessionalPanel';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -18,6 +19,7 @@ interface OperationalGuideTaskViewProps {
 }
 
 export function OperationalGuideTaskView({ task, userId, readOnly = false }: OperationalGuideTaskViewProps) {
+  const phoneLayout = usePhoneLayout();
   const [equipChecked, setEquipChecked] = useState<boolean[]>(() =>
     operationalGuideStore.getEquipmentChecklist(userId, task.id),
   );
@@ -48,13 +50,14 @@ export function OperationalGuideTaskView({ task, userId, readOnly = false }: Ope
           <h3 className="text-lg font-semibold text-corporate-dark">Măsurare {label}</h3>
           {task.categorySubtitle && <Badge variant="default">{task.categorySubtitle}</Badge>}
         </div>
-        {task.introText ? (
-          <p className="text-sm text-corporate-muted mt-1 leading-relaxed whitespace-pre-wrap">{task.introText}</p>
-        ) : (
-          <p className="text-sm text-corporate-muted mt-1 italic">
-            Citiți regulile obligatorii înainte de a confirma deplasarea la șantier.
-          </p>
-        )}
+        {!phoneLayout &&
+          (task.introText ? (
+            <p className="text-sm text-corporate-muted mt-1 leading-relaxed whitespace-pre-wrap">{task.introText}</p>
+          ) : (
+            <p className="text-sm text-corporate-muted mt-1 italic">
+              Citiți regulile obligatorii înainte de a confirma deplasarea la șantier.
+            </p>
+          ))}
         {task.updatedAt && (
           <p className="text-[10px] text-corporate-muted mt-2">
             Actualizat {new Date(task.updatedAt).toLocaleDateString('ro-RO')}

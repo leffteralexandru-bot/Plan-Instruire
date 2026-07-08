@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { EmployeeSelfAssessment, EvaluationCycle } from '@/types';
 import { defaultDesignerCompetencyScores } from '@/data/designerCompetencyMatrix';
 import { Button } from '@/components/ui/Button';
@@ -24,6 +24,8 @@ import { useEvaluationSettings } from '@/hooks/useEvaluationSettings';
 import { computeCompetencyOutcome, isCompetencyScoresComplete } from '@/lib/competencyScoring';
 import { DesignerCompetencyForm } from '@/components/competency/DesignerCompetencyForm';
 import { DesignerCompetencySummary } from '@/components/competency/DesignerCompetencySummary';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
 
 interface EvaluationStagesFlowProps {
   cycle: EvaluationCycle;
@@ -70,6 +72,79 @@ export function EvaluationStagesFlow({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  useEffect(() => {
+    setForm(assessment);
+    setSupervisorForm(supervisorDefaults);
+    setSelfCompetency(cycle.competencySelfScores ?? defaultDesignerCompetencyScores());
+    setSupervisorCompetency(
+      cycle.competencySupervisorScores ??
+        cycle.competencySelfScores ??
+        defaultDesignerCompetencyScores(),
+    );
+  }, [cycle.id, cycle.updatedAt, assessment, supervisorDefaults, cycle.competencySelfScores, cycle.competencySupervisorScores]);
+
+  const employeeStepDone = mode === 'employee' && isEmployeeSelfAssessmentStageDone(cycle);
+
+  const selfDraft = useMemo(() => ({ form, selfCompetency }), [form, selfCompetency]);
+  const selfBaseline = useMemo(
+    () => ({
+      form: assessment,
+      selfCompetency: cycle.competencySelfScores ?? defaultDesignerCompetencyScores(),
+    }),
+    [assessment, cycle.competencySelfScores],
+  );
+
+  const supervisorDraft = useMemo(
+    () => ({ supervisorForm, supervisorCompetency }),
+    [supervisorForm, supervisorCompetency],
+  );
+  const supervisorBaseline = useMemo(
+    () => ({
+      supervisorForm: supervisorDefaults,
+      supervisorCompetency:
+        cycle.competencySupervisorScores ??
+        cycle.competencySelfScores ??
+        defaultDesignerCompetencyScores(),
+    }),
+    [supervisorDefaults, cycle.competencySupervisorScores, cycle.competencySelfScores],
+  );
+
+  const canEditSelf =
+    (mode === 'employee' || mode === 'hr') &&
+    active?.id === 'auto_evaluare' &&
+    active.status === 'in_curs' &&
+    !employeeStepDone;
+  const canEditSupervisor =
+    mode === 'evaluator' && active?.id === 'evaluare_mentor' && active.status === 'in_curs';
+
+  useAutoSave({
+    draft: selfDraft,
+    baseline: selfBaseline,
+    enabled: canEditSelf,
+    save: (d) => {
+      hrPerformanceStore.saveEmployeeSelfAssessment(
+        cycle.id,
+        d.form,
+        { id: actorId, name: actorName },
+        d.selfCompetency,
+      );
+      onUpdated?.();
+    },
+  });
+
+  useAutoSave({
+    draft: supervisorDraft,
+    baseline: supervisorBaseline,
+    enabled: canEditSupervisor,
+    save: (d) => {
+      hrPerformanceStore.saveSupervisorAssessmentDraft(cycle.id, {
+        supervisorAssessment: d.supervisorForm,
+        competencySupervisorScores: d.supervisorCompetency,
+      });
+      onUpdated?.();
+    },
+  });
+
   const handleSaveSelfAssessment = () => {
     setError('');
     setSuccess('');
@@ -103,7 +178,6 @@ export function EvaluationStagesFlow({
     }
   };
 
-  const employeeStepDone = mode === 'employee' && isEmployeeSelfAssessmentStageDone(cycle);
   const waitingForSupervisor =
     employeeStepDone && getActiveStage(cycle)?.id === 'evaluare_mentor';
 
@@ -150,6 +224,9 @@ export function EvaluationStagesFlow({
       subtitle="Auto-evaluare angajat → Evaluare supervizor → Validare HR · Matrice inginer proiectant"
       compact
     >
+      <div className="mb-2 hidden @md:flex justify-end">
+        <AutoSaveStatusText />
+      </div>
       <ol className="space-y-2">
         {visibleStages.map((stage, idx) => (
           <li

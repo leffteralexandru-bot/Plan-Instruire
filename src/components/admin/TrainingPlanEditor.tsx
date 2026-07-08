@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayPlan, Material, Task } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +10,8 @@ import { useHrPerformance } from '@/hooks/useHrPerformance';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import { trainingPlanStore } from '@/lib/trainingPlanStore';
 import { TRAINING_PLAN as STATIC_PLAN } from '@/data/trainingPlan';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
 
 function inferMaterialType(file: File): Material['type'] {
   const name = file.name.toLowerCase();
@@ -177,16 +179,40 @@ function DayEditor({
     syncFromDay();
   }, [syncFromDay]);
 
-  const handleSave = () => {
-    if (!user) return;
-    setSaving(true);
-    try {
+  const dayDraft = useMemo(
+    () => ({ title, subtitle, tasks, materials }),
+    [title, subtitle, tasks, materials],
+  );
+  const dayBaseline = useMemo(
+    () => ({
+      title: day.title,
+      subtitle: day.subtitle ?? '',
+      tasks: [...day.tasks],
+      materials: [...day.materials],
+    }),
+    [day],
+  );
+
+  const { status: autoSaveStatus, flush: flushDaySave } = useAutoSave({
+    draft: dayDraft,
+    baseline: dayBaseline,
+    enabled: !readOnly && !!user,
+    save: (d) => {
+      if (!user) return;
       trainingPlanStore.saveDayOverride(
         day.id,
         'ingineri',
-        { title: title.trim(), subtitle: subtitle.trim() || undefined, tasks, materials },
+        { title: d.title.trim(), subtitle: d.subtitle.trim() || undefined, tasks: d.tasks, materials: d.materials },
         user,
       );
+    },
+  });
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      await flushDaySave();
       onSaved(`Ziua ${day.dayNumber} salvată. Modificările apar imediat în planul angajaților.`);
     } finally {
       setSaving(false);
@@ -259,9 +285,10 @@ function DayEditor({
           <Button type="button" variant="ghost" size="sm" onClick={handleReset}>
             Resetare standard
           </Button>
-          <Button type="button" variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? 'Se salvează…' : 'Salvează ziua'}
+          <Button type="button" variant="primary" size="sm" onClick={() => void handleSave()} disabled={saving || autoSaveStatus === 'saving'}>
+            {saving || autoSaveStatus === 'saving' ? 'Se salvează…' : 'Salvează ziua'}
           </Button>
+          <AutoSaveStatusText className="hidden @md:block w-full" />
         </div>
         )}
       </div>

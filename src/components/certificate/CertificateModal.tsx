@@ -30,7 +30,7 @@ export function CertificateModal({ certificate, angajatId, open, onClose }: Cert
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 transition-all duration-300 @md:items-center @md:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="certificate-modal-title"
@@ -41,7 +41,7 @@ export function CertificateModal({ certificate, angajatId, open, onClose }: Cert
         aria-label="Închide certificatul"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-xl border border-corporate-gold/40 bg-white p-5 shadow-xl">
+      <div className="relative z-10 h-[100dvh] w-full overflow-y-auto rounded-none border border-corporate-gold/40 bg-white p-4 shadow-xl transition-all duration-300 @md:h-auto @md:max-h-[92vh] @md:max-w-2xl @md:rounded-xl @md:p-5">
         <div className="flex items-start justify-between gap-3 mb-4 sticky top-0 bg-white pb-2 border-b border-slate-100 z-10">
           <h2 id="certificate-modal-title" className="text-sm font-semibold text-corporate-dark">
             Certificat plan instruire la angajare

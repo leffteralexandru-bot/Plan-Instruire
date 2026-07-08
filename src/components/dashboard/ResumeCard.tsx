@@ -19,7 +19,7 @@ export function ResumeCard({ day, completedTasks, totalTasks }: ResumeCardProps)
 
   return (
     <Card className="border-corporate-gold/25 bg-gradient-to-br from-corporate-gold-light/80 to-white">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="flex flex-col gap-4 @md:flex-row @md:items-center">
         <div className="flex-1 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="info">Continuă aici</Badge>

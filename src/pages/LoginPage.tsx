@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import { ViewportPreviewMenu } from '@/components/layout/ViewportPreviewMenu';
 import { userStore, repairDemoProfiles, repairLoginCredentials, DEMO_LOGIN_HINTS } from '@/lib/userStore';
 import { credentials, DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
 import { ROLE_LABELS, formatUserRoles, isAngajatUser, isMentorUser } from '@/lib/roles';
@@ -145,14 +146,17 @@ export function LoginPage() {
   );
 
   return (
-    <div className="min-h-screen w-full min-w-0 flex flex-col">
-      <div className="login-hero relative w-full px-4 py-10 sm:py-14 text-center text-white">
-        <div className="relative z-10 mx-auto max-w-lg space-y-4">
-          <BrandLogo tone="light" height={32} className="mx-auto" />
+    <div className="relative min-h-screen flex flex-col">
+      <div className="absolute left-3 top-3 z-20 @md:left-4 @md:top-4">
+        <ViewportPreviewMenu tone="light" layout="dots" />
+      </div>
+      <div className="login-hero relative px-4 py-10 text-center text-white @md:py-14">
+        <div className="relative z-10 mx-auto w-full space-y-4 px-2 @md:max-w-2xl @xl:max-w-screen-xl">
+          <BrandLogo tone="light" className="mx-auto h-[18px] @md:h-8" />
           <p className="text-sm text-corporate-gold font-medium tracking-wide uppercase">
             Plan de Instruire și Adaptare Profesională
           </p>
-          <h1 className="text-xl sm:text-2xl font-light text-white/95 leading-snug">
+          <h1 className="text-xl font-light leading-snug text-white/95 @md:text-2xl">
             Transformăm cunoștințele în{' '}
             <span className="font-semibold text-corporate-gold">proiecte de excelență</span>
           </h1>
@@ -160,8 +164,8 @@ export function LoginPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 pb-10 -mt-6 relative z-10">
-        <div className="mx-auto w-full max-w-lg space-y-4">
+      <div className="relative z-10 -mt-6 flex-1 px-4 pb-10">
+        <div className="mx-auto w-full space-y-4 @md:max-w-2xl @xl:max-w-screen-xl">
           <Card className="shadow-neural-lg border-corporate-border">
             <h2 className="text-lg font-semibold text-corporate-black mb-1">Autentificare</h2>
             <p className="text-sm text-corporate-muted mb-4">Platformă internă artGRANIT</p>
@@ -179,7 +183,7 @@ export function LoginPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
               Profile organizaționale
             </p>
-            <div className="grid gap-2 sm:grid-cols-2 mb-5">
+            <div className="mb-5 grid gap-2 @md:grid-cols-2">
               {admins.map((a) =>
                 renderProfileButton(a, {
                   emoji: '⚙️',
@@ -201,7 +205,7 @@ export function LoginPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
                   Profile temporare (demo)
                 </p>
-                <div className="grid gap-2 sm:grid-cols-2 mb-5">
+                <div className="mb-5 grid gap-2 @md:grid-cols-2">
                   {tempProfiles.map((p) =>
                     renderProfileButton(p, {
                       emoji: tempProfileEmoji(p),

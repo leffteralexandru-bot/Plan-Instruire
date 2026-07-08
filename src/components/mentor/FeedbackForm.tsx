@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { FeedbackForm } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Textarea, Select } from '@/components/ui/Input';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
 
 const RATING_OPTIONS = [1, 2, 3, 4, 5].map((n) => ({
   value: n,
@@ -17,20 +19,62 @@ interface FeedbackFormProps {
   formIdPrefix?: string;
 }
 
+type FeedbackDraft = {
+  autonomieProliner: FeedbackForm['autonomieProliner'];
+  proiectareFaraErori: FeedbackForm['proiectareFaraErori'];
+  integrareEchipa: FeedbackForm['integrareEchipa'];
+  comentarii: string;
+};
+
 export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave, formIdPrefix = '' }: FeedbackFormProps) {
   const [submitted, setSubmitted] = useState(!!existing);
+  const [autonomieProliner, setAutonomieProliner] = useState<FeedbackForm['autonomieProliner']>(
+    existing?.autonomieProliner ?? 3,
+  );
+  const [proiectareFaraErori, setProiectareFaraErori] = useState<FeedbackForm['proiectareFaraErori']>(
+    existing?.proiectareFaraErori ?? 3,
+  );
+  const [integrareEchipa, setIntegrareEchipa] = useState<FeedbackForm['integrareEchipa']>(
+    existing?.integrareEchipa ?? 3,
+  );
+  const [comentarii, setComentarii] = useState(existing?.comentarii ?? '');
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const draft = useMemo<FeedbackDraft>(
+    () => ({ autonomieProliner, proiectareFaraErori, integrareEchipa, comentarii }),
+    [autonomieProliner, proiectareFaraErori, integrareEchipa, comentarii],
+  );
+
+  const baseline = useMemo<FeedbackDraft>(
+    () => ({
+      autonomieProliner: existing?.autonomieProliner ?? 3,
+      proiectareFaraErori: existing?.proiectareFaraErori ?? 3,
+      integrareEchipa: existing?.integrareEchipa ?? 3,
+      comentarii: existing?.comentarii ?? '',
+    }),
+    [existing],
+  );
+
+  const { status: autoSaveStatus, flush } = useAutoSave({
+    draft,
+    baseline,
+    enabled: !submitted,
+    save: (d) => {
+      if (!d.comentarii.trim()) return;
+      onSave({
+        weekNumber,
+        autonomieProliner: d.autonomieProliner,
+        proiectareFaraErori: d.proiectareFaraErori,
+        integrareEchipa: d.integrareEchipa,
+        comentarii: d.comentarii,
+        mentorName,
+      });
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    onSave({
-      weekNumber,
-      autonomieProliner: Number(fd.get('autonomieProliner')) as FeedbackForm['autonomieProliner'],
-      proiectareFaraErori: Number(fd.get('proiectareFaraErori')) as FeedbackForm['proiectareFaraErori'],
-      integrareEchipa: Number(fd.get('integrareEchipa')) as FeedbackForm['integrareEchipa'],
-      comentarii: fd.get('comentarii') as string,
-      mentorName,
-    });
+    if (!comentarii.trim()) return;
+    await flush();
     setSubmitted(true);
   };
 
@@ -48,13 +92,14 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave, f
       {existing && submitted ? (
         <FeedbackSummary feedback={existing} />
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           <Select
             id={`${formIdPrefix}autonomie-${weekNumber}`}
             name="autonomieProliner"
             label="Autonomie utilizare Proliner"
             options={RATING_OPTIONS}
-            defaultValue={existing?.autonomieProliner ?? 3}
+            value={autonomieProliner}
+            onChange={(e) => setAutonomieProliner(Number(e.target.value) as FeedbackForm['autonomieProliner'])}
             required
           />
           <Select
@@ -62,7 +107,8 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave, f
             name="proiectareFaraErori"
             label="Proiectare fără erori"
             options={RATING_OPTIONS}
-            defaultValue={existing?.proiectareFaraErori ?? 3}
+            value={proiectareFaraErori}
+            onChange={(e) => setProiectareFaraErori(Number(e.target.value) as FeedbackForm['proiectareFaraErori'])}
             required
           />
           <Select
@@ -70,7 +116,8 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave, f
             name="integrareEchipa"
             label="Integrare în echipă"
             options={RATING_OPTIONS}
-            defaultValue={existing?.integrareEchipa ?? 3}
+            value={integrareEchipa}
+            onChange={(e) => setIntegrareEchipa(Number(e.target.value) as FeedbackForm['integrareEchipa'])}
             required
           />
           <Textarea
@@ -78,12 +125,16 @@ export function MentorFeedbackForm({ weekNumber, existing, mentorName, onSave, f
             name="comentarii"
             label="Comentarii suplimentare"
             placeholder="Puncte forte, zone de îmbunătățire, recomandări..."
-            defaultValue={existing?.comentarii}
+            value={comentarii}
+            onChange={(e) => setComentarii(e.target.value)}
             required
           />
-          <Button type="submit" variant="secondary">
-            Salvează feedback
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" variant="secondary" disabled={!comentarii.trim() || autoSaveStatus === 'saving'}>
+              {autoSaveStatus === 'saving' ? 'Se salvează…' : 'Salvează feedback'}
+            </Button>
+            <AutoSaveStatusText className="hidden @md:block" />
+          </div>
         </form>
       )}
     </Card>

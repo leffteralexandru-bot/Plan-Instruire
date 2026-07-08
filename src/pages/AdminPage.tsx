@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { ingineriPath } from '@/data/departments';
+import { DesktopPageHeader } from '@/components/layout/DesktopPageHeader';
 
 export function AdminPage() {
   const { canAccessAdmin, loading, isAdmin } = useAuth();
@@ -11,9 +12,11 @@ export function AdminPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">
-          {isAdmin ? 'Panou Administrator' : 'Panou HR'}
-        </h1>
+        <DesktopPageHeader>
+          <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">
+            {isAdmin ? 'Panou Administrator' : 'Panou HR'}
+          </h1>
+        </DesktopPageHeader>
         <p className="text-corporate-muted mt-1">
           {isAdmin
             ? 'Vizibilitate totală — profile, evaluări, instruire, setări'

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +19,8 @@ import {
   parseCatalogLines,
 } from '@/lib/technicalRepositoryParse';
 import { TechnicalRepositoryPanel } from '@/components/technicalRepository/TechnicalRepositoryPanel';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
 
 export function TechnicalRepositoryEditor({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
@@ -78,29 +80,89 @@ export function TechnicalRepositoryEditor({ embedded }: { embedded?: boolean } =
     loadFromStore();
   }, [data.updatedAt, loadFromStore]);
 
+  const repoDraft = useMemo(
+    () => ({
+      productsIntro,
+      materialsIntro,
+      warrantyIntro,
+      productsText,
+      materialsText,
+      warrantyMd,
+      warrantyCheck,
+      warrantyUrl,
+    }),
+    [
+      productsIntro,
+      materialsIntro,
+      warrantyIntro,
+      productsText,
+      materialsText,
+      warrantyMd,
+      warrantyCheck,
+      warrantyUrl,
+    ],
+  );
+
+  const repoBaseline = useMemo(() => {
+    const d = technicalRepositoryStore.get();
+    const md: Record<WarrantyMaterialId, string> = { quartz: '', granit: '', marmura: '', ceramica: '' };
+    const chk: Record<WarrantyMaterialId, string> = { quartz: '', granit: '', marmura: '', ceramica: '' };
+    const url: Record<WarrantyMaterialId, string> = { quartz: '', granit: '', marmura: '', ceramica: '' };
+    for (const w of d.warranty) {
+      md[w.id] = w.markdown;
+      chk[w.id] = linesFromList(w.checklist);
+      url[w.id] = w.mdUrl ?? '';
+    }
+    return {
+      productsIntro: d.productsIntro ?? '',
+      materialsIntro: d.materialsIntro ?? '',
+      warrantyIntro: d.warrantyIntro ?? '',
+      productsText: formatCatalogLines(d.products),
+      materialsText: formatCatalogLines(d.materials),
+      warrantyMd: md,
+      warrantyCheck: chk,
+      warrantyUrl: url,
+    };
+  }, [data.updatedAt]);
+
+  const persistRepo = useCallback(
+    (d: typeof repoDraft) => {
+      if (!user) return;
+      const current = technicalRepositoryStore.get();
+      technicalRepositoryStore.save(
+        {
+          productsIntro: d.productsIntro,
+          materialsIntro: d.materialsIntro,
+          warrantyIntro: d.warrantyIntro,
+          products: parseCatalogLines(d.productsText, current.products),
+          materials: parseCatalogLines(d.materialsText, current.materials),
+          warranty: (Object.keys(WARRANTY_MATERIAL_LABELS) as WarrantyMaterialId[]).map((id) => ({
+            id,
+            label: WARRANTY_MATERIAL_LABELS[id],
+            markdown: d.warrantyMd[id],
+            mdUrl: d.warrantyUrl[id].trim() || undefined,
+            checklist: listFromLines(d.warrantyCheck[id]),
+          })),
+        },
+        user,
+      );
+    },
+    [user],
+  );
+
+  const { status: autoSaveStatus, flush: flushRepoSave } = useAutoSave({
+    draft: repoDraft,
+    baseline: repoBaseline,
+    enabled: !readOnly && !!user && !preview,
+    save: persistRepo,
+  });
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
     setMessage(null);
     try {
-      const current = technicalRepositoryStore.get();
-      technicalRepositoryStore.save(
-        {
-          productsIntro,
-          materialsIntro,
-          warrantyIntro,
-          products: parseCatalogLines(productsText, current.products),
-          materials: parseCatalogLines(materialsText, current.materials),
-          warranty: (Object.keys(WARRANTY_MATERIAL_LABELS) as WarrantyMaterialId[]).map((id) => ({
-            id,
-            label: WARRANTY_MATERIAL_LABELS[id],
-            markdown: warrantyMd[id],
-            mdUrl: warrantyUrl[id].trim() || undefined,
-            checklist: listFromLines(warrantyCheck[id]),
-          })),
-        },
-        user,
-      );
+      await flushRepoSave();
       setMessage('Salvat — angajații văd imediat actualizarea.');
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Eroare la salvare.');
@@ -234,9 +296,10 @@ export function TechnicalRepositoryEditor({ embedded }: { embedded?: boolean } =
             )}
             {!readOnly && (
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" variant="primary" disabled={saving} onClick={() => void handleSave()}>
-                {saving ? 'Se salvează…' : 'Salvează repository'}
+              <Button type="button" variant="primary" disabled={saving || autoSaveStatus === 'saving'} onClick={() => void handleSave()}>
+                {saving || autoSaveStatus === 'saving' ? 'Se salvează…' : 'Salvează repository'}
               </Button>
+              <AutoSaveStatusText className="hidden @md:block" />
               {message && (
                 <p className={`text-sm ${message.startsWith('Salvat') ? 'text-emerald-700' : 'text-red-600'}`}>
                   {message}

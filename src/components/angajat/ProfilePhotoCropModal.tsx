@@ -152,7 +152,7 @@ export function ProfilePhotoCropModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center p-0 transition-all duration-300 @md:items-center @md:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="profile-crop-title"
@@ -163,7 +163,7 @@ export function ProfilePhotoCropModal({
         aria-label="Închide"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-corporate-border bg-white p-5 shadow-xl">
+      <div className="relative z-10 h-[100dvh] w-full overflow-y-auto rounded-none border border-corporate-border bg-white p-4 shadow-xl transition-all duration-300 @md:h-auto @md:max-w-md @md:rounded-xl @md:p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h2 id="profile-crop-title" className="text-base font-semibold text-corporate-dark">

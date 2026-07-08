@@ -7,7 +7,6 @@ import { ProgressProvider } from '@/hooks/useProgress';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { TraineeSelector } from '@/components/mentor/TraineeSelector';
 import { MentorCohortDashboard } from '@/components/mentor/MentorCohortDashboard';
-import { DepartmentPlanBanner } from '@/components/departments/DepartmentPlanBanner';
 import { Button } from '@/components/ui/Button';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 import { ingineriPath, INGINERI_SUPERVISOR_PANEL_PATH } from '@/data/departments';
@@ -51,7 +50,6 @@ export function DashboardPage() {
           : 'panou HR';
     return (
       <div>
-        <DepartmentPlanBanner />
         <Link
           to={backTo}
           className="text-sm text-corporate-gold hover:underline mb-4 inline-block"
@@ -76,7 +74,6 @@ export function DashboardPage() {
 
   return (
     <div>
-      <DepartmentPlanBanner />
       {dualRoleMentorTrainee && user && (
         <div className="mb-6">
           <ProgressProvider userId={user.id}>

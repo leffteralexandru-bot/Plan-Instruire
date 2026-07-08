@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -13,6 +13,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAccessControl } from '@/hooks/useAccessControl';
 import { useOperationalGuide } from '@/hooks/useOperationalGuide';
 import { OperationalGuideTaskView } from '@/components/operational/OperationalGuideTaskView';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
 
 function linesFromText(text: string): string[] {
   return text
@@ -23,6 +25,29 @@ function linesFromText(text: string): string[] {
 
 function textFromLines(lines: string[]): string {
   return lines.join('\n');
+}
+
+interface TaskDraft {
+  categorySubtitle: string;
+  videoUrl: string;
+  videoTitle: string;
+  introText: string;
+  preMeasurementText: string;
+  equipmentText: string;
+  stepsText: string;
+}
+
+function draftFromTask(id: OperationalGuideTaskId): TaskDraft {
+  const task = operationalGuideStore.getTask(id);
+  return {
+    categorySubtitle: task.categorySubtitle ?? '',
+    videoUrl: task.videoUrl ?? '',
+    videoTitle: task.videoTitle ?? '',
+    introText: task.introText ?? '',
+    preMeasurementText: textFromLines(task.preMeasurementConditions),
+    equipmentText: textFromLines(task.equipment),
+    stepsText: textFromLines(task.steps),
+  };
 }
 
 export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}) {
@@ -38,19 +63,18 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
   const [preMeasurementText, setPreMeasurementText] = useState('');
   const [equipmentText, setEquipmentText] = useState('');
   const [stepsText, setStepsText] = useState('');
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
 
   const loadTask = useCallback((id: OperationalGuideTaskId) => {
-    const task = operationalGuideStore.getTask(id);
-    setCategorySubtitle(task.categorySubtitle ?? '');
-    setVideoUrl(task.videoUrl ?? '');
-    setVideoTitle(task.videoTitle ?? '');
-    setIntroText(task.introText ?? '');
-    setPreMeasurementText(textFromLines(task.preMeasurementConditions));
-    setEquipmentText(textFromLines(task.equipment));
-    setStepsText(textFromLines(task.steps));
+    const draft = draftFromTask(id);
+    setCategorySubtitle(draft.categorySubtitle);
+    setVideoUrl(draft.videoUrl);
+    setVideoTitle(draft.videoTitle);
+    setIntroText(draft.introText);
+    setPreMeasurementText(draft.preMeasurementText);
+    setEquipmentText(draft.equipmentText);
+    setStepsText(draft.stepsText);
     setMessage(null);
   }, []);
 
@@ -58,29 +82,58 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
     loadTask(activeId);
   }, [activeId, tasks, loadTask]);
 
-  const handleSave = async () => {
-    if (!user) return;
-    setSaving(true);
-    setMessage(null);
-    try {
+  const draft = useMemo<TaskDraft>(
+    () => ({
+      categorySubtitle,
+      videoUrl,
+      videoTitle,
+      introText,
+      preMeasurementText,
+      equipmentText,
+      stepsText,
+    }),
+    [categorySubtitle, videoUrl, videoTitle, introText, preMeasurementText, equipmentText, stepsText],
+  );
+
+  const baseline = useMemo(() => draftFromTask(activeId), [activeId, tasks]);
+
+  const { status: autoSaveStatus, flush } = useAutoSave({
+    draft,
+    baseline,
+    enabled: !readOnly && !!user && !preview,
+    debounceMs: 1500,
+    save: (d) => {
+      if (!user) return;
       operationalGuideStore.saveTask(
         activeId,
         {
-          categorySubtitle,
-          videoUrl,
-          videoTitle,
-          introText,
-          preMeasurementConditions: linesFromText(preMeasurementText),
-          equipment: linesFromText(equipmentText),
-          steps: linesFromText(stepsText),
+          categorySubtitle: d.categorySubtitle,
+          videoUrl: d.videoUrl,
+          videoTitle: d.videoTitle,
+          introText: d.introText,
+          preMeasurementConditions: linesFromText(d.preMeasurementText),
+          equipment: linesFromText(d.equipmentText),
+          steps: linesFromText(d.stepsText),
         },
         user,
       );
+    },
+  });
+
+  const switchTask = (id: OperationalGuideTaskId) => {
+    void flush();
+    setActiveId(id);
+    setPreview(false);
+  };
+
+  const handleManualSave = async () => {
+    if (!user) return;
+    setMessage(null);
+    try {
+      await flush();
       setMessage('Salvat — inginerii văd imediat actualizarea.');
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Eroare la salvare.');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -88,12 +141,15 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
 
   return (
     <div className={embedded ? 'mt-4 border-t border-corporate-border pt-5 space-y-4' : 'space-y-4'}>
-      <div>
-        <h3 className="text-base font-semibold text-corporate-dark">Ghid Operațional — editare HR</h3>
-        <p className="text-sm text-corporate-muted mt-1">
-          {OPERATIONAL_GUIDE_TASK_COUNT} categorii de măsurare. Checklist pre-măsurare, echipament, pași și video —
-          {readOnly ? ' consultare per categorie (fără salvare).' : ' editabile per categorie.'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 className="text-base font-semibold text-corporate-dark">Ghid Operațional — editare HR</h3>
+          <p className="text-sm text-corporate-muted mt-1">
+            {OPERATIONAL_GUIDE_TASK_COUNT} categorii de măsurare. Checklist pre-măsurare, echipament, pași și video —
+            {readOnly ? ' consultare per categorie (fără salvare).' : ' editabile per categorie.'}
+          </p>
+        </div>
+        {!readOnly && <AutoSaveStatusText className="hidden @md:block shrink-0" />}
       </div>
 
       <nav
@@ -104,10 +160,7 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
           <button
             key={id}
             type="button"
-            onClick={() => {
-              setActiveId(id);
-              setPreview(false);
-            }}
+            onClick={() => switchTask(id)}
             className={[
               'rounded-lg px-2.5 py-2 text-xs sm:text-sm font-medium transition-colors',
               activeId === id
@@ -191,8 +244,13 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
             />
             {!readOnly && (
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" variant="primary" disabled={saving} onClick={() => void handleSave()}>
-                {saving ? 'Se salvează…' : `Salvează — ${OPERATIONAL_GUIDE_LABELS[activeId]}`}
+              <Button
+                type="button"
+                variant="primary"
+                disabled={autoSaveStatus === 'saving'}
+                onClick={() => void handleManualSave()}
+              >
+                {autoSaveStatus === 'saving' ? 'Se salvează…' : `Salvează — ${OPERATIONAL_GUIDE_LABELS[activeId]}`}
               </Button>
               {message && (
                 <p className={`text-sm ${message.startsWith('Salvat') ? 'text-emerald-700' : 'text-red-600'}`}>
@@ -212,7 +270,7 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
               </li>
               <li>Responsabil: persoana care planifică măsurarea. Conținut editabil de HR.</li>
               <li>Echipamentul și pașii apar dedesubt, în ordinea afișată angajatului.</li>
-              <li>Salvați fiecare categorie separat.</li>
+              <li>Modificările se salvează automat după 1,5 s de pauză.</li>
             </ul>
           </Card>
         </div>

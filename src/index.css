@@ -4,41 +4,24 @@
 
 @layer base {
   html {
-    @apply antialiased scroll-smooth w-full;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
+    @apply antialiased scroll-smooth;
   }
 
   body {
-    @apply bg-corporate-surface text-corporate-black min-h-screen w-full overflow-x-clip;
+    @apply bg-corporate-surface text-corporate-black min-h-screen;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
 
   #root {
-    @apply min-h-screen flex flex-col w-full min-w-0;
+    @apply min-h-screen flex flex-col;
   }
 
   ::selection {
     @apply bg-corporate-gold/30 text-corporate-black;
   }
 
-  html.field-mode {
-    font-size: 18px;
-  }
-
-  html.field-mode button,
-  html.field-mode .neural-card {
-    @apply text-base;
-  }
-
-  html.field-mode main input,
-  html.field-mode main textarea,
-  html.field-mode main select {
-    @apply text-base min-h-[48px];
-  }
-
-  .touch-target {
-    @apply inline-flex items-center justify-center min-h-[44px] min-w-[44px];
+  html.phone-layout {
+    font-size: 13px;
   }
 }
 
@@ -189,5 +172,53 @@
   .dept-bar {
     background: linear-gradient(180deg, #121212 0%, #0c0c0c 100%);
     border-top: 1px solid rgba(179, 143, 85, 0.15);
+  }
+
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Telefon — doar etichetele butoanelor din bara departamente */
+  html.phone-layout .dept-bar {
+    @apply px-1.5 py-2;
+  }
+
+  html.phone-layout .dept-bar ul {
+    gap: 2px;
+  }
+
+  html.phone-layout .dept-bar a {
+    min-height: 0;
+    gap: 0.25rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  html.phone-layout .dept-bar .dept-nav-label--mobile {
+    font-size: 8px;
+    line-height: 1.1;
+    font-weight: 300;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  html.phone-layout .dept-bar a.text-corporate-gold .dept-nav-label--mobile,
+  html.phone-layout .dept-bar .dept-nav-label--mobile.text-corporate-gold {
+    color: #b38f55;
+  }
+
+  html.phone-layout .artgranit-panel {
+    font-size: 0.92em;
+  }
+
+  html.phone-layout header,
+  html.phone-layout footer {
+    font-size: 0.92em;
   }
 }

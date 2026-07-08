@@ -49,7 +49,7 @@ export function WeekProgressOverview({ weekProgress, overallPercent }: WeekProgr
       <ProgressBar percent={overallPercent} size="lg" label="Completare totală" />
 
       <PanelSubsection label="Progres pe săptămâni">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 @md:grid-cols-4">
           {weekProgress.map((w) => (
             <div key={w.weekNumber} className="rounded-xl bg-white/80 border border-corporate-border/50 p-3">
               <p className="text-xs font-medium text-corporate-muted mb-2">Săpt. {w.weekNumber}</p>

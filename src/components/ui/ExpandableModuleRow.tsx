@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 
 interface ExpandableModuleRowProps {
   columnCount: number;
@@ -17,11 +18,16 @@ export function ExpandableModuleRow({
   expandedContent,
   expandLabel,
 }: ExpandableModuleRowProps) {
+  const phoneLayout = usePhoneLayout();
   const gridCols =
     columnCount >= 3
-      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+      ? phoneLayout
+        ? 'grid-cols-3'
+        : 'lg:grid-cols-3'
       : columnCount === 2
-        ? 'grid-cols-1 sm:grid-cols-2'
+        ? phoneLayout
+          ? 'grid-cols-2'
+          : 'sm:grid-cols-2'
         : 'grid-cols-1';
 
   const connectorStyle: CSSProperties | undefined =
@@ -33,8 +39,8 @@ export function ExpandableModuleRow({
       : undefined;
 
   return (
-    <div className="w-full min-w-0 rounded-xl border border-corporate-border/90 bg-gradient-to-b from-corporate-surface/35 via-white to-white shadow-sm">
-      <div className={['grid w-full min-w-0 gap-3 p-3 items-stretch', gridCols].join(' ')}>
+    <div className="rounded-xl border border-corporate-border/90 bg-gradient-to-b from-corporate-surface/35 via-white to-white shadow-sm">
+      <div className={['grid gap-2 p-2 items-stretch @md:gap-3 @md:p-3', gridCols].join(' ')}>
         {headers.map((header, index) => (
           <div key={index} className="min-w-0 h-full flex flex-col">
             {header}
@@ -45,7 +51,7 @@ export function ExpandableModuleRow({
       {activeColumnIndex !== null && expandedContent && (
         <div className="relative px-3 pb-3 pt-2">
           <div
-            className="absolute top-0 z-10 hidden lg:flex flex-col items-center -translate-x-1/2"
+            className="absolute top-0 z-10 flex flex-col items-center -translate-x-1/2"
             style={connectorStyle}
             aria-hidden
           >

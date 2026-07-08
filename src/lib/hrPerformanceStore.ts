@@ -776,6 +776,25 @@ export const hrPerformanceStore = {
     });
   },
 
+  /** Salvare parțială evaluare supervizor (fără finalizare etapă). */
+  saveSupervisorAssessmentDraft(
+    id: string,
+    input: {
+      supervisorAssessment: EmployeeSelfAssessment;
+      competencySupervisorScores?: DesignerCompetencyScores;
+    },
+  ): EvaluationCycle {
+    const cycle = hrPerformanceStore.getEvaluations().find((c) => c.id === id);
+    if (!cycle) throw new Error('Evaluare negăsită.');
+    return hrPerformanceStore.updateEvaluation(id, {
+      supervisorAssessment: {
+        ...input.supervisorAssessment,
+        completedAt: undefined,
+      },
+      competencySupervisorScores: input.competencySupervisorScores,
+    });
+  },
+
   /** Supervizor/HR completează etapa de evaluare (evaluatorId = supervizorul angajatului) */
   saveMentorEvaluationStage(
     id: string,
