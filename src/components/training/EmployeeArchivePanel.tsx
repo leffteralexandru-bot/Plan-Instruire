@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 import { useHrPerformance } from '@/hooks/useHrPerformance';
+import { usePhoneLayout } from '@/hooks/usePhoneLayout';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { trainingSystemStore } from '@/lib/trainingSystemStore';
 import { EmployeeEvaluationHistory } from '@/components/angajat/EmployeeEvaluationHistory';
@@ -55,6 +56,7 @@ export function EmployeeArchivePanel({
   defaultExpanded = true,
 }: EmployeeArchivePanelProps) {
   const { user } = useAuth();
+  const phoneLayout = usePhoneLayout();
   const { evaluations, downloadDocument } = useHrPerformance();
   const [activeFolder, setActiveFolder] = useState<EmployeeArchiveFolder>('documentatie_baza');
   const [expanded, setExpanded] = useState(defaultExpanded);
@@ -82,17 +84,22 @@ export function EmployeeArchivePanel({
 
   const body = (
     <>
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className={phoneLayout ? 'mb-4 grid grid-cols-3 gap-1' : 'mb-4 flex flex-wrap gap-2'}>
         {FOLDERS.map((folder) => (
           <button
             key={folder}
             type="button"
+            title={ARCHIVE_FOLDER_LABELS[folder]}
             onClick={() => setActiveFolder(folder)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={[
+              'rounded-lg font-medium transition-colors',
+              phoneLayout
+                ? 'min-w-0 px-1 py-2 text-center text-[9px] leading-tight'
+                : 'px-3 py-1.5 text-sm',
               activeFolder === folder
                 ? 'bg-corporate-gold text-white'
-                : 'bg-corporate-surface text-corporate-dark hover:bg-corporate-border/50'
-            }`}
+                : 'bg-corporate-surface text-corporate-dark hover:bg-corporate-border/50',
+            ].join(' ')}
           >
             {ARCHIVE_FOLDER_LABELS[folder]}
           </button>
