@@ -35,12 +35,13 @@ export function EquipmentManualPage({ imageUrl, alt, videoUrl, hotspot }: Equipm
   return (
     <>
       <figure className="overflow-hidden rounded-xl border border-corporate-border bg-white shadow-sm">
-        <div className="relative w-full bg-corporate-surface/10">
+        <div className="relative w-full bg-white">
           <img
             src={imageUrl}
             alt={alt}
-            className="mx-auto block w-full max-h-[min(88vh,900px)] object-contain"
+            className="mx-auto block h-auto w-full max-w-none object-contain @min-[640px]:max-h-[min(92vh,1200px)] @lg:max-h-[min(94vh,1400px)]"
             loading="lazy"
+            decoding="async"
           />
           {embed && hotspot && (
             <button

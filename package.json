@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "icons": "node scripts/generate-icons.mjs",
+    "proliner-pages": "python scripts/generate_proliner_pages.py",
     "docs": "node scripts/generate-docs.mjs",
     "setup": "npm run icons && npm run docs",
     "test": "vitest run",
