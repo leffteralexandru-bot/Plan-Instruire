@@ -18,6 +18,40 @@ export interface EquipmentGuideSection {
   attachments: EquipmentAttachment[];
 }
 
+/** Imagine din manual — click pe desen deschide videoclipul (ca în PDF Prodim). */
+export interface EquipmentChapterFigure {
+  id: string;
+  imageUrl: string;
+  alt: string;
+  caption?: string;
+  videoUrl?: string;
+  videoLabel?: string;
+}
+
+export type EquipmentChapterCalloutVariant = 'warning' | 'attention' | 'tip' | 'note';
+
+export type EquipmentChapterBlock =
+  | { id: string; type: 'markdown'; body: string }
+  | {
+      id: string;
+      type: 'callout';
+      variant: EquipmentChapterCalloutVariant;
+      title?: string;
+      body: string;
+    }
+  | {
+      id: string;
+      type: 'figure';
+      imageUrl: string;
+      alt: string;
+      caption?: string;
+      videoUrl?: string;
+      videoLabel?: string;
+    }
+  | { id: string; type: 'steps'; title?: string; items: string[] }
+  | { id: string; type: 'definitions'; items: { term: string; definition: string }[] }
+  | { id: string; type: 'bullet-list'; title?: string; items: string[] };
+
 /** Capitol ghid tip manual (ex. Proliner) — layout responsive pe 4 ecrane. */
 export interface EquipmentChapter {
   id: string;
@@ -26,8 +60,12 @@ export interface EquipmentChapter {
   summary: string;
   content: string;
   steps: string[];
+  /** Blocuri ordonate — conținut complet ca în PDF (text, imagini, callout-uri). */
+  blocks?: EquipmentChapterBlock[];
   videoUrl?: string;
+  /** @deprecated folosiți blocks cu type figure */
   images: { id: string; url: string; alt?: string }[];
+  figures?: EquipmentChapterFigure[];
   pdfUrl?: string;
   pdfFileName?: string;
 }

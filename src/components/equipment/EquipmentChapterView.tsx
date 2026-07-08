@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TechnicalCard } from '@/components/equipment/TechnicalCard';
+import { EquipmentChapterBlocks } from '@/components/equipment/EquipmentChapterBlocks';
 import { EquipmentChapterMedia } from '@/components/equipment/EquipmentChapterMedia';
+import { EquipmentVideoFigure } from '@/components/equipment/EquipmentVideoFigure';
 import type { EquipmentChapter, EquipmentDevice } from '@/data/equipmentOperations';
 import { downloadEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
@@ -50,31 +52,45 @@ export function EquipmentChapterView({
       className="shadow-sm"
     >
       <div className="space-y-4">
-        <EquipmentChapterMedia
-          videoUrl={chapter.videoUrl}
-          images={chapter.images}
-          title={chapter.title}
-        />
-
-        {chapter.content.trim() && (
-          <div className="rounded-lg bg-corporate-surface/30 px-3 py-3 @lg:px-4 @lg:py-4">
-            <SimpleMarkdown source={chapter.content} />
-          </div>
-        )}
-
-        {chapter.steps.length > 0 && (
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-corporate-muted">
-              Pași
-            </p>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-corporate-dark">
-              {chapter.steps.map((step, i) => (
-                <li key={i} className="leading-relaxed pl-1">
-                  {step}
-                </li>
-              ))}
-            </ol>
-          </div>
+        {chapter.blocks && chapter.blocks.length > 0 ? (
+          <EquipmentChapterBlocks blocks={chapter.blocks} />
+        ) : (
+          <>
+            <EquipmentChapterMedia
+              videoUrl={chapter.videoUrl}
+              images={chapter.images}
+              title={chapter.title}
+            />
+            {chapter.figures?.map((fig) => (
+              <EquipmentVideoFigure
+                key={fig.id}
+                imageUrl={fig.imageUrl}
+                alt={fig.alt}
+                caption={fig.caption}
+                videoUrl={fig.videoUrl}
+                videoLabel={fig.videoLabel}
+              />
+            ))}
+            {chapter.content.trim() && (
+              <div className="rounded-lg bg-corporate-surface/30 px-3 py-3 @lg:px-4 @lg:py-4">
+                <SimpleMarkdown source={chapter.content} />
+              </div>
+            )}
+            {chapter.steps.length > 0 && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-corporate-muted">
+                  Pași
+                </p>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-corporate-dark">
+                  {chapter.steps.map((step, i) => (
+                    <li key={i} className="leading-relaxed pl-1">
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+          </>
         )}
 
         {showPdfButton && pdfUrl && (

@@ -40,7 +40,13 @@ function mergeDevices(defaults: EquipmentDevice[], stored: EquipmentDevice[] | u
     if (!base?.chapters?.length) return device;
     return {
       ...device,
-      chapters: device.chapters?.length ? device.chapters : base.chapters,
+      chapters: device.chapters?.length
+        ? device.chapters.map((ch, i) => {
+            const baseCh = base.chapters?.[i];
+            if (!baseCh?.blocks?.length) return ch;
+            return ch.blocks?.length ? ch : { ...ch, blocks: baseCh.blocks, videoUrl: ch.videoUrl ?? baseCh.videoUrl };
+          })
+        : base.chapters,
       safetyWarning: device.safetyWarning ?? base.safetyWarning,
       manualPdfUrl: device.manualPdfUrl ?? base.manualPdfUrl,
     };
