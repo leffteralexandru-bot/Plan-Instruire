@@ -38,11 +38,22 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}', 'docs/**/*.html'],
+        // Paginile manual Proliner (4× PNG) depășesc 2 MiB — cache la cerere, nu precache
+        globIgnores: ['**/docs/equipment/proliner/pages/**'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: { cacheName: 'google-fonts-cache', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+          {
+            urlPattern: /\/docs\/equipment\/proliner\/pages\/.+\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'proliner-manual-pages',
+              expiration: { maxEntries: 24, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
           },
         ],
       },
