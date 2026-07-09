@@ -293,6 +293,71 @@ def place_logo_on_page(page_img: Image.Image, page: fitz.Page) -> tuple[Image.Im
     return composed.convert("RGB"), x, y, logo.width
 
 
+def build_artgranit_cover_pdf() -> None:
+    """Copertă manual: PRODIM + artGRANIT centrate sus, fără banner DeepL."""
+    if not SOURCE_PDF.exists():
+        raise FileNotFoundError(f"Lipsește sursa PDF: {SOURCE_PDF}")
+
+    source = fitz.open(SOURCE_PDF)
+    cover_page = source[0]
+    width, height = cover_page.rect.width, cover_page.rect.height
+    center_x = width / 2
+
+    preview = cover_page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+    preview_img = Image.frombytes("RGB", (preview.width, preview.height), preview.samples)
+    bg_rgb = preview_img.getpixel((preview.width // 2, int(preview.height * 0.14)))
+    fill = (bg_rgb[0] / 255, bg_rgb[1] / 255, bg_rgb[2] / 255)
+
+    cover_page.add_redact_annot(fitz.Rect(0, 0, width, 64), fill=fill)
+    cover_page.add_redact_annot(fitz.Rect(0, 104, width, 126), fill=fill)
+    cover_page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
+
+    header_page = source[1]
+    prodim_clip = fitz.Rect(424, 38, 524, 78)
+    prodim_pix = header_page.get_pixmap(clip=prodim_clip, alpha=False)
+    prodim_w = 96
+    prodim_h = prodim_w * prodim_pix.height / prodim_pix.width
+    prodim_x = center_x - prodim_w / 2
+    prodim_y = 50
+    cover_page.insert_image(
+        fitz.Rect(prodim_x, prodim_y, prodim_x + prodim_w, prodim_y + prodim_h),
+        pixmap=prodim_pix,
+    )
+
+    logo_h = 17
+    svg = SVG.read_text(encoding="utf-8").replace("currentColor", LOGO_COLOR)
+    logo_doc = fitz.open(stream=svg.encode("utf-8"), filetype="svg")
+    logo_page = logo_doc[0]
+    logo_scale = logo_h / logo_page.rect.height
+    logo_w = logo_page.rect.width * logo_scale
+    logo_x = center_x - logo_w / 2
+    logo_y = prodim_y + prodim_h + 8
+    logo_pix = logo_page.get_pixmap(matrix=fitz.Matrix(logo_scale, logo_scale), alpha=True)
+    cover_page.insert_image(
+        fitz.Rect(logo_x, logo_y, logo_x + logo_w, logo_y + logo_h),
+        pixmap=logo_pix,
+        keep_proportion=True,
+    )
+    logo_doc.close()
+
+    font_bold = fitz.Font(fontfile=str(resolve_font_path(FONT_BOLD_CANDIDATES)))
+    title = "GHID DE PORNIRE RAPIDĂ PROLINER"
+    title_size = 19
+    title_width = font_bold.text_length(title, fontsize=title_size)
+    title_x = center_x - title_width / 2
+    title_y = logo_y + logo_h + 24
+    writer = fitz.TextWriter(cover_page.rect)
+    writer.append((title_x, title_y), title, font=font_bold, fontsize=title_size)
+    writer.write_text(cover_page, color=(1, 1, 1))
+
+    out = fitz.open()
+    out.insert_pdf(source, from_page=0, to_page=0)
+    out.save(COVER_PDF, deflate=True, garbage=4)
+    out.close()
+    source.close()
+    print(f"Built custom cover {COVER_PDF.name}")
+
+
 def apply_custom_cover(doc: fitz.Document) -> None:
     """Înlocuiește pagina 1 (copertă) cu versiunea artGRANIT editată de utilizator."""
     if not COVER_PDF.exists():
@@ -358,6 +423,7 @@ def brand_pdf() -> None:
 def render_pages() -> None:
     """Generează PDF-ul branduit (descărcare) + PNG-uri din același PDF — logo o singură dată."""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    build_artgranit_cover_pdf()
     brand_pdf()
     doc = fitz.open(PDF_OUT)
     matrix = fitz.Matrix(RENDER_SCALE, RENDER_SCALE)
