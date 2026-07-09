@@ -7,7 +7,8 @@ import fitz
 from PIL import Image, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-PDF = ROOT / "public/docs/equipment/proliner-quick-start-ro.pdf"
+SOURCE_PDF = ROOT / "public/docs/equipment/proliner-quick-start-ro-source.pdf"
+PDF_OUT = ROOT / "public/docs/equipment/proliner-quick-start-ro.pdf"
 OUT_DIR = ROOT / "public/docs/equipment/proliner/pages"
 SVG = ROOT / "public/brand/artgranit-logo.svg"
 
@@ -95,9 +96,51 @@ def place_logo_on_page(page_img: Image.Image, page: fitz.Page) -> tuple[Image.Im
     return composed.convert("RGB"), x, y, logo.width
 
 
+def brand_pdf() -> None:
+    """Adaugă logo artGRANIT în header pe fiecare pagină PDF."""
+    if not SOURCE_PDF.exists():
+        raise FileNotFoundError(f"Lipsește sursa PDF: {SOURCE_PDF}")
+
+    doc = fitz.open(SOURCE_PDF)
+    for page in doc:
+        width, height = page.rect.width, page.rect.height
+        black_right = width * (BLUE_PANEL_X0_PCT - LOGO_MARGIN_BEFORE_BLUE_PCT) / 100
+        title_min_x = width * (chapter_title_end_x_pct(page) + LOGO_GAP_AFTER_TITLE_PCT) / 100
+        header_y0 = height * HEADER_Y0_PCT / 100
+        header_y1 = height * HEADER_Y1_PCT / 100
+
+        logo_h = max(1, height * LOGO_MAX_HEIGHT_PCT / 100)
+        svg = SVG.read_text(encoding="utf-8").replace("currentColor", LOGO_COLOR)
+        logo_doc = fitz.open(stream=svg.encode("utf-8"), filetype="svg")
+        logo_page = logo_doc[0]
+        scale = logo_h / logo_page.rect.height
+        logo_w = logo_page.rect.width * scale
+
+        x = black_right - logo_w
+        if x < title_min_x:
+            x = title_min_x
+        available = black_right - title_min_x
+        if logo_w > available and available > 0:
+            scale = (available * 0.98) / logo_page.rect.width
+            logo_h = logo_page.rect.height * scale
+            logo_w = logo_page.rect.width * scale
+            x = black_right - logo_w
+
+        y = header_y0 + max(0, (header_y1 - header_y0 - logo_h) / 2)
+        rect = fitz.Rect(x, y, x + logo_w, y + logo_h)
+        logo_pix = logo_page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=True)
+        page.insert_image(rect, pixmap=logo_pix, keep_proportion=True)
+        logo_doc.close()
+
+    doc.save(PDF_OUT, deflate=True, garbage=4)
+    doc.close()
+    print(f"Wrote branded PDF {PDF_OUT.name}")
+
+
 def render_pages() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    doc = fitz.open(PDF)
+    brand_pdf()
+    doc = fitz.open(PDF_OUT)
     matrix = fitz.Matrix(RENDER_SCALE, RENDER_SCALE)
 
     for index, page in enumerate(doc):

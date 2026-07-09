@@ -40,17 +40,24 @@ function mergeDevices(defaults: EquipmentDevice[], stored: EquipmentDevice[] | u
     if (!base?.chapters?.length) return device;
     return {
       ...device,
-      chapters: device.chapters?.length
-        ? device.chapters.map((ch, i) => {
-            const baseCh = base.chapters?.[i];
-            if (!baseCh) return ch;
-            const merged = { ...ch };
-            if (baseCh.pages?.length && !ch.pages?.length) merged.pages = baseCh.pages;
-            if (baseCh.blocks?.length && !ch.blocks?.length) merged.blocks = baseCh.blocks;
-            if (!ch.videoUrl && baseCh.videoUrl) merged.videoUrl = baseCh.videoUrl;
-            return merged;
-          })
-        : base.chapters,
+      chapters:
+        device.id === 'eq-proliner' && base.chapters?.length
+          ? base.chapters
+          : device.chapters?.length
+            ? device.chapters.map((ch, i) => {
+                const baseCh = base.chapters?.[i];
+                if (!baseCh) return ch;
+                const mergedCh = { ...ch };
+                if (baseCh.pages?.length && !ch.pages?.length) mergedCh.pages = baseCh.pages;
+                if (baseCh.blocks?.length && !ch.blocks?.length) mergedCh.blocks = baseCh.blocks;
+                if (!ch.videoUrl && baseCh.videoUrl) mergedCh.videoUrl = baseCh.videoUrl;
+                mergedCh.title = baseCh.title;
+                mergedCh.summary = baseCh.summary;
+                mergedCh.pdfUrl = baseCh.pdfUrl;
+                mergedCh.pdfFileName = baseCh.pdfFileName;
+                return mergedCh;
+              })
+            : base.chapters,
       safetyWarning: device.safetyWarning ?? base.safetyWarning,
       manualPdfUrl: device.manualPdfUrl ?? base.manualPdfUrl,
     };

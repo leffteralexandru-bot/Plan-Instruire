@@ -68,8 +68,7 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
     }
   }, [isSidebar, activeChapterId, chapters]);
 
-  const pdfUrl =
-    activeChapter?.pdfUrl ?? device.manualPdfUrl ?? chapters[0]?.pdfUrl;
+  const pdfUrl = activeChapter?.pdfUrl;
   const pdfName =
     activeChapter?.pdfFileName ??
     `${device.name.replace(/\s+/g, '-')}-manual.pdf`;
@@ -122,7 +121,8 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
                   <EquipmentChapterView
                     device={device}
                     chapter={chapter}
-                    showPdfButton={false}
+                    showPdfButton={!!chapter.pdfUrl}
+                    pdfButtonFullWidth
                   />
                 </div>
               )}
@@ -210,7 +210,7 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
           }}
           onDownloadPdf={() => void handleDownloadActivePdf()}
           downloading={downloading}
-          canDownload={!!pdfUrl && !!activeChapterId}
+          canDownload={!!pdfUrl}
         />
       )}
     </div>

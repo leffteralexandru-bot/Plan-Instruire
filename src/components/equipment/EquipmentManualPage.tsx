@@ -46,7 +46,7 @@ export function EquipmentManualPage({ imageUrl, alt, videoUrl, hotspot }: Equipm
           {embed && hotspot && (
             <button
               type="button"
-              className="absolute cursor-pointer rounded-md border-2 border-transparent bg-transparent transition-colors hover:border-corporate-gold/60 hover:bg-corporate-gold/10 focus:outline-none focus-visible:border-corporate-gold focus-visible:ring-2 focus-visible:ring-corporate-gold/40"
+              className="absolute cursor-pointer border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold/80"
               style={{
                 left: `${hotspot.x}%`,
                 top: `${hotspot.y}%`,

@@ -83,6 +83,10 @@ export function EquipmentChapterView({
     );
   }
 
+  if (chapter.pdfUrl) {
+    return <div className="space-y-3">{pdfButton}</div>;
+  }
+
   return (
     <div className="space-y-4">
       {chapter.blocks && chapter.blocks.length > 0 ? (

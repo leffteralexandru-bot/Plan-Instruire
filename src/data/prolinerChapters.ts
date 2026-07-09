@@ -34,6 +34,7 @@ function chapter(
   title: string,
   summary: string,
   pageNums: number[],
+  options?: { includePdf?: boolean },
 ): EquipmentChapter {
   const pages = pageNums.map((p) => manualPage(p));
   const primaryVideo = pages.find((p) => p.videoUrl)?.videoUrl;
@@ -47,14 +48,19 @@ function chapter(
     pages,
     videoUrl: primaryVideo,
     images: [],
-    pdfUrl: PROLINER_MANUAL_PDF,
-    pdfFileName: `Proliner-Capitol-${number}-${title.replace(/\s+/g, '-').slice(0, 40)}.pdf`,
+    pdfUrl: options?.includePdf ? PROLINER_MANUAL_PDF : undefined,
+    pdfFileName: options?.includePdf
+      ? 'Proliner-Manual-de-instruire-artGRANIT.pdf'
+      : undefined,
   };
 }
 
-/** Doar paginile din manual — fără text duplicat; video la click pe play din desen. */
+/**
+ * Capitol 1 = doar PDF (manual complet).
+ * Capitolele 2–11 = pagini din ghid (fără PDF, fără „Conținutul pachetului”).
+ */
 export const PROLINER_CHAPTERS: EquipmentChapter[] = [
-  chapter(1, 'Conținutul pachetului', 'Componente standard și verificare colet', [4]),
+  chapter(1, 'Manual de instruire', 'Descărcare ghid complet PDF — offline', [], { includePdf: true }),
   chapter(2, 'Proliner (hardware)', 'Piese, butoane și montaj pe trepied', [5]),
   chapter(3, 'Telecomanda', 'Mod punct, continuu, închidere contur, ștergere', [6]),
   chapter(4, 'Software-ul Proliner', 'Autentificare, aplicații, meniuri și setări', [7, 8, 9]),
