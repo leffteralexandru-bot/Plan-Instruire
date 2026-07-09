@@ -37,9 +37,19 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}', 'docs/**/*.html'],
-        // Paginile manual Proliner (4× PNG) depășesc 2 MiB — cache la cerere, nu precache
-        globIgnores: ['**/docs/equipment/proliner/pages/**'],
+        // Nu include toate PNG-urile — paginile Proliner (2–4 MB) depășesc limita Workbox
+        globPatterns: [
+          '**/*.{js,css,html,ico,svg,woff2}',
+          'icons/icon-*.png',
+          'favicon.png',
+          'docs/**/*.html',
+        ],
+        globIgnores: [
+          '**/node_modules/**',
+          'docs/equipment/proliner/pages/**',
+          '**/docs/equipment/proliner/pages/**',
+        ],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
