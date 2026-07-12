@@ -1,0 +1,16 @@
+{
+  "pdf": "/docs/equipment/bosch-tape-5m/bosch-tape-5m-declaratie-ue.pdf",
+  "pagesDir": "/docs/equipment/bosch-tape-5m/pages",
+  "videosDir": "/docs/equipment/bosch-tape-5m/videos",
+  "videoIds": [
+    "D4XjvT04RxM",
+    "Eyv967IsKlw",
+    "OGsf-SZtW-s"
+  ],
+  "videos": {
+    "howto_ro": "D4XjvT04RxM",
+    "tips_ro": "Eyv967IsKlw",
+    "pro_tips": "OGsf-SZtW-s"
+  },
+  "productCode": "1600A016BH"
+}

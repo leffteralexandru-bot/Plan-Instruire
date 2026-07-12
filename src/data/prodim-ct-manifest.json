@@ -1,0 +1,384 @@
+{
+  "pdf": "/docs/equipment/prodim-ct-manual-ro.pdf",
+  "pagesDir": "/docs/equipment/prodim-ct/pages",
+  "videosDir": "/docs/equipment/prodim-ct/videos",
+  "pageCount": 20,
+  "videoIds": [
+    "-0-fx1LEmlY",
+    "-Iw4ZYcsg_M",
+    "0UrWUY7Me2s",
+    "0e4NUWJNcF4",
+    "69Fdj0GteHQ",
+    "7Bdtmhaby70",
+    "DNjVvnSI54w",
+    "EkWWriC_wQo",
+    "JLpBgUdQUCk",
+    "OVkXBvrq400",
+    "PS-3JMQyc1I",
+    "TfsWjXDtIi4",
+    "ZLGsht4pOkI",
+    "a1sK0-i9klE",
+    "lANjixxsJCU",
+    "lYweM5vMZok",
+    "pCay1-tukro",
+    "pZ0YrEUUp5w",
+    "pnPChi_ML6U",
+    "rb-YWAuJMCI",
+    "uh8Sf4BSjwI",
+    "zlIrJW3AjvU"
+  ],
+  "pageHotspots": {
+    "10": [
+      {
+        "videoId": "a1sK0-i9klE",
+        "x": 52.31,
+        "y": 66.86,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "a1sK0-i9klE",
+        "x": 52.31,
+        "y": 71.82,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "a1sK0-i9klE",
+        "x": 52.31,
+        "y": 75.53,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "a1sK0-i9klE",
+        "x": 52.31,
+        "y": 80.64,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "a1sK0-i9klE",
+        "x": 52.25,
+        "y": 85.11,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ],
+    "12": [
+      {
+        "videoId": "ZLGsht4pOkI",
+        "x": 52.31,
+        "y": 51.97,
+        "w": 2.23,
+        "h": 2.61
+      },
+      {
+        "videoId": "ZLGsht4pOkI",
+        "x": 52.27,
+        "y": 58.73,
+        "w": 2.23,
+        "h": 2.61
+      },
+      {
+        "videoId": "ZLGsht4pOkI",
+        "x": 52.24,
+        "y": 63.78,
+        "w": 2.23,
+        "h": 2.61
+      },
+      {
+        "videoId": "ZLGsht4pOkI",
+        "x": 52.2,
+        "y": 70.36,
+        "w": 2.23,
+        "h": 2.61
+      },
+      {
+        "videoId": "ZLGsht4pOkI",
+        "x": 52.16,
+        "y": 76.86,
+        "w": 2.23,
+        "h": 2.61
+      },
+      {
+        "videoId": "ZLGsht4pOkI",
+        "x": 52.13,
+        "y": 81.99,
+        "w": 2.23,
+        "h": 2.61
+      }
+    ],
+    "13": [
+      {
+        "videoId": "-0-fx1LEmlY",
+        "x": 52.21,
+        "y": 54.43,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "OVkXBvrq400",
+        "x": 2.29,
+        "y": 54.98,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "0UrWUY7Me2s",
+        "x": 2.29,
+        "y": 59.95,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "0e4NUWJNcF4",
+        "x": 52.21,
+        "y": 60.81,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "DNjVvnSI54w",
+        "x": 2.29,
+        "y": 66.43,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "lANjixxsJCU",
+        "x": 52.21,
+        "y": 66.97,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "pCay1-tukro",
+        "x": 52.21,
+        "y": 73.53,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "TfsWjXDtIi4",
+        "x": 2.29,
+        "y": 74.34,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "pZ0YrEUUp5w",
+        "x": 2.29,
+        "y": 80.71,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "rb-YWAuJMCI",
+        "x": 2.29,
+        "y": 87.03,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ],
+    "14": [
+      {
+        "videoId": "zlIrJW3AjvU",
+        "x": 2.48,
+        "y": 60.74,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "-Iw4ZYcsg_M",
+        "x": 2.48,
+        "y": 67.06,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "7Bdtmhaby70",
+        "x": 2.48,
+        "y": 81.28,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "7Bdtmhaby70",
+        "x": 2.48,
+        "y": 89.22,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ],
+    "16": [
+      {
+        "videoId": "uh8Sf4BSjwI",
+        "x": 2.3,
+        "y": 38.79,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "uh8Sf4BSjwI",
+        "x": 2.3,
+        "y": 45.36,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "uh8Sf4BSjwI",
+        "x": 2.3,
+        "y": 50.43,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "PS-3JMQyc1I",
+        "x": 52.21,
+        "y": 61.31,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ],
+    "17": [
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 52.84,
+        "y": 47.21,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "lYweM5vMZok",
+        "x": 52.84,
+        "y": 51.73,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "JLpBgUdQUCk",
+        "x": 2.21,
+        "y": 57.89,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 52.85,
+        "y": 60.52,
+        "w": 2.21,
+        "h": 3.69
+      },
+      {
+        "videoId": "pnPChi_ML6U",
+        "x": 2.21,
+        "y": 64.39,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ],
+    "18": [
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 59.45,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 63.1,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 66.58,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 70.05,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 73.7,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 80.3,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "69Fdj0GteHQ",
+        "x": 2.74,
+        "y": 83.79,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ],
+    "19": [
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 2.69,
+        "y": 46.13,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 52.77,
+        "y": 51.48,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 2.69,
+        "y": 52.16,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 52.77,
+        "y": 61.05,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 52.77,
+        "y": 69.3,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 52.77,
+        "y": 76.0,
+        "w": 2.21,
+        "h": 2.59
+      },
+      {
+        "videoId": "EkWWriC_wQo",
+        "x": 52.77,
+        "y": 84.17,
+        "w": 2.21,
+        "h": 2.59
+      }
+    ]
+  }
+}

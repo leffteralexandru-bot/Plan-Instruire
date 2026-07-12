@@ -1,0 +1,15 @@
+{
+  "pdf": "/docs/equipment/bosch-gll-3-80/bosch-gll-3-80-manual-ro.pdf",
+  "pagesDir": "/docs/equipment/bosch-gll-3-80/pages",
+  "videosDir": "/docs/equipment/bosch-gll-3-80/videos",
+  "videoIds": [
+    "qFUVfZ27hh0",
+    "7zhZHo0UIrg",
+    "zlsrkgk8Rmw"
+  ],
+  "videos": {
+    "overview": "qFUVfZ27hh0",
+    "operation": "7zhZHo0UIrg",
+    "crossline": "zlsrkgk8Rmw"
+  }
+}

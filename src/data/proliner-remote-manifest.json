@@ -1,0 +1,20 @@
+{
+  "pdf": "/docs/equipment/proliner-remote-manual-ro.pdf",
+  "pagesDir": "/docs/equipment/proliner-remote/pages",
+  "videosDir": "/docs/equipment/proliner-remote/videos",
+  "pageCount": 6,
+  "videoIds": [
+    "rnME9ftG7Us"
+  ],
+  "pageHotspots": {
+    "5": [
+      {
+        "videoId": "rnME9ftG7Us",
+        "x": 4.43,
+        "y": 47.12,
+        "w": 31.68,
+        "h": 18.35
+      }
+    ]
+  }
+}

@@ -15,6 +15,7 @@ import {
 
 interface EquipmentGuideDeviceViewProps {
   device: EquipmentDevice;
+  manualNumber?: number;
   onBack: () => void;
 }
 
@@ -49,7 +50,7 @@ function PhoneReachabilityBar({
   );
 }
 
-export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDeviceViewProps) {
+export function EquipmentGuideDeviceView({ device, manualNumber, onBack }: EquipmentGuideDeviceViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layoutMode = useEquipmentLayoutMode(containerRef);
   const chapters = device.chapters ?? [];
@@ -68,10 +69,11 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
     }
   }, [isSidebar, activeChapterId, chapters]);
 
-  const pdfUrl = activeChapter?.pdfUrl;
+  const manualChapter = chapters.find((c) => c.pdfUrl) ?? null;
+  const pdfUrl = manualChapter?.pdfUrl;
   const pdfName =
-    activeChapter?.pdfFileName ??
-    `${device.name.replace(/\s+/g, '-')}-manual.pdf`;
+    manualChapter?.pdfFileName ??
+    `${device.name.replace(/\s+/g, '-')}-Manual.pdf`;
 
   const handlePhoneChapterClick = (chapter: EquipmentChapter) => {
     if (phoneExpandedId === chapter.id) {
@@ -154,12 +156,22 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
       )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wide text-corporate-muted">Aparat</p>
-          <p className="text-sm font-semibold text-corporate-dark @lg:text-base">{device.name}</p>
-          {device.description && (
-            <p className="mt-0.5 text-xs text-corporate-muted @lg:text-sm">{device.description}</p>
+        <div className="min-w-0 flex items-start gap-3">
+          {manualNumber != null && (
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-corporate-black text-white"
+              aria-hidden
+            >
+              {manualNumber}
+            </span>
           )}
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wide text-corporate-muted">Manual</p>
+            <p className="text-sm font-semibold text-corporate-dark @lg:text-base">{device.name}</p>
+            {device.description && (
+              <p className="mt-0.5 text-xs text-corporate-muted @lg:text-sm">{device.description}</p>
+            )}
+          </div>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onBack} className="@min-[640px]:inline-flex">
           ← Înapoi
@@ -173,7 +185,11 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
           <aside className="min-w-0">{chapterNav}</aside>
           <main className="min-w-0">
             {activeChapter ? (
-              <EquipmentChapterView device={device} chapter={activeChapter} />
+              <EquipmentChapterView
+                device={device}
+                chapter={activeChapter}
+                showPdfButton={!!activeChapter.pdfUrl}
+              />
             ) : (
               <p className="text-sm text-corporate-muted">Selectați un capitol din meniul din stânga.</p>
             )}
@@ -187,7 +203,11 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
               <Button type="button" variant="ghost" size="sm" onClick={() => setActiveChapterId(null)}>
                 ← Toate capitolele
               </Button>
-              <EquipmentChapterView device={device} chapter={activeChapter} />
+              <EquipmentChapterView
+                device={device}
+                chapter={activeChapter}
+                showPdfButton={!!activeChapter.pdfUrl}
+              />
             </>
           )}
           {activeChapter === null && chapters.length > 0 && (
@@ -210,7 +230,7 @@ export function EquipmentGuideDeviceView({ device, onBack }: EquipmentGuideDevic
           }}
           onDownloadPdf={() => void handleDownloadActivePdf()}
           downloading={downloading}
-          canDownload={!!pdfUrl}
+          canDownload={!!activeChapter?.pdfUrl}
         />
       )}
     </div>

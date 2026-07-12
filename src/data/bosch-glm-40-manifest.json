@@ -1,0 +1,15 @@
+{
+  "pdf": "/docs/equipment/bosch-glm-40/bosch-glm-40-manual-ro.pdf",
+  "pagesDir": "/docs/equipment/bosch-glm-40/pages",
+  "videosDir": "/docs/equipment/bosch-glm-40/videos",
+  "videoIds": [
+    "ck8hgxavkR4",
+    "6hZxO5xUjtE",
+    "d76uCeNqlRE"
+  ],
+  "videos": {
+    "overview": "ck8hgxavkR4",
+    "howto": "6hZxO5xUjtE",
+    "demo_ro": "d76uCeNqlRE"
+  }
+}

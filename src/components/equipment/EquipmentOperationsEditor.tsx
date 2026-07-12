@@ -187,19 +187,19 @@ export function EquipmentOperationsEditor({ embedded }: { embedded?: boolean } =
       </div>
 
       <nav className="flex flex-wrap gap-1 rounded-xl border border-corporate-border bg-corporate-surface/50 p-1">
-        {devices.map((d) => (
+        {devices.map((d, index) => (
           <button
             key={d.id}
             type="button"
             onClick={() => handleDeviceChange(d.id)}
             className={[
-              'rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors',
+              'rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors tabular-nums',
               activeDeviceId === d.id
                 ? 'bg-corporate-black text-white shadow-sm'
                 : 'text-corporate-muted hover:bg-white hover:text-corporate-dark',
             ].join(' ')}
           >
-            {d.name}
+            {index + 1}. {d.name}
           </button>
         ))}
       </nav>

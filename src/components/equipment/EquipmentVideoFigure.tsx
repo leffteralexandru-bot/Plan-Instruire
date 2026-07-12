@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
+import { hasEquipmentVideo } from '@/lib/equipmentVideoUrl';
 
 interface EquipmentVideoFigureProps {
   imageUrl: string;
@@ -8,24 +9,6 @@ interface EquipmentVideoFigureProps {
   caption?: string;
   videoUrl?: string;
   videoLabel?: string;
-}
-
-function youtubeEmbedUrl(url: string): string | null {
-  try {
-    const clean = url.trim();
-    if (clean.includes('youtube.com/watch')) {
-      const id = new URL(clean).searchParams.get('v');
-      return id ? `https://www.youtube.com/embed/${id}` : null;
-    }
-    if (clean.includes('youtu.be/')) {
-      const id = clean.split('youtu.be/')[1]?.split(/[?#]/)[0];
-      return id ? `https://www.youtube.com/embed/${id}` : null;
-    }
-    if (clean.includes('youtube.com/embed/')) return clean.trim();
-  } catch {
-    return null;
-  }
-  return null;
 }
 
 /** Ilustrație din manual — apăsați pe desen pentru videoclip (stil Prodim). */
@@ -37,8 +20,7 @@ export function EquipmentVideoFigure({
   videoLabel = 'Urmăriți videoclipul',
 }: EquipmentVideoFigureProps) {
   const [videoOpen, setVideoOpen] = useState(false);
-  const embed = videoUrl ? youtubeEmbedUrl(videoUrl) : null;
-  const clickable = !!embed;
+  const clickable = videoUrl ? hasEquipmentVideo(videoUrl) : false;
 
   return (
     <figure className="overflow-hidden rounded-xl border border-corporate-border bg-white shadow-sm">
@@ -82,7 +64,7 @@ export function EquipmentVideoFigure({
         </figcaption>
       )}
 
-      {videoOpen && embed && (
+      {videoOpen && videoUrl && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
           role="dialog"

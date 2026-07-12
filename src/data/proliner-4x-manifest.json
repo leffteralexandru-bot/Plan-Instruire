@@ -1,0 +1,281 @@
+{
+  "pdf": "/docs/equipment/proliner-4x-manual-ro.pdf",
+  "pagesDir": "/docs/equipment/proliner-4x/pages",
+  "videosDir": "/docs/equipment/proliner-4x/videos",
+  "pageCount": 55,
+  "videoIds": [
+    "2ov1Rr6xIq8",
+    "3mXw9HUHtmM",
+    "53Id85OzNdY",
+    "81Rq-tonxfM",
+    "AlKd_AKYzVs",
+    "BnDh5eU1_vM",
+    "CMENwvDPCpM",
+    "F6gDUV4JeQg",
+    "GHGUiLdtC6A",
+    "If52QLJuR_w",
+    "Ko4Wi73CGrs",
+    "NdgqVVibllM",
+    "Nn8YXbtIQhY",
+    "SdSX1QqU8Z0",
+    "UplpHUPqq3k",
+    "h9uSny8M4Iw",
+    "hRo1y76k-bY",
+    "knNH1vD60F0",
+    "nw2NnLJ_JvA",
+    "ogZTH-hVRXA",
+    "oicgc3K81PE",
+    "qOKtedf2orY",
+    "rQbfwbTx0JA",
+    "rd5DtrVKbPw",
+    "t23nOcZKGRc",
+    "tcRwrgMM0nE",
+    "vm6MOux13G8",
+    "zLh8uGnjD6g",
+    "ziCljyrA1BA"
+  ],
+  "pageHotspots": {
+    "7": [
+      {
+        "videoId": "2ov1Rr6xIq8",
+        "x": 12.09,
+        "y": 78.92,
+        "w": 4.6,
+        "h": 2.59
+      }
+    ],
+    "40": [
+      {
+        "videoId": "zLh8uGnjD6g",
+        "x": 12.09,
+        "y": 86.67,
+        "w": 4.6,
+        "h": 2.59
+      }
+    ],
+    "48": [
+      {
+        "videoId": "h9uSny8M4Iw",
+        "x": 14.92,
+        "y": 15.19,
+        "w": 3.06,
+        "h": 1.68
+      },
+      {
+        "videoId": "nw2NnLJ_JvA",
+        "x": 14.92,
+        "y": 26.91,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "SdSX1QqU8Z0",
+        "x": 14.92,
+        "y": 46.34,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "knNH1vD60F0",
+        "x": 15.47,
+        "y": 61.97,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "NdgqVVibllM",
+        "x": 15.47,
+        "y": 75.7,
+        "w": 3.03,
+        "h": 1.7
+      }
+    ],
+    "49": [
+      {
+        "videoId": "If52QLJuR_w",
+        "x": 15.47,
+        "y": 10.74,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "81Rq-tonxfM",
+        "x": 15.47,
+        "y": 28.27,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "CMENwvDPCpM",
+        "x": 15.47,
+        "y": 42.0,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "rd5DtrVKbPw",
+        "x": 15.47,
+        "y": 55.73,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "Nn8YXbtIQhY",
+        "x": 15.47,
+        "y": 65.64,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "tcRwrgMM0nE",
+        "x": 15.47,
+        "y": 75.56,
+        "w": 3.03,
+        "h": 1.7
+      }
+    ],
+    "50": [
+      {
+        "videoId": "oicgc3K81PE",
+        "x": 15.47,
+        "y": 10.74,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "3mXw9HUHtmM",
+        "x": 15.47,
+        "y": 26.37,
+        "w": 3.08,
+        "h": 1.66
+      },
+      {
+        "videoId": "UplpHUPqq3k",
+        "x": 15.47,
+        "y": 39.97,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "t23nOcZKGRc",
+        "x": 15.47,
+        "y": 57.5,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "GHGUiLdtC6A",
+        "x": 15.47,
+        "y": 74.96,
+        "w": 3.03,
+        "h": 1.7
+      }
+    ],
+    "51": [
+      {
+        "videoId": "GHGUiLdtC6A",
+        "x": 15.47,
+        "y": 15.69,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "GHGUiLdtC6A",
+        "x": 15.47,
+        "y": 37.02,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "F6gDUV4JeQg",
+        "x": 15.47,
+        "y": 54.56,
+        "w": 3.08,
+        "h": 1.67
+      }
+    ],
+    "52": [
+      {
+        "videoId": "ziCljyrA1BA",
+        "x": 15.47,
+        "y": 10.74,
+        "w": 3.08,
+        "h": 1.66
+      },
+      {
+        "videoId": "BnDh5eU1_vM",
+        "x": 15.47,
+        "y": 31.89,
+        "w": 3.08,
+        "h": 1.67
+      },
+      {
+        "videoId": "Ko4Wi73CGrs",
+        "x": 15.47,
+        "y": 53.03,
+        "w": 3.08,
+        "h": 1.67
+      },
+      {
+        "videoId": "ogZTH-hVRXA",
+        "x": 15.47,
+        "y": 76.15,
+        "w": 3.08,
+        "h": 1.66
+      }
+    ],
+    "53": [
+      {
+        "videoId": "hRo1y76k-bY",
+        "x": 15.47,
+        "y": 10.74,
+        "w": 3.08,
+        "h": 1.66
+      },
+      {
+        "videoId": "rQbfwbTx0JA",
+        "x": 15.47,
+        "y": 26.24,
+        "w": 3.08,
+        "h": 1.67
+      },
+      {
+        "videoId": "vm6MOux13G8",
+        "x": 15.47,
+        "y": 39.85,
+        "w": 3.08,
+        "h": 1.66
+      },
+      {
+        "videoId": "53Id85OzNdY",
+        "x": 15.47,
+        "y": 59.16,
+        "w": 3.08,
+        "h": 1.67
+      }
+    ],
+    "54": [
+      {
+        "videoId": "qOKtedf2orY",
+        "x": 15.47,
+        "y": 10.74,
+        "w": 3.08,
+        "h": 1.66
+      },
+      {
+        "videoId": "qOKtedf2orY",
+        "x": 15.47,
+        "y": 31.89,
+        "w": 3.03,
+        "h": 1.7
+      },
+      {
+        "videoId": "AlKd_AKYzVs",
+        "x": 15.47,
+        "y": 53.16,
+        "w": 3.08,
+        "h": 1.66
+      }
+    ]
+  }
+}

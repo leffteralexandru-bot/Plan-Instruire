@@ -23,10 +23,10 @@ export function EquipmentChapterView({
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const pdfUrl = chapter.pdfUrl ?? device.manualPdfUrl;
+  const pdfUrl = chapter.pdfUrl;
   const pdfName =
     chapter.pdfFileName ??
-    `${device.name.replace(/\s+/g, '-')}-Capitol-${chapter.number}.pdf`;
+    `${device.name.replace(/\s+/g, '-')}-Manual.pdf`;
 
   const handleDownload = async () => {
     if (!pdfUrl) return;
@@ -41,7 +41,7 @@ export function EquipmentChapterView({
     }
   };
 
-  const pdfButton = showPdfButton && pdfUrl && (
+  const pdfButton = showPdfButton && chapter.pdfUrl && (
     <div className="pt-1">
       <Button
         type="button"
@@ -76,9 +76,19 @@ export function EquipmentChapterView({
             alt={`Capitol ${chapter.number} — ${chapter.title}`}
             videoUrl={page.videoUrl}
             hotspot={page.hotspot}
+            videoHotspots={page.videoHotspots}
+            compactPlayHotspots={
+              device.id === 'eq-factory-fabricator' ||
+              device.id === 'eq-prodim-ct' ||
+              device.id === 'eq-proliner-4x'
+            }
+            filmIconShift={
+              device.id === 'eq-factory-fabricator' || device.id === 'eq-proliner-4x'
+                ? 'fabricator'
+                : 'none'
+            }
           />
         ))}
-        {pdfButton}
       </div>
     );
   }
@@ -119,7 +129,6 @@ export function EquipmentChapterView({
           )}
         </>
       )}
-      {pdfButton}
     </div>
   );
 }

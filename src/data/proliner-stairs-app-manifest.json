@@ -1,0 +1,20 @@
+{
+  "pdf": "/docs/equipment/proliner-stairs-app-manual-ro.pdf",
+  "pagesDir": "/docs/equipment/proliner-stairs-app/pages",
+  "videosDir": "/docs/equipment/proliner-stairs-app/videos",
+  "pageCount": 10,
+  "videoIds": [
+    "ZbYBUY10qtU"
+  ],
+  "pageHotspots": {
+    "4": [
+      {
+        "videoId": "ZbYBUY10qtU",
+        "x": 5.68,
+        "y": 31.54,
+        "w": 43.05,
+        "h": 19.68
+      }
+    ]
+  }
+}
