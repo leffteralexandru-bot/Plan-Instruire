@@ -14,9 +14,9 @@ function isThumbnailHotspot(spot: EquipmentManualPageHotspot): boolean {
 function FilmIconPlayReplacement() {
   return (
     <span className="pointer-events-none flex h-full w-full items-center justify-center rounded-[1px] bg-white">
-      <span className="flex h-[88%] w-[88%] items-center justify-center rounded-[1px] bg-[#d82231] shadow-sm">
+      <span className="flex h-[76%] w-[76%] items-center justify-center rounded-[1px] bg-[#d82231] shadow-sm">
         <svg
-          className="h-[56%] w-[56%] shrink-0 text-white"
+          className="h-[50%] w-[50%] shrink-0 text-white"
           style={{ marginLeft: '8%' }}
           viewBox="0 0 24 24"
           fill="currentColor"
@@ -65,8 +65,8 @@ function compactFilmIconHitStyle(
   };
   return {
     ...base,
-    minWidth: '1.35rem',
-    minHeight: '1.35rem',
+    minWidth: '1.1rem',
+    minHeight: '1.1rem',
   };
 }
 
@@ -78,10 +78,10 @@ function ManualPlayIcon({ compact = false }: { compact?: boolean }) {
 
   return (
     <span
-      className="pointer-events-none flex h-7 w-7 shrink-0 items-center justify-center rounded-[3px] bg-[#d82231] shadow-md ring-1 ring-black/15"
+      className="pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] bg-[#d82231] shadow-sm ring-1 ring-black/15"
       aria-hidden
     >
-      <svg className="ml-0.5 h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+      <svg className="ml-0.5 h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="currentColor">
         <path d="M8 5v14l11-7z" />
       </svg>
     </span>
@@ -147,8 +147,8 @@ export function EquipmentManualPage({
                         top: `${spot.y}%`,
                         width: thumbnail ? `${spot.w}%` : undefined,
                         height: thumbnail ? `${spot.h}%` : undefined,
-                        minWidth: thumbnail ? undefined : '2rem',
-                        minHeight: thumbnail ? undefined : '2rem',
+                        minWidth: thumbnail ? undefined : '1.5rem',
+                        minHeight: thumbnail ? undefined : '1.5rem',
                       }
                 }
                 onClick={() => setActiveVideo(spot.videoUrl)}

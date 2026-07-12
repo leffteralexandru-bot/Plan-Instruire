@@ -77,10 +77,7 @@ export function EquipmentChapterView({
             videoUrl={page.videoUrl}
             hotspot={page.hotspot}
             videoHotspots={page.videoHotspots}
-            compactPlayHotspots={
-              device.id === 'eq-factory-fabricator' ||
-              device.id === 'eq-prodim-ct'
-            }
+            compactPlayHotspots={device.id !== 'eq-proliner'}
             filmIconShift={
               device.id === 'eq-factory-fabricator' ? 'fabricator' : 'none'
             }
