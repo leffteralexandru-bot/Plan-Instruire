@@ -79,13 +79,10 @@ export function EquipmentChapterView({
             videoHotspots={page.videoHotspots}
             compactPlayHotspots={
               device.id === 'eq-factory-fabricator' ||
-              device.id === 'eq-prodim-ct' ||
-              device.id === 'eq-proliner-4x'
+              device.id === 'eq-prodim-ct'
             }
             filmIconShift={
-              device.id === 'eq-factory-fabricator' || device.id === 'eq-proliner-4x'
-                ? 'fabricator'
-                : 'none'
+              device.id === 'eq-factory-fabricator' ? 'fabricator' : 'none'
             }
           />
         ))}

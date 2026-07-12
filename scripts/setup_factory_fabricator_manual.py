@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from manual_hotspot_utils import extract_film_icon_hotspots_from_pdf, normalize_film_icon_bbox, merge_ro_en_film_hotspots
 
 SOURCE_PDF = Path(
-    r"c:\Users\AlioSol\Desktop\34efaeb73b67c98fdf4279022140052979c0b9652abaccc377e3e4a2e7eba054_f0d19d63b49d40f082fa76c9c5a8a96b_output_0488b4cc2c92439cb3b6196d4e0ca92c.pdf"
+    r"c:\Users\AlioSol\Desktop\PROLINER-4X-Manual-de-utilizare-artGRANIT_c490b841d3f8482d84c2f14bf29a5d90_output_f76f3edda86142c28d63218988888241.pdf"
 )
 # Manual EN — are toate linkurile pe iconița film (PDF RO le are incomplete).
 EN_PDF = Path(

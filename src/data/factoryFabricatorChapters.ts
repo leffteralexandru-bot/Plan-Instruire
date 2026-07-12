@@ -52,7 +52,7 @@ function chapter(
     images: [],
     pdfUrl: options?.includePdf ? FACTORY_FABRICATOR_MANUAL_PDF : undefined,
     pdfFileName: options?.includePdf
-      ? 'Fabricator-fabrica-Manual-software-artGRANIT.pdf'
+      ? 'PRODIM-Factory-Fabricator-Manual-artGRANIT.pdf'
       : undefined,
   };
 }

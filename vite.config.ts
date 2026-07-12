@@ -54,10 +54,6 @@ export default defineConfig({
           '**/docs/equipment/prodim-ct/pages/**',
           'docs/equipment/prodim-ct/videos/**',
           '**/docs/equipment/prodim-ct/videos/**',
-          'docs/equipment/proliner-4x/pages/**',
-          '**/docs/equipment/proliner-4x/pages/**',
-          'docs/equipment/proliner-4x/videos/**',
-          '**/docs/equipment/proliner-4x/videos/**',
           'docs/equipment/prodim-stairs/pages/**',
           '**/docs/equipment/prodim-stairs/pages/**',
           'docs/equipment/prodim-stairs/videos/**',
@@ -132,25 +128,6 @@ export default defineConfig({
             options: {
               cacheName: 'prodim-ct-manual-videos',
               expiration: { maxEntries: 24, maxAgeSeconds: 60 * 60 * 24 * 90 },
-              cacheableResponse: { statuses: [0, 200] },
-              rangeRequests: true,
-            },
-          },
-          {
-            urlPattern: /\/docs\/equipment\/proliner-4x\/pages\/.+\.png$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'proliner-4x-manual-pages',
-              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-          {
-            urlPattern: /\/docs\/equipment\/proliner-4x\/videos\/.+\.mp4$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'proliner-4x-manual-videos',
-              expiration: { maxEntries: 32, maxAgeSeconds: 60 * 60 * 24 * 90 },
               cacheableResponse: { statuses: [0, 200] },
               rangeRequests: true,
             },

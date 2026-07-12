@@ -26,11 +26,6 @@ MANUALS = [
         "videos_dir": ROOT / "public/docs/equipment/prodim-ct/videos",
     },
     {
-        "name": "PROLINER 4.X MANUAL",
-        "manifest": ROOT / "src/data/proliner-4x-manifest.json",
-        "videos_dir": ROOT / "public/docs/equipment/proliner-4x/videos",
-    },
-    {
         "name": "SCĂRI PRODIM",
         "manifest": ROOT / "src/data/prodim-stairs-manifest.json",
         "videos_dir": ROOT / "public/docs/equipment/prodim-stairs/videos",
@@ -61,7 +56,7 @@ MANUALS = [
         "videos_dir": ROOT / "public/docs/equipment/bosch-glm-40/videos",
     },
     {
-        "name": "FABRICATOR FABRICĂ",
+        "name": "PRODIM FACTORY FABRICATOR",
         "manifest": ROOT / "src/data/factory-fabricator-manifest.json",
         "videos_dir": ROOT / "public/docs/equipment/factory-fabricator/videos",
     },

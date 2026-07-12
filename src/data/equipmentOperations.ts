@@ -151,11 +151,6 @@ import {
   PRODIM_CT_SAFETY_WARNING,
 } from '@/data/prodimCtChapters';
 import {
-  PROLINER_4X_CHAPTERS,
-  PROLINER_4X_MANUAL_URL,
-  PROLINER_4X_SAFETY_WARNING,
-} from '@/data/proliner4xChapters';
-import {
   PRODIM_STAIRS_CHAPTERS,
   PRODIM_STAIRS_MANUAL_URL,
   PRODIM_STAIRS_SAFETY_WARNING,
@@ -240,9 +235,9 @@ export const DEFAULT_EQUIPMENT_OPERATIONS: EquipmentOperationsData = {
     },
     {
       id: 'eq-factory-fabricator',
-      name: 'FABRICATOR FABRICĂ — MANUAL SOFTWARE',
+      name: 'PRODIM FACTORY FABRICATOR — MANUAL SOFTWARE',
       category: 'Măsurare digitală',
-      description: 'Manual software Fabricator fabrică — proiecte, desen, potrivire și integrare Proliner',
+      description: 'Manual software v1.4 — proiecte, desen CAD, potrivire, cotație și integrare Proliner',
       chapters: FACTORY_FABRICATOR_CHAPTERS,
       safetyWarning: FACTORY_FABRICATOR_SAFETY_WARNING,
       manualPdfUrl: FACTORY_FABRICATOR_MANUAL_URL,
@@ -253,32 +248,10 @@ export const DEFAULT_EQUIPMENT_OPERATIONS: EquipmentOperationsData = {
       utilizare: section(
         '## Mod de lucru\n\nParcurgeți capitolele 2–12 pentru instalare, bibliotecă, desen și integrare Proliner.',
         [],
-        [{ type: 'pdf', label: 'Fabricator fabrică — Manual software (PDF)', url: FACTORY_FABRICATOR_MANUAL_URL }],
+        [{ type: 'pdf', label: 'Factory Fabricator — Manual software (PDF)', url: FACTORY_FABRICATOR_MANUAL_URL }],
       ),
       cad: section(
         '## Integrare CAD\n\n- Export proiecte .prlp către Proliner\n- Import măsurători în Fabricator fabrică\n- Layout tăiere și cotație',
-        [],
-      ),
-    },
-    {
-      id: 'eq-proliner-4x',
-      name: 'PROLINER 4.X MANUAL DE UTILIZARE',
-      category: 'Măsurare digitală',
-      description: 'Manual software Proliner 4.X — Factory Fabricator, desen, potrivire și integrare teren',
-      chapters: PROLINER_4X_CHAPTERS,
-      safetyWarning: PROLINER_4X_SAFETY_WARNING,
-      manualPdfUrl: PROLINER_4X_MANUAL_URL,
-      curatare: section(
-        '## Protocol curățare\n\nConsultați ghidul de pornire rapidă Proliner pentru întreținerea hardware.',
-        ['Curățare cablu cu cârpă fără praf', 'Verificare stilou și cablu înainte de măsurare'],
-      ),
-      utilizare: section(
-        '## Mod de lucru\n\nParcurgeți capitolele 2–12 pentru instalare, bibliotecă, desen și integrare Proliner.',
-        [],
-        [{ type: 'pdf', label: 'PROLINER 4.X Manual de utilizare (PDF)', url: PROLINER_4X_MANUAL_URL }],
-      ),
-      cad: section(
-        '## Integrare CAD\n\n- Export proiecte .prlp către Proliner\n- Import măsurători în Factory Fabricator\n- Editare CAD și layout tăiere',
         [],
       ),
     },

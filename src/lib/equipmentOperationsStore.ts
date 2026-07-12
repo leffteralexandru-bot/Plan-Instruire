@@ -13,6 +13,8 @@ const REMOVED_PLACEHOLDER_NAMES = new Set([
   'Stație totală / teodolit',
   'Laser distanță (distanțometru)',
   'Ruletă digitală / bandă laser',
+  'PROLINER 4.X MANUAL DE UTILIZARE',
+  'FABRICATOR FABRICĂ — MANUAL SOFTWARE',
 ]);
 
 function readJson<T>(key: string, fallback: T): T {
@@ -48,7 +50,6 @@ function mergeDevices(defaults: EquipmentDevice[], stored: EquipmentDevice[] | u
     const isBuiltInManual =
       device.id === 'eq-proliner' ||
       device.id === 'eq-prodim-ct' ||
-      device.id === 'eq-proliner-4x' ||
       device.id === 'eq-prodim-stairs' ||
       device.id === 'eq-proliner-stairs-app' ||
       device.id === 'eq-proliner-remote' ||
@@ -65,9 +66,7 @@ function mergeDevices(defaults: EquipmentDevice[], stored: EquipmentDevice[] | u
           ? base.chapters
           : device.id === 'eq-prodim-ct' && base.chapters?.length
             ? base.chapters
-            : device.id === 'eq-proliner-4x' && base.chapters?.length
-              ? base.chapters
-              : device.id === 'eq-prodim-stairs' && base.chapters?.length
+            : device.id === 'eq-prodim-stairs' && base.chapters?.length
                 ? base.chapters
                 : device.id === 'eq-proliner-stairs-app' && base.chapters?.length
                   ? base.chapters
