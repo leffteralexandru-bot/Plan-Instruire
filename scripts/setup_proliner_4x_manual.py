@@ -13,12 +13,13 @@ import fitz
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from manual_hotspot_utils import extract_film_icon_hotspots_from_pdf
+from manual_hotspot_utils import merge_ro_en_film_hotspots
 
-USER_SOURCE = Path(
-    r"c:\Users\AlioSol\Desktop\2e44e97d6d72b09c34e2abd85761a6fdffc24ccd19a5eadb480b692122e0fca9_af24b5578daf4dd8a3cba126771fa6ef_output_bfa15ee088ec4440be0510f69427502b.pdf"
+SOURCE_PDF = Path(
+    r"c:\Users\AlioSol\Desktop\PROLINER-4X-Manual-de-utilizare-artGRANIT_c490b841d3f8482d84c2f14bf29a5d90_output_f76f3edda86142c28d63218988888241.pdf"
 )
-FALLBACK_SOURCE = Path(
+# Manual EN — linkuri YouTube pe iconița film (PDF RO tradus le are incomplete).
+EN_PDF = Path(
     r"C:\Users\AlioSol\Desktop\Instructie pentru ingineri\Prodim(Instructie pentru incepatori)\Prodim-Manual-Factory-Fabricator-software.pdf"
 )
 PDF_OUT = ROOT / "public/docs/equipment/proliner-4x-manual-ro.pdf"
@@ -35,17 +36,14 @@ def youtube_id(uri: str) -> str:
 
 
 def resolve_source() -> Path:
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
         candidate = Path(sys.argv[1])
         if candidate.exists():
             return candidate
-    if USER_SOURCE.exists():
-        return USER_SOURCE
-    if FALLBACK_SOURCE.exists():
-        print(f"PDF utilizator indisponibil — folosesc sursa: {FALLBACK_SOURCE.name}")
-        return FALLBACK_SOURCE
+    if SOURCE_PDF.exists():
+        return SOURCE_PDF
     raise FileNotFoundError(
-        "Lipsește PDF-ul Proliner 4.X. Plasați fișierul pe Desktop sau pasați calea ca argument."
+        "Lipsește PDF-ul Proliner 4.X RO. Plasați fișierul pe Desktop sau pasați calea ca argument."
     )
 
 
@@ -70,7 +68,8 @@ def render_pages() -> int:
 
 
 def extract_hotspots() -> dict:
-    pages, unique_ids = extract_film_icon_hotspots_from_pdf(PDF_OUT)
+    print("Hotspot-uri: poziții RO + completări EN pentru iconițe fără link în RO")
+    pages, unique_ids = merge_ro_en_film_hotspots(PDF_OUT, EN_PDF)
     hotspot_count = sum(len(v) for v in pages.values())
     manifest = {
         "pdf": "/docs/equipment/proliner-4x-manual-ro.pdf",
@@ -81,7 +80,7 @@ def extract_hotspots() -> dict:
         "pageHotspots": pages,
     }
     MANIFEST.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Manifest → {MANIFEST.relative_to(ROOT)} ({len(unique_ids)} videoclipuri, {hotspot_count} iconițe)")
+    print(f"Manifest → {MANIFEST.relative_to(ROOT)} ({len(unique_ids)} videoclipuri, {hotspot_count} iconițe film)")
     return manifest
 
 

@@ -3,10 +3,10 @@ import type { EquipmentManualPageVideoHotspot } from '@/data/equipmentOperations
 
 export const PROLINER_4X_PAGE_HOTSPOTS: Record<number, EquipmentManualPageVideoHotspot[]> = {
   7: [
-    { videoUrl: PROLINER_4X_LOCAL_VIDEOS['2ov1Rr6xIq8'], x: 12.09, y: 78.92, w: 4.6, h: 2.59 },
+    { videoUrl: PROLINER_4X_LOCAL_VIDEOS['2ov1Rr6xIq8'], x: 12.09, y: 78.92, w: 3.1, h: 2.59 },
   ],
   40: [
-    { videoUrl: PROLINER_4X_LOCAL_VIDEOS['zLh8uGnjD6g'], x: 12.09, y: 86.67, w: 4.6, h: 2.59 },
+    { videoUrl: PROLINER_4X_LOCAL_VIDEOS['zLh8uGnjD6g'], x: 12.09, y: 86.67, w: 3.1, h: 2.59 },
   ],
   48: [
     { videoUrl: PROLINER_4X_LOCAL_VIDEOS['h9uSny8M4Iw'], x: 14.92, y: 15.19, w: 3.06, h: 1.68 },
