@@ -184,25 +184,25 @@
   }
 
   .manual-play-hotspot--small {
-    width: min(var(--manual-play-w-pct), 0.55rem);
+    width: min(var(--manual-play-w-pct), 0.72rem);
     aspect-ratio: 1;
   }
 
   @container (min-width: 640px) {
     .manual-play-hotspot--small {
-      width: min(var(--manual-play-w-pct), 0.82rem);
+      width: min(var(--manual-play-w-pct), 1.35rem);
     }
   }
 
   @container (min-width: 768px) {
     .manual-play-hotspot--small {
-      width: min(var(--manual-play-w-pct), 1rem);
+      width: min(var(--manual-play-w-pct), 1.65rem);
     }
   }
 
   @container (min-width: 1024px) {
     .manual-play-hotspot--small {
-      width: min(var(--manual-play-w-pct), 1.15rem);
+      width: min(var(--manual-play-w-pct), 1.95rem);
     }
   }
 
