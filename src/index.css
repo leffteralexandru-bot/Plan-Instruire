@@ -178,31 +178,35 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* Manual Prodim CT — play mic pe telefon, mai mare pe tabletă / desktop */
+  /* Manual Prodim CT — dimensiuni fixe per ecran (nu % din pagină, care ignora rem-urile) */
   .manual-page-canvas {
     container-type: inline-size;
   }
 
   .manual-play-hotspot--small {
-    width: min(var(--manual-play-w-pct), 0.72rem);
+    width: 0.72rem;
+    height: 0.72rem;
     aspect-ratio: 1;
   }
 
   @container (min-width: 640px) {
     .manual-play-hotspot--small {
-      width: min(var(--manual-play-w-pct), 1.35rem);
+      width: 1.35rem;
+      height: 1.35rem;
     }
   }
 
   @container (min-width: 768px) {
     .manual-play-hotspot--small {
-      width: min(var(--manual-play-w-pct), 1.65rem);
+      width: 1.65rem;
+      height: 1.65rem;
     }
   }
 
   @container (min-width: 1024px) {
     .manual-play-hotspot--small {
-      width: min(var(--manual-play-w-pct), 1.95rem);
+      width: 1.95rem;
+      height: 1.95rem;
     }
   }
 

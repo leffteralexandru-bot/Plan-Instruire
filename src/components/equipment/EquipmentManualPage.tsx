@@ -103,7 +103,6 @@ function compactFilmIconHitStyle(
     return {
       left: `${spot.x}%`,
       top: `${spot.y}%`,
-      ['--manual-play-w-pct' as string]: `${widthPct}%`,
     };
   }
 
