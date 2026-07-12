@@ -81,6 +81,7 @@ export function EquipmentChapterView({
             filmIconShift={
               device.id === 'eq-factory-fabricator' ? 'fabricator' : 'none'
             }
+            playButtonSize={device.id === 'eq-prodim-ct' ? 'small' : 'default'}
           />
         ))}
       </div>

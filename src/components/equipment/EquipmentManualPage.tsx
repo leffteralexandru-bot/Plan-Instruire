@@ -6,18 +6,44 @@ import type {
 } from '@/data/equipmentOperations';
 import { hasEquipmentVideo, isYoutubeVideo } from '@/lib/equipmentVideoUrl';
 
+type PlayButtonSize = 'default' | 'small';
+
+const PLAY_BUTTON_SIZES: Record<
+  PlayButtonSize,
+  { fillPercent: number; iconPercent: number; minHit: string; standalone: string; standaloneIcon: string }
+> = {
+  default: {
+    fillPercent: 76,
+    iconPercent: 50,
+    minHit: '1.1rem',
+    standalone: 'h-5 w-5',
+    standaloneIcon: 'h-2.5 w-2.5',
+  },
+  small: {
+    fillPercent: 46,
+    iconPercent: 36,
+    minHit: '0.55rem',
+    standalone: 'h-3.5 w-3.5',
+    standaloneIcon: 'h-1.5 w-1.5',
+  },
+};
+
 function isThumbnailHotspot(spot: EquipmentManualPageHotspot): boolean {
   return spot.w >= 20 && spot.h >= 8;
 }
 
 /** Înlocuiește iconița film albastră — un singur buton roșu peste icon. */
-function FilmIconPlayReplacement() {
+function FilmIconPlayReplacement({ size = 'default' }: { size?: PlayButtonSize }) {
+  const { fillPercent, iconPercent } = PLAY_BUTTON_SIZES[size];
   return (
     <span className="pointer-events-none flex h-full w-full items-center justify-center rounded-[1px] bg-white">
-      <span className="flex h-[76%] w-[76%] items-center justify-center rounded-[1px] bg-[#d82231] shadow-sm">
+      <span
+        className="flex items-center justify-center rounded-[1px] bg-[#d82231] shadow-sm"
+        style={{ width: `${fillPercent}%`, height: `${fillPercent}%` }}
+      >
         <svg
-          className="h-[50%] w-[50%] shrink-0 text-white"
-          style={{ marginLeft: '8%' }}
+          className="shrink-0 text-white"
+          style={{ width: `${iconPercent}%`, height: `${iconPercent}%`, marginLeft: '8%' }}
           viewBox="0 0 24 24"
           fill="currentColor"
           aria-hidden
@@ -56,32 +82,42 @@ function fabricatorFilmIconStyle(spot: EquipmentManualPageHotspot): CSSPropertie
 function compactFilmIconHitStyle(
   spot: EquipmentManualPageHotspot,
   shift: 'fabricator' | 'none',
+  size: PlayButtonSize = 'default',
 ): CSSProperties {
+  const { minHit } = PLAY_BUTTON_SIZES[size];
+  const visualScale = size === 'small' ? 0.82 : 1;
   const base = shift === 'fabricator' ? fabricatorFilmIconStyle(spot) : {
     left: `${spot.x}%`,
     top: `${spot.y}%`,
-    width: `${spot.w}%`,
-    height: `${spot.h}%`,
+    width: `${spot.w * visualScale}%`,
+    height: `${spot.h * visualScale}%`,
   };
   return {
     ...base,
-    minWidth: '1.1rem',
-    minHeight: '1.1rem',
+    minWidth: minHit,
+    minHeight: minHit,
   };
 }
 
 /** Buton play mic roșu — pentru pagini fără miniatură video în desen. */
-function ManualPlayIcon({ compact = false }: { compact?: boolean }) {
+function ManualPlayIcon({
+  compact = false,
+  size = 'default',
+}: {
+  compact?: boolean;
+  size?: PlayButtonSize;
+}) {
   if (compact) {
-    return <FilmIconPlayReplacement />;
+    return <FilmIconPlayReplacement size={size} />;
   }
 
+  const { standalone, standaloneIcon } = PLAY_BUTTON_SIZES[size];
   return (
     <span
-      className="pointer-events-none flex h-5 w-5 shrink-0 items-center justify-center rounded-[2px] bg-[#d82231] shadow-sm ring-1 ring-black/15"
+      className={`pointer-events-none flex ${standalone} shrink-0 items-center justify-center rounded-[2px] bg-[#d82231] shadow-sm ring-1 ring-black/15`}
       aria-hidden
     >
-      <svg className="ml-0.5 h-2.5 w-2.5 text-white" viewBox="0 0 24 24" fill="currentColor">
+      <svg className={`ml-0.5 ${standaloneIcon} text-white`} viewBox="0 0 24 24" fill="currentColor">
         <path d="M8 5v14l11-7z" />
       </svg>
     </span>
@@ -97,6 +133,8 @@ interface EquipmentManualPageProps {
   /** Înlocuiește iconița film — bbox din PDF; Fabricator are offset vizual suplimentar. */
   compactPlayHotspots?: boolean;
   filmIconShift?: 'fabricator' | 'none';
+  /** Prodim CT are iconițe foarte mici — buton redus față de celelalte manuale. */
+  playButtonSize?: PlayButtonSize;
 }
 
 /** Pagină manual — imagine clară; video la apăsarea zonei play din desen. */
@@ -108,6 +146,7 @@ export function EquipmentManualPage({
   videoHotspots,
   compactPlayHotspots = false,
   filmIconShift = 'none',
+  playButtonSize = 'default',
 }: EquipmentManualPageProps) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
 
@@ -132,7 +171,9 @@ export function EquipmentManualPage({
           {spots.map((spot, index) => {
             const thumbnail = isThumbnailHotspot(spot);
             const compactIcon = compactPlayHotspots && !thumbnail;
-            const compactPos = compactIcon ? compactFilmIconHitStyle(spot, filmIconShift) : null;
+            const compactPos = compactIcon
+              ? compactFilmIconHitStyle(spot, filmIconShift, playButtonSize)
+              : null;
             const thumbPos = thumbnail ? thumbnailHitStyle(spot) : null;
             return (
               <button
@@ -147,14 +188,14 @@ export function EquipmentManualPage({
                         top: `${spot.y}%`,
                         width: thumbnail ? `${spot.w}%` : undefined,
                         height: thumbnail ? `${spot.h}%` : undefined,
-                        minWidth: thumbnail ? undefined : '1.5rem',
-                        minHeight: thumbnail ? undefined : '1.5rem',
+                        minWidth: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].minHit,
+                        minHeight: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].minHit,
                       }
                 }
                 onClick={() => setActiveVideo(spot.videoUrl)}
                 aria-label={`Redare video ${index + 1}: ${alt}`}
               >
-                {!thumbnail && <ManualPlayIcon compact={compactIcon} />}
+                {!thumbnail && <ManualPlayIcon compact={compactIcon} size={playButtonSize} />}
               </button>
             );
           })}
