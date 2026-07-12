@@ -10,19 +10,19 @@ type PlayButtonSize = 'default' | 'small';
 
 const PLAY_BUTTON_SIZES: Record<
   PlayButtonSize,
-  { fillPercent: number; iconPercent: number; minHit: string; standalone: string; standaloneIcon: string }
+  { fillPercent: number; iconPercent: number; visualCap: string; standalone: string; standaloneIcon: string }
 > = {
   default: {
     fillPercent: 76,
     iconPercent: 50,
-    minHit: '1.1rem',
+    visualCap: '1.1rem',
     standalone: 'h-5 w-5',
     standaloneIcon: 'h-2.5 w-2.5',
   },
   small: {
     fillPercent: 46,
     iconPercent: 36,
-    minHit: '0.55rem',
+    visualCap: '0.55rem',
     standalone: 'h-3.5 w-3.5',
     standaloneIcon: 'h-1.5 w-1.5',
   },
@@ -78,24 +78,40 @@ function fabricatorFilmIconStyle(spot: EquipmentManualPageHotspot): CSSPropertie
   };
 }
 
-/** Zonă de apăsare minimă — vizualul rămâne mic, click-ul funcționează. */
+/** Zonă compactă — lățime din bbox PDF; înălțimea paginii nu mai umflă butonul pe mobil. */
 function compactFilmIconHitStyle(
   spot: EquipmentManualPageHotspot,
   shift: 'fabricator' | 'none',
   size: PlayButtonSize = 'default',
 ): CSSProperties {
-  const { minHit } = PLAY_BUTTON_SIZES[size];
+  const { visualCap } = PLAY_BUTTON_SIZES[size];
   const visualScale = size === 'small' ? 0.82 : 1;
-  const base = shift === 'fabricator' ? fabricatorFilmIconStyle(spot) : {
+
+  if (shift === 'fabricator') {
+    const fab = fabricatorFilmIconStyle(spot);
+    const widthPct = parseFloat(String(fab.width)) * visualScale;
+    return {
+      left: fab.left,
+      top: fab.top,
+      width: `min(${widthPct}%, ${visualCap})`,
+      aspectRatio: '1',
+    };
+  }
+
+  const widthPct = spot.w * visualScale;
+  if (size === 'small') {
+    return {
+      left: `${spot.x}%`,
+      top: `${spot.y}%`,
+      ['--manual-play-w-pct' as string]: `${widthPct}%`,
+    };
+  }
+
+  return {
     left: `${spot.x}%`,
     top: `${spot.y}%`,
-    width: `${spot.w * visualScale}%`,
-    height: `${spot.h * visualScale}%`,
-  };
-  return {
-    ...base,
-    minWidth: minHit,
-    minHeight: minHit,
+    width: `min(${widthPct}%, ${visualCap})`,
+    aspectRatio: '1',
   };
 }
 
@@ -160,7 +176,7 @@ export function EquipmentManualPage({
   return (
     <>
       <figure className="overflow-hidden rounded-xl border border-corporate-border bg-white shadow-sm">
-        <div className="relative w-full bg-white">
+        <div className="manual-page-canvas relative w-full bg-white">
           <img
             src={imageUrl}
             alt={alt}
@@ -175,21 +191,25 @@ export function EquipmentManualPage({
               ? compactFilmIconHitStyle(spot, filmIconShift, playButtonSize)
               : null;
             const thumbPos = thumbnail ? thumbnailHitStyle(spot) : null;
+            const responsiveSmall = playButtonSize === 'small' && compactIcon;
             return (
               <button
                 key={`${spot.videoUrl}-${spot.y}-${index}`}
                 type="button"
                 className={`absolute z-20 cursor-pointer border-0 bg-transparent p-0 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold/80 ${
                   thumbnail ? 'overflow-hidden' : compactIcon ? 'overflow-visible' : 'flex items-center justify-center'
-                }`}
+                }${responsiveSmall ? ' manual-play-hotspot--small' : ''}`}
                 style={
                   thumbPos ?? compactPos ?? {
                         left: `${spot.x}%`,
                         top: `${spot.y}%`,
                         width: thumbnail ? `${spot.w}%` : undefined,
                         height: thumbnail ? `${spot.h}%` : undefined,
-                        minWidth: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].minHit,
-                        minHeight: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].minHit,
+                        minWidth: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].visualCap,
+                        minHeight: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].visualCap,
+                        maxWidth: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].visualCap,
+                        maxHeight: thumbnail ? undefined : PLAY_BUTTON_SIZES[playButtonSize].visualCap,
+                        aspectRatio: thumbnail ? undefined : '1',
                       }
                 }
                 onClick={() => setActiveVideo(spot.videoUrl)}
