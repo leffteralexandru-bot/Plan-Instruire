@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  server: {
+    port: 5174,
+    strictPort: false,
+  },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
