@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { ViewportPreviewMenu } from '@/components/layout/ViewportPreviewMenu';
+import { InstallOnPhoneCard } from '@/components/pwa/InstallOnPhoneCard';
 import { userStore, repairDemoProfiles, repairLoginCredentials } from '@/lib/userStore';
 import { credentials } from '@/lib/credentials';
 import {
@@ -148,6 +149,10 @@ export function LoginPage() {
               Apăsați cardul demo sau introduceți numele și parola.
             </p>
 
+            <div className="mb-5">
+              <InstallOnPhoneCard />
+            </div>
+
             <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
               Cont demo (public)
             </p>
@@ -235,7 +240,7 @@ export function LoginPage() {
           </Card>
 
           <p className="text-center text-xs text-corporate-muted">
-            PWA · funcționează offline după prima încărcare
+            După instalare pe telefon, aplicația funcționează și offline.
           </p>
         </div>
       </div>
