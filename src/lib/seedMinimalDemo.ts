@@ -137,8 +137,11 @@ export function ensureMinimalDemoIfEmpty(): void {
   try {
     const raw = localStorage.getItem(USERS_KEY);
     const users = raw ? (JSON.parse(raw) as User[]) : [];
-    if (users.length === 0 || !isMinimalDemoCurrent()) {
+    if (users.length === 0) {
       resetMinimalDemoScenario();
+    } else if (!isMinimalDemoCurrent()) {
+      // Version bump without wiping custom users/enrollments/profiles (tests + live data).
+      localStorage.setItem(DEMO_VERSION_KEY, DEMO_DATA_VERSION);
     }
     purgePersistedPlatformSettingsAdmin();
   } catch {
