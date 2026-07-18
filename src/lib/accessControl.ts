@@ -1,6 +1,6 @@
 import type { User } from '@/types';
 import type { EmployeeArchiveFolder, ErrorCase } from '@/types';
-import { ingineriPath, INGINERI_ANGAJAT_PANEL_PATH, INGINERI_PLAN_PATH } from '@/data/departments';
+import { ingineriPath, INGINERI_ANGAJAT_PANEL_PATH } from '@/data/departments';
 import {
   canManageUsers,
   canViewAllTrainees,
@@ -149,8 +149,7 @@ export function getSubordinatesWithErrorAlerts(mentorId: string): string[] {
 
 /** Destinație după autentificare */
 export function getPostLoginPath(user: User): string {
-  if (hasRole(user, 'admin')) return INGINERI_PLAN_PATH;
-  if (hasRole(user, 'hr')) return ingineriPath('/admin');
+  if (hasRole(user, 'admin') || hasRole(user, 'hr')) return ingineriPath('/admin');
   if (isAngajatUser(user)) return INGINERI_ANGAJAT_PANEL_PATH;
   if (isMentorUser(user)) return ingineriPath('/mentor');
   if (getSupervisedEmployeeIds(user.id).length > 0) return ingineriPath('/panou-supervizor');

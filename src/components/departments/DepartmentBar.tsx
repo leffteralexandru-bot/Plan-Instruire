@@ -1,5 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { DEPARTMENTS, getDepartmentFromPath, INGINERI_ANGAJAT_PANEL_PATH, INGINERI_ADMIN_DASHBOARD_PATH, INGINERI_PLAN_PATH, ingineriPath } from '@/data/departments';
+import {
+  DEPARTMENTS,
+  getDepartmentFromPath,
+  INGINERI_ANGAJAT_PANEL_PATH,
+  INGINERI_ADMIN_DASHBOARD_PATH,
+  INGINERI_PLAN_PATH,
+  ingineriPath,
+} from '@/data/departments';
 import { DepartmentGlyph, DEPT_SHORT_LABELS } from '@/components/departments/DepartmentGlyph';
 import { useAuth } from '@/hooks/useAuth';
 import { isAngajatUser, hasRole, isHrOnly } from '@/lib/roles';
@@ -44,7 +51,13 @@ export function DepartmentBar() {
       <ul className="mx-auto flex w-full max-w-none items-stretch justify-between gap-1 @md:gap-2 @xl:max-w-screen-xl">
         {DEPARTMENTS.map((dept) => {
           const isActive = activeDept?.id === dept.id;
-          const to = departmentLink(dept.route, dept.planAvailable, isStaffAngajat, isHrStaff, isAdmin);
+          const to = departmentLink(
+            dept.route,
+            dept.planAvailable,
+            isStaffAngajat,
+            isHrStaff,
+            isAdmin,
+          );
 
           return (
             <li key={dept.id} className="min-w-0 flex-1">

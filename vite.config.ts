@@ -90,6 +90,16 @@ export default defineConfig({
           '**/docs/equipment/factory-fabricator/pages/**',
           'docs/equipment/factory-fabricator/videos/**',
           '**/docs/equipment/factory-fabricator/videos/**',
+          'docs/repository/silestone/pages/**',
+          '**/docs/repository/silestone/pages/**',
+          'docs/repository/silestone-sinks/**',
+          '**/docs/repository/silestone-sinks/**',
+          'docs/repository/cosentino-furniture/**',
+          '**/docs/repository/cosentino-furniture/**',
+          'docs/repository/dekton-kitchen/**',
+          '**/docs/repository/dekton-kitchen/**',
+          'docs/operational-guide/**',
+          '**/docs/operational-guide/**',
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         runtimeCaching: [
@@ -286,6 +296,114 @@ export default defineConfig({
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 90 },
               cacheableResponse: { statuses: [0, 200] },
               rangeRequests: true,
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/silestone\/pages\/.+\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'silestone-manual-pages',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/silestone\/silestone-countertops-manual\.pdf$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'silestone-manual-pdf',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/silestone-sinks\/.+\/pages\/.+\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'silestone-sinks-manual-pages',
+              expiration: { maxEntries: 24, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/silestone-sinks\/.+\.pdf$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'silestone-sinks-manual-pdf',
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/cosentino-furniture\/pages\/.+\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cosentino-furniture-manual-pages',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/cosentino-furniture\/furniture-design-installation\.pdf$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cosentino-furniture-manual-pdf',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/dekton-kitchen\/pages\/.+\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'dekton-kitchen-manual-pages',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/repository\/dekton-kitchen\/dekton-kitchen-countertops-manual\.pdf$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'dekton-kitchen-manual-pdf',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/operational-guide\/checklists\/pages\/.+\.png$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'operational-checklist-pages',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/operational-guide\/checklists\/Checklist-masuratori-.+\.pdf$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'operational-checklist-pdfs',
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/operational-guide\/equipment\/.+\.(png|pdf)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'operational-equipment-docs',
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /\/docs\/operational-guide\/steps\/.+\.(png|pdf)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'operational-steps-docs',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
         ],

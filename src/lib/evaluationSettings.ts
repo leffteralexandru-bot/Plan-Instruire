@@ -3,7 +3,7 @@ import {
   type DesignerCompetencyCriterion,
 } from '@/data/designerCompetencyMatrix';
 import type { User } from '@/types';
-import { canEditPlatformSettings } from '@/lib/platformSettingsAdmin';
+import { canEditPlatformSettings, PLATFORM_SETTINGS_ADMIN_NAME } from '@/lib/platformSettingsAdmin';
 
 const EVALUATION_SETTINGS_KEY = 'artgranit_evaluation_settings';
 
@@ -153,7 +153,7 @@ export function saveEvaluationSettings(
   actor: Pick<User, 'id' | 'name' | 'email'>,
 ): EvaluationSettings {
   if (!canEditPlatformSettings(actor)) {
-    throw new Error('Doar Alex poate modifica setările de evaluare.');
+    throw new Error(`Doar ${PLATFORM_SETTINGS_ADMIN_NAME} poate modifica setările de evaluare.`);
   }
   const current = getEvaluationSettings();
   const next: EvaluationSettings = {
@@ -182,7 +182,7 @@ export function saveEvaluationSettings(
 
 export function resetEvaluationSettings(actor: Pick<User, 'id' | 'name' | 'email'>): EvaluationSettings {
   if (!canEditPlatformSettings(actor)) {
-    throw new Error('Doar Alex poate modifica setările de evaluare.');
+    throw new Error(`Doar ${PLATFORM_SETTINGS_ADMIN_NAME} poate modifica setările de evaluare.`);
   }
   const next = getDefaultEvaluationSettings();
   next.updatedAt = nowIso();

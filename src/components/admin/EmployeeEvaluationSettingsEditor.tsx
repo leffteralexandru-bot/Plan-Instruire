@@ -13,6 +13,7 @@ import {
   type EvaluationSettings,
 } from '@/lib/evaluationSettings';
 import { useEvaluationSettings } from '@/hooks/useEvaluationSettings';
+import { PLATFORM_SETTINGS_ADMIN_NAME } from '@/lib/platformSettingsAdmin';
 
 export function EmployeeEvaluationSettingsEditor({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
@@ -108,7 +109,8 @@ export function EmployeeEvaluationSettingsEditor({ embedded }: { embedded?: bool
     <div className={shell}>
       {readOnly && (
         <p className="text-sm text-corporate-muted rounded-lg border border-corporate-border bg-corporate-surface/50 px-3 py-2">
-          Mod consultare — puteți deschide criteriile și previzualiza testul. Salvarea se face doar din contul Alex.
+          Mod consultare — puteți deschide criteriile și previzualiza testul. Salvarea se face doar din contul{' '}
+          {PLATFORM_SETTINGS_ADMIN_NAME}.
         </p>
       )}
       <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/40 p-4 space-y-3">

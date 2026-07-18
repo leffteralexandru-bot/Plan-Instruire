@@ -1,8 +1,13 @@
 /** Repository Tehnic artGRANIT — hub documentație (separat de Ghid Operațional) */
 
-export type TechnicalRepositorySection = 'produse' | 'materiale' | 'garantie';
+import type { EquipmentChapter } from '@/data/equipmentOperations';
+import { DEKTON_KITCHEN_CHAPTERS } from '@/data/dektonKitchenChapters';
+import { COSENTINO_FURNITURE_CHAPTERS } from '@/data/cosentinoFurnitureChapters';
+import { SILESTONE_CHAPTERS } from '@/data/silestoneChapters';
+import { SILESTONE_INTEGRITY_CHAPTERS } from '@/data/silestoneIntegrityChapters';
+import { SILESTONE_INTEGRITY_DRAWINGS_CHAPTERS } from '@/data/silestoneIntegrityDrawingsChapters';
 
-export type WarrantyMaterialId = 'quartz' | 'granit' | 'marmura' | 'ceramica';
+export type TechnicalRepositorySection = 'manuale' | 'produse';
 
 export interface TechnicalCatalogItem {
   id: string;
@@ -15,24 +20,23 @@ export interface TechnicalCatalogItem {
   specs: Record<string, string>;
 }
 
-export interface WarrantyMaterialPack {
-  id: WarrantyMaterialId;
-  label: string;
-  /** Conținut Markdown — editabil HR sau încărcat din mdUrl */
-  markdown: string;
-  /** Cale opțională fișier .md în /public (ex. /docs/repository/warranty/quartz.md) */
-  mdUrl?: string;
-  /** Puncte checklist certificare conformitate */
-  checklist: string[];
+/** Manual tehnic interactiv — capitole + pagini PNG (ca la Utilaje teren). */
+export interface TechnicalManual {
+  id: string;
+  name: string;
+  category: string;
+  description?: string;
+  chapters: EquipmentChapter[];
+  manualPdfUrl?: string;
 }
 
 export interface TechnicalRepositoryData {
   productsIntro?: string;
-  materialsIntro?: string;
-  warrantyIntro?: string;
+  manualsIntro?: string;
   products: TechnicalCatalogItem[];
-  materials: TechnicalCatalogItem[];
-  warranty: WarrantyMaterialPack[];
+  /** Manuale interactive pentru produse finite (ex. chiuvete producător). */
+  productManuals: TechnicalManual[];
+  manuals: TechnicalManual[];
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -43,135 +47,75 @@ export const TECH_REPO_SECTIONS: {
   description: string;
 }[] = [
   {
+    id: 'manuale',
+    label: 'Reguli producător & garanție',
+    description:
+      'Condiții oficiale pentru rezistență și garanția proiectelor — ingineri, măsurători, proiectanți',
+  },
+  {
     id: 'produse',
     label: 'Specificații tehnice produse',
-    description: 'Chiuvete, baterii, accesorii — fișe și cataloage',
-  },
-  {
-    id: 'materiale',
-    label: 'Standarde materiale & prelucrare',
-    description: 'Quartz, granit, marmură, ceramică — greutate, debitare, fișe',
-  },
-  {
-    id: 'garantie',
-    label: 'Certificare garanție',
-    description: 'Reguli per material · checklist conformitate',
+    description: 'Chiuvete, baterii, accesorii — fișe producător și cataloage',
   },
 ];
 
-export const WARRANTY_MATERIAL_LABELS: Record<WarrantyMaterialId, string> = {
-  quartz: 'Quartz',
-  granit: 'Granit',
-  marmura: 'Marmură',
-  ceramica: 'Ceramică',
-};
-
-const DEFAULT_WARRANTY_MD: Record<WarrantyMaterialId, string> = {
-  quartz:
-    '## Garanție — Quartz\n\n- Verificați lotul și fișa producătorului\n- Respectați grosimea minimă recomandată\n- Documentați decupajele și muchiile finisate\n- Păstrați dovada montajului conform procedurii artGRANIT',
-  granit:
-    '## Garanție — Granit natural\n\n- Confirmați originea materialului\n- Verificați tratamentul suprafeței\n- Respectați limitele de debitare pentru granit dur\n- Fotografiați starea la livrare',
-  marmura:
-    '## Garanție — Marmură\n\n- Atenție la materiale poroase — tratament obligatoriu\n- Verificați compatibilitatea adezivului\n- Evitați contactul prelungit cu acizi\n- Documentați finisajele aplicate',
-  ceramica:
-    '## Garanție — Ceramică\n\n- Verificați clasificarea PEI / rezistență\n- Respectați rosturile minime\n- Confirmați suportul plan\n- Arhivați certificatul furnizorului',
-};
-
-function defaultWarrantyChecklist(label: string): string[] {
-  return [
-    `Am verificat fișa tehnică ${label} și lotul materialului`,
-    'Documentația foto/video la livrare este completă',
-    'Prelucrarea respectă limitele de debitare artGRANIT',
-    'Clientul a fost informat despre condițiile de garanție',
-  ];
-}
-
-function catalogId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-}
-
 export const DEFAULT_TECHNICAL_REPOSITORY: TechnicalRepositoryData = {
   productsIntro:
-    'Catalog produse finite utilizate în proiecte artGRANIT. Consultați fișa tehnică înainte de specificare.',
-  materialsIntro:
-    'Standarde pentru piatră naturală și materiale compozite — greutate, limite debitare, prelucrare.',
-  warrantyIntro:
-    'Citiți regulile pentru tipul de material, apoi bifați checklist-ul de conformitate înainte de certificare.',
-  products: [
+    'Documentație oficială a producătorilor — chiuvete Silestone® Integrity (planșe tehnice și ghid instalare). Fiecare document este extras din PDF-ul producătorului, organizat pe capitole cu pagini vizuale.',
+  manualsIntro:
+    'Reguli și condiții impuse de producătorii de materiale (quartz, granit, marmură, ceramică). Nu sunt proceduri artGRANIT, ci cerințe oficiale de prelucrare, montaj și aplicare care trebuie respectate în proiectare pentru a asigura rezistența lucrărilor și validitatea garanției. Fiecare manual este extras din PDF-ul Cosentino, cu capitole și pagini identice documentului original.',
+  products: [],
+  productManuals: [
     {
-      id: catalogId('prod'),
-      title: 'Chiuvetă sub blat — model standard',
-      category: 'Chiuvete',
-      description: 'Dimensiuni și decupaj standard bucătărie',
-      specs: { montaj: 'Sub blat', material: 'Inox / compozit' },
+      id: 'product-silestone-integrity-sinks',
+      name: 'Silestone® Integrity — Chiuvete',
+      category: 'Chiuvete · Cosentino',
+      description:
+        'Planșe tehnice producător — modele Integrity (ONE, DUE, Q), dimensiuni și decupaj blat',
+      chapters: SILESTONE_INTEGRITY_DRAWINGS_CHAPTERS,
+      manualPdfUrl: '/docs/repository/silestone-sinks/install-drawings.pdf',
     },
     {
-      id: catalogId('prod'),
-      title: 'Baterie monocomandă',
-      category: 'Baterii',
-      description: 'Gaură standard Ø35 mm',
-      specs: { debit: 'Standard', finisaj: 'Crom / negru mat' },
-    },
-  ],
-  materials: [
-    {
-      id: catalogId('mat'),
-      title: 'Quartz compozit',
-      category: 'Quartz',
-      description: 'Plăci compozit — regim industrial',
-      specs: {
-        greutate: '~24–28 kg/m² (20 mm)',
-        debitare: 'Disc diamant, turație redusă',
-        grosime: '20 / 30 mm',
-      },
-    },
-    {
-      id: catalogId('mat'),
-      title: 'Granit natural',
-      category: 'Granit',
-      description: 'Piatră naturală — variabilitate desen',
-      specs: {
-        greutate: '~28–32 kg/m² (20 mm)',
-        debitare: 'Răcire continuă, disc segmentat',
-        grosime: '20 / 30 / 40 mm',
-      },
-    },
-    {
-      id: catalogId('mat'),
-      title: 'Marmură',
-      category: 'Marmură',
-      description: 'Piatră calcaroasă — atenție la porozitate',
-      specs: {
-        greutate: '~26–30 kg/m² (20 mm)',
-        debitare: 'Viteză redusă, suport rigid',
-        tratament: 'Impermeabilizare recomandată',
-      },
-    },
-    {
-      id: catalogId('mat'),
-      title: 'Ceramică / sinterizat',
-      category: 'Ceramică',
-      description: 'Plăci ceramice mari format',
-      specs: {
-        greutate: 'Conform fișei producător',
-        debitare: 'Disc continuu, suport plin',
-        rost: 'Min. conform producător',
-      },
+      id: 'product-silestone-integrity-install',
+      name: 'Instrucțiuni instalare chiuvete Silestone® Integrity',
+      category: 'Chiuvete · Cosentino',
+      description:
+        'Ghid oficial instalare: undermount cu benzi, chiuvetă integrată, montaj cu adeziv și încorporată',
+      chapters: SILESTONE_INTEGRITY_CHAPTERS,
+      manualPdfUrl: '/docs/repository/silestone-sinks/integrity-guide.pdf',
     },
   ],
-  warranty: (['quartz', 'granit', 'marmura', 'ceramica'] as WarrantyMaterialId[]).map((id) => ({
-    id,
-    label: WARRANTY_MATERIAL_LABELS[id],
-    markdown: DEFAULT_WARRANTY_MD[id],
-    mdUrl: `/docs/repository/warranty/${id}.md`,
-    checklist: defaultWarrantyChecklist(WARRANTY_MATERIAL_LABELS[id]),
-  })),
+  manuals: [
+    {
+      id: 'manual-silestone',
+      name: 'Cerințe Silestone® — Proiectare și instalare blaturi',
+      category: 'Quartz compozit · Cosentino',
+      description:
+        'Reguli oficiale Cosentino: specificații de fabricație, toleranțe, suport și montaj — condiții pentru rezistență și garanție la blaturi de bucătărie',
+      chapters: SILESTONE_CHAPTERS,
+      manualPdfUrl: '/docs/repository/silestone/silestone-countertops-manual.pdf',
+    },
+    {
+      id: 'manual-dekton-kitchen',
+      name: 'Cerințe Dekton® — Proiectare și instalare blaturi bucătărie',
+      category: 'Ceramică sinterizată · Cosentino',
+      description:
+        'Reguli oficiale Cosentino pentru blaturi Dekton® — familii I–IV, XGloss, Grip+, proiectare, suport, montaj și garanție',
+      chapters: DEKTON_KITCHEN_CHAPTERS,
+      manualPdfUrl: '/docs/repository/dekton-kitchen/dekton-kitchen-countertops-manual.pdf',
+    },
+    {
+      id: 'manual-cosentino-furniture',
+      name: 'Cerințe Cosentino® Spaces — Mobilier design & instalare',
+      category: 'Mobilier · Cosentino',
+      description:
+        'Reguli oficiale proiectare și instalare mobilier Silestone®/Dekton® — structuri, mese, blaturi, ancorare și ambalare',
+      chapters: COSENTINO_FURNITURE_CHAPTERS,
+      manualPdfUrl: '/docs/repository/cosentino-furniture/furniture-design-installation.pdf',
+    },
+  ],
 };
 
 export function isTechnicalRepositorySection(v: string): v is TechnicalRepositorySection {
   return TECH_REPO_SECTIONS.some((s) => s.id === v);
-}
-
-export function isWarrantyMaterialId(v: string): v is WarrantyMaterialId {
-  return v in WARRANTY_MATERIAL_LABELS;
 }

@@ -7,78 +7,83 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { ViewportPreviewMenu } from '@/components/layout/ViewportPreviewMenu';
-import { userStore, repairDemoProfiles, repairLoginCredentials, DEMO_LOGIN_HINTS } from '@/lib/userStore';
-import { credentials, DEFAULT_PLATFORM_PASSWORD } from '@/lib/credentials';
-import { ROLE_LABELS, formatUserRoles, isAngajatUser, isMentorUser } from '@/lib/roles';
+import { userStore, repairDemoProfiles, repairLoginCredentials } from '@/lib/userStore';
+import { credentials } from '@/lib/credentials';
+import {
+  DEMO_ANGAJAT_ID,
+  DEMO_ANGAJAT_PASSWORD,
+  MINIMAL_DEMO_ANGAJAT,
+} from '@/lib/seedMinimalDemo';
 import type { User } from '@/types';
 
-function OrgProfileCard({
-  emoji,
-  title,
-  subtitle,
-  name,
-  email,
+const DEMO_NUME = 'Angajat';
+
+function DemoAngajatCard({
+  onClick,
+  disabled,
 }: {
-  emoji: string;
-  title: string;
-  subtitle: string;
-  name: string;
-  email: string;
+  onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-corporate-border bg-corporate-surface/50 p-3.5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-lg shadow-sm">
-          {emoji}
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide text-corporate-gold">{title}</p>
-          <p className="text-sm font-medium text-corporate-dark mt-0.5">{name}</p>
-          <p className="text-xs text-corporate-muted">{subtitle}</p>
-          <p className="text-xs text-corporate-muted/90 truncate mt-1">{email}</p>
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="w-full text-left rounded-xl transition-colors hover:ring-2 hover:ring-corporate-gold/40 disabled:opacity-60"
+      title="Conectare rapidă ca angajat demo"
+    >
+      <div className="rounded-xl border border-corporate-border bg-corporate-surface/50 p-3.5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-lg shadow-sm">
+            🎓
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-corporate-gold">
+              Demo angajat
+            </p>
+            <p className="text-sm font-medium text-corporate-dark mt-0.5">{MINIMAL_DEMO_ANGAJAT.name}</p>
+            <p className="text-xs text-corporate-muted">
+              Vizualizare panou angajat — acces public
+            </p>
+            <p className="text-xs text-corporate-muted/90 mt-1">Nume: {DEMO_NUME}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </button>
   );
-}
-
-function profilePassword(user: User): string {
-  return credentials.getPassword(user.id) ?? DEFAULT_PLATFORM_PASSWORD;
-}
-
-function tempProfileSubtitle(user: User): string {
-  if (isAngajatUser(user) && isMentorUser(user)) {
-    return 'Angajat · Mentor temporar (HR)';
-  }
-  if (isMentorUser(user)) return 'Mentor — validări & feedback';
-  if (isAngajatUser(user)) return 'Panou Angajat · plan instruire';
-  return formatUserRoles(user);
-}
-
-function tempProfileEmoji(user: User): string {
-  if (isAngajatUser(user) && isMentorUser(user)) return '🎓👤';
-  if (isMentorUser(user)) return '👤';
-  return '🎓';
 }
 
 export function LoginPage() {
   const { login, isAuthenticated, loading, user } = useAuth();
   const [error, setError] = useState('');
-  const [email, setEmail] = useState('');
+  const [nume, setNume] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [profileTick, setProfileTick] = useState(0);
 
   useEffect(() => {
     repairLoginCredentials();
+    repairDemoProfiles();
     setProfileTick((t) => t + 1);
   }, []);
 
-  const admins = useMemo(() => userStore.getAdministratorProfiles(), [profileTick]);
-  const hrProfiles = useMemo(() => userStore.getHrProfiles(), [profileTick]);
-  const tempProfiles = useMemo(() => userStore.getTemporaryLoginProfiles(), [profileTick]);
+  const demoAngajat = useMemo(() => {
+    return (
+      userStore.getTemporaryLoginProfiles().find((u) => u.id === DEMO_ANGAJAT_ID) ??
+      MINIMAL_DEMO_ANGAJAT
+    );
+  }, [profileTick]);
 
-  const hasOrgProfiles = admins.length > 0 || hrProfiles.length > 0;
+  const leftoverProfiles = useMemo(() => {
+    const temps = userStore.getTemporaryLoginProfiles().filter((u) => u.id !== DEMO_ANGAJAT_ID);
+    return (
+      userStore.getAdministratorProfiles().length +
+        userStore.getHrProfiles().length +
+        temps.length >
+      0
+    );
+  }, [profileTick]);
 
   if (loading) {
     return (
@@ -90,60 +95,30 @@ export function LoginPage() {
 
   if (isAuthenticated && user) return <Navigate to={getPostLoginPath(user)} replace />;
 
-  const applyProfile = (profile: User) => {
-    setEmail(profile.email);
-    setPassword(profilePassword(profile));
-    setError('');
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const ok = await login(email.trim(), password);
+    const ok = await login(nume.trim(), password);
     setSubmitting(false);
     if (!ok) {
-      setError(
-        'Profil sau parolă incorectă. Parola demo: artgranit2026. Dacă nu apar carduri, apăsați „Restaurează scenariu test”.',
-      );
+      setError('Nume sau parolă incorectă.');
     }
   };
 
-  const quickLogin = async (profile: User) => {
-    const pwd = profilePassword(profile);
-    applyProfile(profile);
+  const loginAsDemoAngajat = async () => {
+    const profile: User = demoAngajat;
+    const pwd = credentials.getPassword(profile.id) ?? DEMO_ANGAJAT_PASSWORD;
+    setNume(DEMO_NUME);
+    setPassword(pwd);
     setError('');
     setSubmitting(true);
-    const ok = await login(profile.email, pwd);
+    const ok = await login(DEMO_NUME, pwd);
     setSubmitting(false);
     if (!ok) {
-      setError(
-        'Nu s-a putut conecta acest profil. Apăsați „Restaurează scenariu test” sau folosiți parola artgranit2026.',
-      );
+      setError('Nu s-a putut deschide contul demo angajat. Apăsați din nou cardul.');
     }
   };
-
-  const renderProfileButton = (
-    profile: User,
-    card: { emoji: string; title: string; subtitle: string },
-  ) => (
-    <button
-      key={profile.id}
-      type="button"
-      disabled={submitting}
-      onClick={() => void quickLogin(profile)}
-      className="text-left rounded-xl transition-colors hover:ring-2 hover:ring-corporate-gold/40 disabled:opacity-60"
-      title={`Conectare: ${profile.email} · parolă demo`}
-    >
-      <OrgProfileCard
-        emoji={card.emoji}
-        title={card.title}
-        subtitle={card.subtitle}
-        name={profile.name}
-        email={profile.email}
-      />
-    </button>
-  );
 
   return (
     <div className="relative min-h-screen flex flex-col">
@@ -168,61 +143,20 @@ export function LoginPage() {
         <div className="mx-auto w-full space-y-4 @md:max-w-2xl @xl:max-w-screen-xl">
           <Card className="shadow-neural-lg border-corporate-border">
             <h2 className="text-lg font-semibold text-corporate-black mb-1">Autentificare</h2>
-            <p className="text-sm text-corporate-muted mb-4">Platformă internă artGRANIT</p>
-
-            <div className="mb-5 rounded-xl border border-corporate-gold/25 bg-corporate-gold-light/30 p-3 text-xs text-corporate-stone space-y-1.5">
-              <p>
-                <strong>Ierarhie acces:</strong> Administrator → creează profile HR → HR creează
-                angajați și acordă statut mentor temporar.
-              </p>
-              <p>
-                Apăsați un card — email și parolă demo se completează automat și vă conectați.
-              </p>
-            </div>
+            <p className="text-sm text-corporate-muted mb-4">
+              Apăsați cardul demo sau introduceți numele și parola.
+            </p>
 
             <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
-              Profile organizaționale
+              Cont demo (public)
             </p>
-            <div className="mb-5 grid gap-2 @md:grid-cols-2">
-              {admins.map((a) =>
-                renderProfileButton(a, {
-                  emoji: '⚙️',
-                  title: ROLE_LABELS.admin,
-                  subtitle: 'Acces complet · HR & setări',
-                }),
-              )}
-              {hrProfiles.map((h) =>
-                renderProfileButton(h, {
-                  emoji: '📋',
-                  title: ROLE_LABELS.hr,
-                  subtitle: 'Panou HR · angajați & evaluări',
-                }),
-              )}
+            <div className="mb-5">
+              <DemoAngajatCard disabled={submitting} onClick={() => void loginAsDemoAngajat()} />
             </div>
 
-            {tempProfiles.length > 0 && (
-              <>
-                <p className="text-xs font-semibold uppercase tracking-wide text-corporate-muted mb-2">
-                  Profile temporare (demo)
-                </p>
-                <div className="mb-5 grid gap-2 @md:grid-cols-2">
-                  {tempProfiles.map((p) =>
-                    renderProfileButton(p, {
-                      emoji: tempProfileEmoji(p),
-                      title: formatUserRoles(p),
-                      subtitle: tempProfileSubtitle(p),
-                    }),
-                  )}
-                </div>
-              </>
-            )}
-
-            {!hasOrgProfiles && tempProfiles.length === 0 && (
+            {leftoverProfiles && (
               <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <p className="font-medium">Nu apar profile demo în browserul curent.</p>
-                <p className="mt-1 text-amber-800">
-                  Apăsați butonul de mai jos sau introduceți manual un email din listă.
-                </p>
+                <p className="font-medium">Au mai rămas profile vechi în acest browser.</p>
                 <Button
                   type="button"
                   variant="secondary"
@@ -233,47 +167,19 @@ export function LoginPage() {
                     setProfileTick((t) => t + 1);
                   }}
                 >
-                  Restaurează scenariu test (1 angajat + supervizor + mentor)
+                  Restaurează demo angajat
                 </Button>
               </div>
             )}
 
-            <details className="mb-5 text-xs text-corporate-muted">
-              <summary className="cursor-pointer font-medium text-corporate-stone hover:text-corporate-dark">
-                Lista conturi demo (email + parolă)
-              </summary>
-              <ul className="mt-2 space-y-1 border-t border-corporate-border pt-2">
-                {DEMO_LOGIN_HINTS.map((h) => (
-                  <li key={h.email} className="flex flex-wrap gap-x-2 gap-y-0.5">
-                    <button
-                      type="button"
-                      className="text-corporate-gold hover:underline text-left"
-                      onClick={() => {
-                        setEmail(h.email);
-                        setPassword(DEFAULT_PLATFORM_PASSWORD);
-                        setError('');
-                      }}
-                    >
-                      {h.email}
-                    </button>
-                    <span>— {h.rol}</span>
-                  </li>
-                ))}
-                <li className="pt-1">
-                  Parolă pentru toate:{' '}
-                  <code className="text-corporate-dark">{DEFAULT_PLATFORM_PASSWORD}</code>
-                </li>
-              </ul>
-            </details>
-
             <form onSubmit={handleLogin} className="space-y-3">
               <Input
-                id="email"
-                label="Profil (email artGRANIT)"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@artgranit.ro"
+                id="nume"
+                label="Nume"
+                type="text"
+                value={nume}
+                onChange={(e) => setNume(e.target.value)}
+                placeholder="Nume"
                 required
                 autoComplete="username"
               />
@@ -295,8 +201,9 @@ export function LoginPage() {
             {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
 
             <p className="text-xs text-corporate-muted mt-4 border-t border-corporate-border pt-3">
-              Parolă demo (toate profilele):{' '}
-              <code className="text-corporate-dark">{DEFAULT_PLATFORM_PASSWORD}</code>
+              Demo: nume <code className="text-corporate-dark">{DEMO_NUME}</code>
+              {' · '}
+              parolă <code className="text-corporate-dark">{DEMO_ANGAJAT_PASSWORD}</code>
             </p>
           </Card>
 

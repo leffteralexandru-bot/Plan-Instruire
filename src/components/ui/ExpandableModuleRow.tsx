@@ -9,6 +9,8 @@ interface ExpandableModuleRowProps {
   expandedContent: ReactNode | null;
   /** Etichetă discretă deasupra zonei încastrate */
   expandLabel?: string;
+  /** Context deasupra butoanelor (ex. tipul de măsurare selectat) */
+  topHeader?: ReactNode;
 }
 
 export function ExpandableModuleRow({
@@ -17,6 +19,7 @@ export function ExpandableModuleRow({
   headers,
   expandedContent,
   expandLabel,
+  topHeader,
 }: ExpandableModuleRowProps) {
   const phoneLayout = usePhoneLayout();
   const gridCols =
@@ -40,6 +43,9 @@ export function ExpandableModuleRow({
 
   return (
     <div className="rounded-xl border border-corporate-border/90 bg-gradient-to-b from-corporate-surface/35 via-white to-white shadow-sm">
+      {topHeader ? (
+        <div className="border-b border-corporate-border/60 px-3 py-2.5 sm:px-4">{topHeader}</div>
+      ) : null}
       <div className={['grid gap-2 p-2 items-stretch @md:gap-3 @md:p-3', gridCols].join(' ')}>
         {headers.map((header, index) => (
           <div key={index} className="min-w-0 h-full flex flex-col">

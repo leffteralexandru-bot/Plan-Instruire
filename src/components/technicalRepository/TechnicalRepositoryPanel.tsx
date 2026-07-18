@@ -6,8 +6,8 @@ import {
   type TechnicalRepositorySection,
 } from '@/data/technicalRepository';
 import { useTechnicalRepository } from '@/hooks/useTechnicalRepository';
-import { TechnicalRepositoryCatalogSection } from '@/components/technicalRepository/TechnicalRepositoryCatalogSection';
-import { TechnicalRepositoryWarrantySection } from '@/components/technicalRepository/TechnicalRepositoryWarrantySection';
+import { TechnicalRepositoryProductsSection } from '@/components/technicalRepository/TechnicalRepositoryProductsSection';
+import { TechnicalRepositoryManualsSection } from '@/components/technicalRepository/TechnicalRepositoryManualsSection';
 
 type TechnicalRepositoryDisplay = 'inline' | 'header' | 'body';
 
@@ -55,8 +55,6 @@ function HubCard({
 }
 
 function TechnicalRepositoryContent({
-  userId,
-  readOnly,
   section,
   onSectionChange,
 }: {
@@ -67,6 +65,12 @@ function TechnicalRepositoryContent({
 }) {
   const data = useTechnicalRepository();
   const sectionMeta = section ? TECH_REPO_SECTIONS.find((s) => s.id === section) : null;
+  const [selectedManualId, setSelectedManualId] = useState<string | null>(null);
+
+  const handleSectionBack = () => {
+    setSelectedManualId(null);
+    onSectionChange(null);
+  };
 
   if (section) {
     return (
@@ -76,57 +80,48 @@ function TechnicalRepositoryContent({
             <p className="text-[10px] uppercase tracking-wide text-corporate-muted">Secțiune</p>
             <p className="text-sm font-semibold text-corporate-dark">{sectionMeta?.label}</p>
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={() => onSectionChange(null)}>
+          <Button type="button" variant="ghost" size="sm" onClick={handleSectionBack}>
             ← Înapoi la hub
           </Button>
         </div>
 
         {section === 'produse' && (
-          <TechnicalRepositoryCatalogSection
+          <TechnicalRepositoryProductsSection
             intro={data.productsIntro}
             items={data.products}
-            emptyLabel="HR va adăuga produse și fișe tehnice."
+            productManuals={data.productManuals}
           />
         )}
-        {section === 'materiale' && (
-          <TechnicalRepositoryCatalogSection
-            intro={data.materialsIntro}
-            items={data.materials}
-            emptyLabel="HR va adăuga standarde materiale."
-          />
-        )}
-        {section === 'garantie' && (
-          <TechnicalRepositoryWarrantySection
-            intro={data.warrantyIntro}
-            packs={data.warranty}
-            userId={userId}
-            readOnly={readOnly}
+        {section === 'manuale' && (
+          <TechnicalRepositoryManualsSection
+            intro={data.manualsIntro}
+            manuals={data.manuals}
+            emptyLabel="Nu există documente cu reguli producător încărcate încă."
+            selectedManualId={selectedManualId}
+            onSelectManual={setSelectedManualId}
+            onBack={() => setSelectedManualId(null)}
           />
         )}
       </div>
     );
   }
 
+  const sectionCounts: Record<TechnicalRepositorySection, number> = {
+    manuale: data.manuals.length,
+    produse: data.productManuals.length,
+  };
+
   return (
     <div className="grid gap-2 sm:grid-cols-1">
-      <HubCard
-        label={TECH_REPO_SECTIONS[0]!.label}
-        description={TECH_REPO_SECTIONS[0]!.description}
-        count={data.products.length}
-        onClick={() => onSectionChange('produse')}
-      />
-      <HubCard
-        label={TECH_REPO_SECTIONS[1]!.label}
-        description={TECH_REPO_SECTIONS[1]!.description}
-        count={data.materials.length}
-        onClick={() => onSectionChange('materiale')}
-      />
-      <HubCard
-        label={TECH_REPO_SECTIONS[2]!.label}
-        description={TECH_REPO_SECTIONS[2]!.description}
-        count={data.warranty.length}
-        onClick={() => onSectionChange('garantie')}
-      />
+      {TECH_REPO_SECTIONS.map((s) => (
+        <HubCard
+          key={s.id}
+          label={s.label}
+          description={s.description}
+          count={sectionCounts[s.id]}
+          onClick={() => onSectionChange(s.id)}
+        />
+      ))}
     </div>
   );
 }
@@ -143,7 +138,7 @@ export function TechnicalRepositoryPanel({
   const [section, setSection] = useState<TechnicalRepositorySection | null>(null);
 
   const expanded = display === 'header' ? !!expandedProp : expandedInternal;
-  const itemCount = data.products.length + data.materials.length + data.warranty.length;
+  const itemCount = data.productManuals.length + data.manuals.length;
 
   const handleToggle = () => {
     if (display === 'header') {
@@ -176,7 +171,7 @@ export function TechnicalRepositoryPanel({
       icon="chart"
       eyebrow="Documentație tehnică"
       title="Repository Tehnic"
-      subtitle="Produse · materiale · certificare garanție"
+      subtitle="Reguli producător · specificații produse"
       collapsible
       expanded={expanded}
       onToggle={handleToggle}
@@ -190,7 +185,7 @@ export function TechnicalRepositoryPanel({
       }
       collapsedPeek={
         <p className="text-sm text-corporate-muted">
-          Hub central — specificații produse, standarde materiale și certificare garanție.
+          Hub central — reguli producător pentru rezistență și garanție, specificații tehnice produse.
         </p>
       }
     >

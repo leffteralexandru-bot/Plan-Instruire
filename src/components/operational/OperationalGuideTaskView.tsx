@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
+import { useMemo, useState } from 'react';
+import { ExpandableModuleRow } from '@/components/ui/ExpandableModuleRow';
 import {
   OPERATIONAL_GUIDE_LABELS,
   type OperationalGuideTask,
 } from '@/data/operationalGuide';
-import { operationalGuideStore } from '@/lib/operationalGuideStore';
 import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
-import { OperationalGuideChecklist } from '@/components/operational/OperationalGuideChecklist';
-import { OperationalGuidePreMeasurementRules } from '@/components/operational/OperationalGuidePreMeasurementRules';
-import { PanelSubsection } from '@/components/ui/ProfessionalPanel';
-import { usePhoneLayout } from '@/hooks/usePhoneLayout';
+import { OperationalGuideEquipmentSection } from '@/components/operational/OperationalGuideEquipmentSection';
+import {
+  OperationalGuidePreDesignRules,
+  OperationalGuidePreMeasurementRules,
+} from '@/components/operational/OperationalGuidePreMeasurementRules';
+import { OperationalGuideStepsSection } from '@/components/operational/OperationalGuideStepsSection';
+import { OperationalGuideToggleTile } from '@/components/operational/OperationalGuideToggleTile';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -18,102 +19,135 @@ interface OperationalGuideTaskViewProps {
   readOnly?: boolean;
 }
 
-export function OperationalGuideTaskView({ task, userId, readOnly = false }: OperationalGuideTaskViewProps) {
-  const phoneLayout = usePhoneLayout();
-  const [equipChecked, setEquipChecked] = useState<boolean[]>(() =>
-    operationalGuideStore.getEquipmentChecklist(userId, task.id),
+type ActiveGuide = 'measurer' | 'design';
+
+function MeasurerGuideBody({ task, label }: { task: OperationalGuideTask; label: string }) {
+  return (
+    <div className="space-y-2">
+      <OperationalGuidePreMeasurementRules
+        conditions={task.preMeasurementConditions}
+        categoryLabel={label}
+        defaultExpanded={false}
+        pdfUrl={task.checklistPdfUrl}
+        pdfFileName={task.checklistPdfFileName}
+        pageImageUrl={task.checklistPageImageUrl}
+      />
+      <OperationalGuideEquipmentSection
+        items={task.equipment}
+        defaultExpanded={false}
+        pdfUrl={task.equipmentPdfUrl}
+        pdfFileName={task.equipmentPdfFileName}
+        pageImageUrl={task.equipmentPageImageUrl}
+      />
+      <OperationalGuideStepsSection
+        taskId={task.id}
+        steps={task.steps}
+        defaultExpanded={false}
+        pdfUrl={task.stepsPdfUrl}
+        pdfFileName={task.stepsPdfFileName}
+        pageImageUrl={task.stepsPageImageUrl}
+      />
+      <OperationalGuideVideo url={task.videoUrl} title={task.videoTitle} />
+    </div>
   );
+}
 
-  useEffect(() => {
-    setEquipChecked(operationalGuideStore.getEquipmentChecklist(userId, task.id));
-  }, [userId, task.id, task.equipment.length]);
+function DesignGuideBody({ task, label }: { task: OperationalGuideTask; label: string }) {
+  return (
+    <div className="space-y-2">
+      <OperationalGuidePreDesignRules
+        conditions={task.preDesignConditions ?? []}
+        categoryLabel={label}
+        defaultExpanded={false}
+      />
+      <OperationalGuideStepsSection
+        taskId={`design-${task.id}`}
+        steps={task.designSteps ?? []}
+        defaultExpanded={false}
+        eyebrow="La birou"
+        title="Pași de proiectare"
+        subtitle="Ordinea la proiectare — adaptată tipului selectat (diferită de pașii pe teren)."
+        emptyMessage="Pașii de proiectare vor fi adăugați separat — diferiți de pașii de măsurare."
+      />
+    </div>
+  );
+}
 
-  const toggleEquip = (index: number) => {
-    if (readOnly) return;
-    setEquipChecked(
-      operationalGuideStore.setEquipmentChecklistItem(
-        userId,
-        task.id,
-        index,
-        !equipChecked[index],
-        task.equipment.length,
-      ),
-    );
-  };
-
+function OperationalGuideTaskContextHeader({ task }: { task: OperationalGuideTask }) {
   const label = OPERATIONAL_GUIDE_LABELS[task.id];
 
   return (
+    <p className="text-[11px] sm:text-xs text-corporate-muted leading-snug">
+      Ghidurile <span className="font-medium text-corporate-dark">Măsurare</span> și{' '}
+      <span className="font-medium text-corporate-dark">Proiectare</span>:{' '}
+      <span className="font-semibold text-corporate-dark">{label}</span>
+    </p>
+  );
+}
+
+export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps) {
+  const label = OPERATIONAL_GUIDE_LABELS[task.id];
+  const [active, setActive] = useState<ActiveGuide | null>(null);
+
+  const toggle = (id: ActiveGuide) => {
+    setActive((current) => (current === id ? null : id));
+  };
+
+  const modules = useMemo(
+    () => [
+      {
+        id: 'measurer' as const,
+        header: (
+          <OperationalGuideToggleTile
+            eyebrow="Ghid măsurător"
+            actionLabel="Măsurare"
+            categoryLabel={label}
+            mobileLabel="Masurare"
+            expanded={active === 'measurer'}
+            onToggle={() => toggle('measurer')}
+            ariaLabel={`Ghid măsurător — Măsurare ${label}`}
+          />
+        ),
+        body: <MeasurerGuideBody task={task} label={label} />,
+      },
+      {
+        id: 'design' as const,
+        header: (
+          <OperationalGuideToggleTile
+            eyebrow="Ghid Proiectare"
+            actionLabel="Proiectare"
+            categoryLabel={label}
+            mobileLabel="Proiectare"
+            expanded={active === 'design'}
+            onToggle={() => toggle('design')}
+            ariaLabel={`Ghid Proiectare — Proiectare ${label}`}
+          />
+        ),
+        body: <DesignGuideBody task={task} label={label} />,
+      },
+    ],
+    [active, label, task],
+  );
+
+  const activeIndex = active !== null ? modules.findIndex((m) => m.id === active) : null;
+  const activeModule = active !== null ? modules.find((m) => m.id === active) : null;
+
+  return (
     <div className="space-y-4">
-      <div>
-        <div className="flex flex-wrap items-center gap-2 mb-1">
-          <h3 className="text-lg font-semibold text-corporate-dark">Măsurare {label}</h3>
-          {task.categorySubtitle && <Badge variant="default">{task.categorySubtitle}</Badge>}
-        </div>
-        {!phoneLayout &&
-          (task.introText ? (
-            <p className="text-sm text-corporate-muted mt-1 leading-relaxed whitespace-pre-wrap">{task.introText}</p>
-          ) : (
-            <p className="text-sm text-corporate-muted mt-1 italic">
-              Citiți regulile obligatorii înainte de a confirma deplasarea la șantier.
-            </p>
-          ))}
-        {task.updatedAt && (
-          <p className="text-[10px] text-corporate-muted mt-2">
-            Actualizat {new Date(task.updatedAt).toLocaleDateString('ro-RO')}
-            {task.updatedByName ? ` · ${task.updatedByName}` : ''}
-          </p>
-        )}
-      </div>
+      {task.updatedAt && (
+        <p className="text-[10px] text-corporate-muted">
+          Actualizat {new Date(task.updatedAt).toLocaleDateString('ro-RO')}
+          {task.updatedByName ? ` · ${task.updatedByName}` : ''}
+        </p>
+      )}
 
-      <OperationalGuidePreMeasurementRules
-        key={task.id}
-        conditions={task.preMeasurementConditions}
-        categoryLabel={task.categorySubtitle}
-        defaultExpanded={false}
+      <ExpandableModuleRow
+        columnCount={2}
+        activeColumnIndex={activeIndex !== null && activeIndex >= 0 ? activeIndex : null}
+        topHeader={<OperationalGuideTaskContextHeader task={task} />}
+        headers={modules.map((m) => m.header)}
+        expandedContent={activeModule?.body ?? null}
       />
-
-      <PanelSubsection label="Echipament necesar">
-        <OperationalGuideChecklist
-          items={task.equipment}
-          checked={equipChecked}
-          onToggle={toggleEquip}
-          readOnly={readOnly}
-          emptyMessage="Lista de echipament va fi adăugată de HR."
-        />
-        {!readOnly && task.equipment.length > 0 && (
-          <p className="text-[10px] text-corporate-muted mt-2">
-            Bifă echipamentul pregătit — salvat local pe dispozitiv, util pe teren.
-          </p>
-        )}
-      </PanelSubsection>
-
-      <PanelSubsection label="Pași de măsurare">
-        {task.steps.length === 0 ? (
-          <Card padding="sm" className="border-dashed bg-corporate-surface/40">
-            <p className="text-sm text-corporate-muted">Pașii vor fi adăugați de HR.</p>
-          </Card>
-        ) : (
-          <ol className="space-y-2 list-none">
-            {task.steps.map((step, index) => (
-              <li
-                key={`${task.id}-step-${index}`}
-                className="flex gap-3 rounded-xl border border-corporate-border bg-white px-4 py-3"
-              >
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-corporate-gold/15 text-xs font-bold text-amber-900"
-                  aria-hidden
-                >
-                  {index + 1}
-                </span>
-                <p className="text-sm text-corporate-dark leading-relaxed pt-0.5">{step}</p>
-              </li>
-            ))}
-          </ol>
-        )}
-      </PanelSubsection>
-
-      <OperationalGuideVideo url={task.videoUrl} title={task.videoTitle} />
     </div>
   );
 }

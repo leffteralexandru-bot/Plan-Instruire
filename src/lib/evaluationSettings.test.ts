@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PLATFORM_SETTINGS_ADMIN_EMAIL, PLATFORM_SETTINGS_ADMIN_ID } from '@/lib/platformSettingsAdmin';
+import {
+  PLATFORM_SETTINGS_ADMIN_EMAIL,
+  PLATFORM_SETTINGS_ADMIN_ID,
+  PLATFORM_SETTINGS_ADMIN_NAME,
+} from '@/lib/platformSettingsAdmin';
 import {
   DEFAULT_EVALUATION_CYCLE_DAYS,
   getDefaultEvaluationSettings,
@@ -9,7 +13,11 @@ import {
   saveEvaluationSettings,
 } from '@/lib/evaluationSettings';
 
-const alex = { id: PLATFORM_SETTINGS_ADMIN_ID, name: 'Alex', email: PLATFORM_SETTINGS_ADMIN_EMAIL };
+const owner = {
+  id: PLATFORM_SETTINGS_ADMIN_ID,
+  name: PLATFORM_SETTINGS_ADMIN_NAME,
+  email: PLATFORM_SETTINGS_ADMIN_EMAIL,
+};
 
 const ls: Record<string, string> = {};
 
@@ -37,20 +45,20 @@ describe('evaluationSettings', () => {
   });
 
   it('salvează și citește ciclul de zile', () => {
-    saveEvaluationSettings({ cycleDays: 120 }, alex);
+    saveEvaluationSettings({ cycleDays: 120 }, owner);
     expect(getEvaluationCycleDays()).toBe(120);
   });
 
   it('limitează ciclul între 30 și 365 zile', () => {
-    saveEvaluationSettings({ cycleDays: 10 }, alex);
+    saveEvaluationSettings({ cycleDays: 10 }, owner);
     expect(getEvaluationCycleDays()).toBe(30);
-    saveEvaluationSettings({ cycleDays: 999 }, alex);
+    saveEvaluationSettings({ cycleDays: 999 }, owner);
     expect(getEvaluationCycleDays()).toBe(365);
   });
 
   it('resetează la valorile implicite', () => {
-    saveEvaluationSettings({ cycleDays: 60 }, alex);
-    resetEvaluationSettings(alex);
+    saveEvaluationSettings({ cycleDays: 60 }, owner);
+    resetEvaluationSettings(owner);
     expect(getEvaluationCycleDays()).toBe(getDefaultEvaluationSettings().cycleDays);
   });
 
@@ -60,6 +68,6 @@ describe('evaluationSettings', () => {
         { cycleDays: 120 },
         { id: 'u-hr', name: 'Elena', email: 'e.vasilescu@artgranit.ro' },
       ),
-    ).toThrow(/Alex/i);
+    ).toThrow(new RegExp(PLATFORM_SETTINGS_ADMIN_NAME, 'i'));
   });
 });

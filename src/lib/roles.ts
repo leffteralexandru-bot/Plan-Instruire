@@ -103,7 +103,7 @@ export function canViewAllTrainees(user: Pick<User, 'roles'> | null | undefined)
   return hasAnyRole(user, ['admin', 'hr']);
 }
 
-/** Doar Alex (cont dedicat) editează planul, evaluarea și conținutul din Setări HR */
+/** Doar contul dedicat (owner) editează planul, evaluarea și conținutul din Setări */
 export function canEditTrainingPlan(
   user: Pick<User, 'id'> & Partial<Pick<User, 'email'>> | null | undefined,
 ): boolean {
@@ -139,7 +139,8 @@ export function canCreateRoles(actor: Pick<User, 'roles'> | null | undefined, ta
   if (!actor || !targetRoles.length) return false;
   const targets = normalizeRoles(targetRoles);
   if (hasRole(actor, 'admin')) {
-    return targets.every((r) => r === 'hr');
+    // Admin = aceleași drepturi ca HR + poate crea și profile HR
+    return targets.every((r) => r === 'hr' || r === 'angajat' || r === 'mentor');
   }
   if (hasRole(actor, 'hr')) {
     return targets.every((r) => r === 'angajat' || r === 'mentor');

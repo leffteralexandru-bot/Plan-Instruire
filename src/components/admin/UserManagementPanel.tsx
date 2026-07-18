@@ -30,7 +30,7 @@ function buildStaffRoles(orgRole: StaffRole, grantMentor: boolean): UserRole[] {
   return grantMentor ? ['angajat', 'mentor'] : ['angajat'];
 }
 
-/** Administrator — creează doar profile HR */
+/** Administrator — creează profile HR (și poate forma angajați ca HR) */
 function AdminHrSection() {
   const { users, createUser, updateUser } = useUsers();
   const [name, setName] = useState('');
@@ -65,8 +65,8 @@ function AdminHrSection() {
     <Card>
       <h2 className="text-lg font-semibold text-corporate-dark mb-1">Gestionare profile HR</h2>
       <p className="text-sm text-corporate-muted mb-4">
-        Ca <strong>Administrator</strong>, creați profile pentru <strong>Resurse Umane</strong>.
-        HR va forma apoi angajații, mentorii și înscrierile la instruire.
+        Ca <strong>Administrator</strong>, puteți crea profile <strong>Resurse Umane</strong> și, mai jos,
+        formați angajații la fel ca HR.
       </p>
 
       <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-2 mb-6">
@@ -450,7 +450,7 @@ function HrStaffSection() {
                 repoOpen ? 'text-white/60' : 'text-corporate-muted/80',
               ].join(' ')}
             >
-              Produse · materiale · garanție
+              Reguli producător · specificații produse
             </span>
           </button>
           <button
@@ -646,7 +646,7 @@ export function UserManagementPanel() {
   return (
     <div className="space-y-6">
       {isAdmin && <AdminHrSection />}
-      {isHr && <HrStaffSection />}
+      {(isHr || isAdmin) && <HrStaffSection />}
     </div>
   );
 }

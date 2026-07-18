@@ -94,7 +94,9 @@ export function AngajatPanelPage() {
           </p>
           <ul className="mt-4 text-sm text-corporate-muted space-y-2 list-disc list-inside">
             <li>Pentru a vedea panoul unui inginer: deschideți fișa din Panou HR → Angajați.</li>
-            <li>Pentru test rapid: autentificați-vă cu <strong>angajat@artgranit.ro</strong>.</li>
+            <li>
+              Pentru test rapid: autentificați-vă cu numele <strong>Angajat</strong>.
+            </li>
           </ul>
           <div className="flex flex-wrap gap-2 mt-5">
             {canAccessAdmin && (

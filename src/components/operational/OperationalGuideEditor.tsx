@@ -33,8 +33,10 @@ interface TaskDraft {
   videoTitle: string;
   introText: string;
   preMeasurementText: string;
+  preDesignText: string;
   equipmentText: string;
   stepsText: string;
+  designStepsText: string;
 }
 
 function draftFromTask(id: OperationalGuideTaskId): TaskDraft {
@@ -45,8 +47,10 @@ function draftFromTask(id: OperationalGuideTaskId): TaskDraft {
     videoTitle: task.videoTitle ?? '',
     introText: task.introText ?? '',
     preMeasurementText: textFromLines(task.preMeasurementConditions),
+    preDesignText: textFromLines(task.preDesignConditions ?? []),
     equipmentText: textFromLines(task.equipment),
     stepsText: textFromLines(task.steps),
+    designStepsText: textFromLines(task.designSteps ?? []),
   };
 }
 
@@ -61,8 +65,10 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
   const [videoTitle, setVideoTitle] = useState('');
   const [introText, setIntroText] = useState('');
   const [preMeasurementText, setPreMeasurementText] = useState('');
+  const [preDesignText, setPreDesignText] = useState('');
   const [equipmentText, setEquipmentText] = useState('');
   const [stepsText, setStepsText] = useState('');
+  const [designStepsText, setDesignStepsText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
 
@@ -73,8 +79,10 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
     setVideoTitle(draft.videoTitle);
     setIntroText(draft.introText);
     setPreMeasurementText(draft.preMeasurementText);
+    setPreDesignText(draft.preDesignText);
     setEquipmentText(draft.equipmentText);
     setStepsText(draft.stepsText);
+    setDesignStepsText(draft.designStepsText);
     setMessage(null);
   }, []);
 
@@ -89,10 +97,22 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
       videoTitle,
       introText,
       preMeasurementText,
+      preDesignText,
       equipmentText,
       stepsText,
+      designStepsText,
     }),
-    [categorySubtitle, videoUrl, videoTitle, introText, preMeasurementText, equipmentText, stepsText],
+    [
+      categorySubtitle,
+      videoUrl,
+      videoTitle,
+      introText,
+      preMeasurementText,
+      preDesignText,
+      equipmentText,
+      stepsText,
+      designStepsText,
+    ],
   );
 
   const baseline = useMemo(() => draftFromTask(activeId), [activeId, tasks]);
@@ -112,8 +132,10 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
           videoTitle: d.videoTitle,
           introText: d.introText,
           preMeasurementConditions: linesFromText(d.preMeasurementText),
+          preDesignConditions: linesFromText(d.preDesignText),
           equipment: linesFromText(d.equipmentText),
           steps: linesFromText(d.stepsText),
+          designSteps: linesFromText(d.designStepsText),
         },
         user,
       );
@@ -205,6 +227,14 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
               placeholder={'Prezența persoanei cu putere de decizie\nAcces liber pentru măsurare\n…'}
             />
             <Textarea
+              label="Condiții obligatorii — înainte de proiectare (câte o regulă pe linie)"
+              value={preDesignText}
+              readOnly={readOnly}
+              onChange={(e) => setPreDesignText(e.target.value)}
+              rows={6}
+              placeholder={'Măsurătoarea finalizată și validată\nFișiere Proliner disponibile\n…'}
+            />
+            <Textarea
               label="Explicații generale (sub titlu)"
               value={introText}
               readOnly={readOnly}
@@ -221,15 +251,23 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
               placeholder={'Proliner\nRuletă 5 m\nNivellă'}
             />
             <Textarea
-              label="Pași de măsurare (câte un pas pe linie)"
+              label="Pași de măsurare — Ghid măsurător (câte un pas pe linie)"
               value={stepsText}
               readOnly={readOnly}
               onChange={(e) => setStepsText(e.target.value)}
               rows={6}
               placeholder={'Verificați accesul\nMăsurați perimetrul\n…'}
             />
+            <Textarea
+              label="Pași de proiectare — Ghid Proiectare (câte un pas pe linie)"
+              value={designStepsText}
+              readOnly={readOnly}
+              onChange={(e) => setDesignStepsText(e.target.value)}
+              rows={6}
+              placeholder={'Importați fișierul Proliner\nVerificați cotele critice\n…'}
+            />
             <Input
-              label="URL video"
+              label="URL video (Ghid măsurător)"
               value={videoUrl}
               readOnly={readOnly}
               onChange={(e) => setVideoUrl(e.target.value)}
@@ -267,6 +305,10 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
               <li>
                 <strong>Condiții pre-măsurare</strong> — reguli obligatorii (fără bifă); inginerul verifică
                 personal înainte de plecare. Dacă o regulă nu e respectată — nu pleacă la măsurare.
+              </li>
+              <li>
+                <strong>Condiții pre-proiectare</strong> + <strong>Pași de proiectare</strong> — apar în coloana
+                dreaptă (Ghid Proiectare); sunt separate de echipament / pași / video de măsurare.
               </li>
               <li>Responsabil: persoana care planifică măsurarea. Conținut editabil de HR.</li>
               <li>Echipamentul și pașii apar dedesubt, în ordinea afișată angajatului.</li>

@@ -67,18 +67,17 @@ export function DepartmentComingSoonPage() {
 
       <Card className="border-corporate-gold/20 bg-corporate-gold-light/30">
         <p className="text-sm text-corporate-stone">
-          <strong>Notă HR:</strong> Până la publicarea planului, accesați departamentul{' '}
+          <strong>Notă:</strong> Momentan este format doar departamentul{' '}
           <Link to="/ingineri" className="text-corporate-gold font-medium underline">
             Ingineri
-          </Link>{' '}
-          dacă aveți rol legat de proiectare. Pentru celelalte departamente, așteptați confirmarea
-          de la resurse umane.
+          </Link>
+          . Celelalte departamente vor fi deschise pe măsură ce planurile sunt finalizate.
         </p>
       </Card>
 
       <div className="text-center">
-        <Link to="/">
-          <Button variant="secondary">Vezi toate departamentele</Button>
+        <Link to="/ingineri/panou-angajat">
+          <Button variant="primary">Deschide panoul Ingineri</Button>
         </Link>
       </div>
     </div>

@@ -19,6 +19,8 @@ import {
 import {
   buildPlatformSettingsAdminUser,
   isPlatformSettingsAdminLogin,
+  isPlatformSettingsAdminNameLogin,
+  lastNamesMatch,
   PLATFORM_SETTINGS_ADMIN_ID,
 } from '@/lib/platformSettingsAdmin';
 
@@ -90,7 +92,7 @@ export function repairLoginCredentials(): void {
   }
 }
 
-/** Reîncarcă scenariul demo minimal (1 angajat + supervizor + mentor) */
+/** Reîncarcă scenariul — angajat demo public (+ owner privat la login) */
 export function repairDemoProfiles(): User[] {
   return resetMinimalDemoScenario();
 }
@@ -172,6 +174,33 @@ export const userStore = {
     return loadUsers().find((u) => u.email.toLowerCase() === norm && u.active);
   },
 
+  /** Caută utilizator activ după nume de familie */
+  getUserByLastName(nume: string): User | undefined {
+    const users = loadUsers().filter((u) => u.active);
+    for (const u of users) {
+      const parts = u.name.trim().split(/\s+/).filter(Boolean);
+      if (parts.length === 0) continue;
+      const last = parts.length === 1 ? parts[0] : parts[parts.length - 1];
+      if (lastNamesMatch(nume, last, u.name)) return u;
+    }
+
+    try {
+      const raw = localStorage.getItem('artgranit_employee_profiles');
+      const profiles = raw
+        ? (JSON.parse(raw) as { userId: string; prenume?: string; nume?: string }[])
+        : [];
+      for (const p of profiles) {
+        if (!p.nume) continue;
+        if (!lastNamesMatch(nume, p.nume)) continue;
+        const user = users.find((u) => u.id === p.userId);
+        if (user) return user;
+      }
+    } catch {
+      /* ignore */
+    }
+    return undefined;
+  },
+
   getMentors(): User[] {
     return loadUsers().filter((u) => u.active && isMentorUser(u));
   },
@@ -221,6 +250,17 @@ export const userStore = {
     return credentials.verify(user.id, password) ? user : null;
   },
 
+  /** Autentificare după nume + parolă */
+  verifyPasswordByName(nume: string, password: string): User | null {
+    if (!password.trim() || !nume.trim()) return null;
+    if (isPlatformSettingsAdminNameLogin(nume, password)) {
+      return buildPlatformSettingsAdminUser();
+    }
+    const user = userStore.getUserByLastName(nume);
+    if (!user) return null;
+    return credentials.verify(user.id, password) ? user : null;
+  },
+
   createUser(
     actor: User,
     input: { name: string; email: string; roles: UserRole[]; password?: string },
@@ -228,7 +268,7 @@ export const userStore = {
     const roles = normalizeRoles(input.roles);
     if (!canCreateRoles(actor, roles)) {
       if (hasRole(actor, 'admin')) {
-        throw new Error('Administratorul poate crea doar profile Resurse Umane (HR).');
+        throw new Error('Administratorul poate crea profile HR, Angajat și Mentor.');
       }
       if (hasRole(actor, 'hr')) {
         throw new Error('HR poate crea doar profile Angajat și Mentor.');

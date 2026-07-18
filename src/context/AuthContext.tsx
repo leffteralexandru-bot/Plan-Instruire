@@ -36,7 +36,7 @@ interface AuthContextValue {
   canAccessMentor: boolean;
   canManageSettings: boolean;
   supabaseAuth: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (nume: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   demoUsers: User[];
   refreshUser: () => void;
@@ -80,8 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (email: string, password?: string) => {
-    if (!password?.trim()) return false;
+  const login = useCallback(async (nume: string, password?: string) => {
+    if (!password?.trim() || !nume.trim()) return false;
 
     const finishLogin = async (found: User) => {
       storage.setAuth(found);
@@ -91,18 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     if (isSupabaseAuthEnabled()) {
-      const cloudOk = await signInWithSupabaseAuth(email, password);
-      if (cloudOk) {
-        const cloudUser = userStore.getUserByEmail(email);
-        if (cloudUser) return finishLogin(cloudUser);
+      const localUser = userStore.verifyPasswordByName(nume, password);
+      if (localUser) {
+        const cloudOk = await signInWithSupabaseAuth(localUser.email, password);
+        if (cloudOk || localUser) return finishLogin(localUser);
       }
-      // Cont demo local / Alex — parolă verificată în browser (fără cont Supabase Auth)
-      const localUser = userStore.verifyPassword(email, password);
-      if (localUser) return finishLogin(localUser);
       return false;
     }
 
-    const localUser = userStore.verifyPassword(email, password);
+    const localUser = userStore.verifyPasswordByName(nume, password);
     if (!localUser) return false;
     return finishLogin(localUser);
   }, []);

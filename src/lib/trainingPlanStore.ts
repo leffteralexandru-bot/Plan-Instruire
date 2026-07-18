@@ -2,6 +2,7 @@ import type { DepartmentId } from '@/data/departments';
 import type { DayPlan, DayPlanOverride, Material, Task, User, WeekPlan } from '@/types';
 import { TRAINING_PLAN as STATIC_PLAN, ALL_DAYS as STATIC_DAYS } from '@/data/trainingPlan';
 import { canEditTrainingPlan } from '@/lib/roles';
+import { PLATFORM_SETTINGS_ADMIN_NAME } from '@/lib/platformSettingsAdmin';
 
 const OVERRIDES_KEY = 'artgranit_training_plan_overrides';
 
@@ -58,7 +59,7 @@ export const trainingPlanStore = {
     actor: Pick<User, 'id' | 'name' | 'roles'>,
   ): DayPlanOverride {
     if (!canEditTrainingPlan(actor)) {
-      throw new Error('Doar Alex poate modifica planul de instruire.');
+      throw new Error(`Doar ${PLATFORM_SETTINGS_ADMIN_NAME} poate modifica planul de instruire.`);
     }
     const overrides = trainingPlanStore.getOverrides();
     const idx = overrides.findIndex((o) => o.dayId === dayId);

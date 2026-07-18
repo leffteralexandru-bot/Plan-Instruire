@@ -12,6 +12,7 @@ import { trainingPlanStore } from '@/lib/trainingPlanStore';
 import { TRAINING_PLAN as STATIC_PLAN } from '@/data/trainingPlan';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { AutoSaveStatusText } from '@/components/shared/AutoSaveIndicator';
+import { PLATFORM_SETTINGS_ADMIN_NAME } from '@/lib/platformSettingsAdmin';
 
 function inferMaterialType(file: File): Material['type'] {
   const name = file.name.toLowerCase();
@@ -470,7 +471,7 @@ export function TrainingPlanEditor({ embedded }: { embedded?: boolean } = {}) {
           {readOnly ? (
             <>
               Vizualizare plan instruire — deschideți săptămânile și zilele pentru a consulta conținutul.
-              Modificările se fac doar din contul Alex.
+              Modificările se fac doar din contul {PLATFORM_SETTINGS_ADMIN_NAME}.
             </>
           ) : (
             <>
