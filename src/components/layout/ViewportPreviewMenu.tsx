@@ -14,9 +14,11 @@ import {
 } from '@/lib/responsiveLayout';
 
 const PREVIEW_MODES = ['mobile', 'tablet', 'laptop', 'desktop'] as const;
+/** Pe telefon real — doar aceste tipuri */
+const PHONE_PREVIEW_MODES = ['mobile'] as const;
 
 const MODE_HINTS: Record<ViewportPreviewMode, string> = {
-  auto: 'Auto — lățime nativă (telefon)',
+  auto: 'Auto — lățime nativă a ecranului',
   mobile: `Mobil · ${VIEWPORT_PREVIEW_WIDTHS.mobile}px`,
   tablet: `Tabletă · ${VIEWPORT_PREVIEW_WIDTHS.tablet}px`,
   laptop: `Laptop · ${VIEWPORT_PREVIEW_WIDTHS.laptop}px`,
@@ -143,20 +145,13 @@ export function ViewportPreviewMenu({
     ? 'bg-corporate-gold/15 text-corporate-gold ring-1 ring-corporate-gold/40'
     : 'bg-corporate-gold-light text-corporate-black ring-1 ring-corporate-gold/50';
 
-  const triggerLabel = phoneLayoutLocked ? 'AUTO' : isAuto ? 'AUTO' : VIEWPORT_PREVIEW_LABELS[mode];
+  const triggerLabel = isAuto
+    ? 'AUTO'
+    : mode === 'mobile'
+      ? 'Mobil'
+      : VIEWPORT_PREVIEW_LABELS[mode];
 
-  if (phoneLayoutLocked && isBottomNav) {
-    return (
-      <div
-        className="flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 px-0.5 text-corporate-gold"
-        title={MODE_HINTS.auto}
-        aria-label={MODE_HINTS.auto}
-      >
-        <ViewportModeIcon mode="mobile" className="h-4 w-4" />
-        <span className="text-[8px] font-semibold uppercase leading-none tracking-[0.08em]">AUTO</span>
-      </div>
-    );
-  }
+  const visibleModes = phoneLayoutLocked ? PHONE_PREVIEW_MODES : PREVIEW_MODES;
 
   return (
     <div ref={rootRef} className="relative">
@@ -166,7 +161,7 @@ export function ViewportPreviewMenu({
           isBottomNav
             ? [
                 'flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded px-0.5 transition-colors',
-                isAuto ? 'text-corporate-gold' : 'text-white/55',
+                isAuto || mode === 'mobile' ? 'text-corporate-gold' : 'text-white/55',
               ].join(' ')
             : isDots
               ? [
@@ -188,7 +183,7 @@ export function ViewportPreviewMenu({
                       ? 'bg-white/10 text-white ring-1 ring-white/10'
                       : 'bg-corporate-surface text-corporate-stone ring-1 ring-corporate-border'
                     : '',
-                  isAuto ? 'text-corporate-gold' : '',
+                  isAuto || mode === 'mobile' ? 'text-corporate-gold' : '',
                 ].join(' ')
         }
         aria-expanded={open}
@@ -200,7 +195,7 @@ export function ViewportPreviewMenu({
       >
         {isBottomNav ? (
           <>
-            {isAuto ? (
+            {isAuto || mode === 'mobile' ? (
               <ViewportModeIcon mode="mobile" className="h-4 w-4" />
             ) : (
               <ViewportModeIcon mode={mode} className="h-4 w-4" />
@@ -245,28 +240,27 @@ export function ViewportPreviewMenu({
               AUTO
             </button>
 
-            {!phoneLayoutLocked &&
-              PREVIEW_MODES.map((previewMode) => (
-                <button
-                  key={previewMode}
-                  type="button"
-                  role="option"
-                  aria-selected={mode === previewMode}
-                  aria-label={VIEWPORT_PREVIEW_LABELS[previewMode]}
-                  title={MODE_HINTS[previewMode]}
-                  className={[
-                    'flex items-center justify-center rounded-md transition-colors',
-                    isDots ? VIEWPORT_DOTS_PANEL_OPTION : 'h-7 w-7',
-                    mode === previewMode ? optionActive : optionBase,
-                  ].join(' ')}
-                  onClick={() => select(previewMode)}
-                >
-                  <ViewportModeIcon
-                    mode={previewMode}
-                    className={isDots ? VIEWPORT_DOTS_ICON : 'h-3.5 w-3.5'}
-                  />
-                </button>
-              ))}
+            {visibleModes.map((previewMode) => (
+              <button
+                key={previewMode}
+                type="button"
+                role="option"
+                aria-selected={mode === previewMode}
+                aria-label={VIEWPORT_PREVIEW_LABELS[previewMode]}
+                title={MODE_HINTS[previewMode]}
+                className={[
+                  'flex items-center justify-center rounded-md transition-colors',
+                  isDots ? VIEWPORT_DOTS_PANEL_OPTION : 'h-7 w-7',
+                  mode === previewMode ? optionActive : optionBase,
+                ].join(' ')}
+                onClick={() => select(previewMode)}
+              >
+                <ViewportModeIcon
+                  mode={previewMode}
+                  className={isDots ? VIEWPORT_DOTS_ICON : 'h-3.5 w-3.5'}
+                />
+              </button>
+            ))}
           </div>
         </div>
       )}

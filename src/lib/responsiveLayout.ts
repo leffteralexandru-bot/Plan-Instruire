@@ -80,13 +80,7 @@ export const BAR_NAV_LABEL =
   'w-full text-center text-[10px] font-medium leading-snug @md:text-xs';
 
 export const BAR_NAV_LABEL_DEPT =
-  'dept-nav-label w-full text-center leading-tight break-words';
-
-export const BAR_NAV_LABEL_DEPT_MOBILE =
-  'dept-nav-label--mobile @md:hidden break-normal';
-
-export const BAR_NAV_LABEL_DEPT_DESKTOP =
-  'dept-nav-label--desktop hidden @md:inline font-medium line-clamp-1 @md:text-xs @md:leading-snug @md:uppercase @md:tracking-[0.12em] @lg:text-sm';
+  'dept-nav-label w-full text-center leading-tight';
 
 export const BAR_NAV_INACTIVE = 'text-white/80 hover:text-white';
 

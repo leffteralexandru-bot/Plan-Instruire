@@ -13,13 +13,13 @@ import {
 } from '@/lib/responsiveLayout';
 
 const STORAGE_KEY = 'artgranit-viewport-preview';
-const PHONE_QUERY = '(max-width: 767px)';
 
 interface ViewportPreviewContextValue {
   mode: ViewportPreviewMode;
   setMode: (mode: ViewportPreviewMode) => void;
   frameWidth: number | null;
   isSimulated: boolean;
+  /** Telefon fizic (iPhone / Android phone) — nu fereastră îngustă pe PC */
   isRealMobile: boolean;
   phoneLayoutLocked: boolean;
 }
@@ -35,34 +35,24 @@ function readStoredMode(): ViewportPreviewMode {
   return 'auto';
 }
 
-function readRealMobile(): boolean {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia(PHONE_QUERY).matches;
+/** Doar dispozitiv mobil real — NU panoul îngust din Cursor / browser pe PC */
+function readRealPhoneDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/iPhone|iPod/i.test(ua)) return true;
+  if (/Android/i.test(ua) && /Mobile/i.test(ua)) return true;
+  if (/webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua)) return true;
+  return false;
 }
 
 export function ViewportPreviewProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ViewportPreviewMode>(readStoredMode);
-  const [isRealMobile, setIsRealMobile] = useState(readRealMobile);
-
-  useEffect(() => {
-    const mq = window.matchMedia(PHONE_QUERY);
-    const onChange = () => {
-      const mobile = mq.matches;
-      setIsRealMobile(mobile);
-      if (mobile) setModeState('auto');
-    };
-    onChange();
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  useEffect(() => {
-    if (isRealMobile) setModeState('auto');
-  }, [isRealMobile]);
+  const [isRealMobile] = useState(readRealPhoneDevice);
 
   const setMode = useCallback(
     (next: ViewportPreviewMode) => {
-      if (isRealMobile) {
+      // Pe telefon fizic: doar Auto + Mobil
+      if (isRealMobile && next !== 'auto' && next !== 'mobile') {
         setModeState('auto');
         localStorage.removeItem(STORAGE_KEY);
         return;
@@ -76,6 +66,13 @@ export function ViewportPreviewProvider({ children }: { children: ReactNode }) {
     },
     [isRealMobile],
   );
+
+  useEffect(() => {
+    if (isRealMobile && mode !== 'auto' && mode !== 'mobile') {
+      setModeState('auto');
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [isRealMobile, mode]);
 
   useEffect(() => {
     document.documentElement.dataset.viewportPreview = mode;

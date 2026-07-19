@@ -14,8 +14,6 @@ import {
   BAR_NAV_ACTIVE,
   BAR_NAV_INACTIVE,
   BAR_NAV_LABEL_DEPT,
-  BAR_NAV_LABEL_DEPT_DESKTOP,
-  BAR_NAV_LABEL_DEPT_MOBILE,
 } from '@/lib/responsiveLayout';
 
 function departmentLink(
@@ -96,16 +94,7 @@ export function DepartmentBar() {
                 <span
                   className={[
                     BAR_NAV_LABEL_DEPT,
-                    BAR_NAV_LABEL_DEPT_DESKTOP,
-                    isActive ? 'text-corporate-gold' : '',
-                  ].join(' ')}
-                >
-                  {DEPT_SHORT_LABELS[dept.id]}
-                </span>
-                <span
-                  className={[
-                    BAR_NAV_LABEL_DEPT,
-                    BAR_NAV_LABEL_DEPT_MOBILE,
+                    'dept-nav-label--text whitespace-nowrap overflow-hidden text-ellipsis font-medium',
                     isActive ? 'text-corporate-gold' : '',
                   ].join(' ')}
                 >
