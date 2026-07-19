@@ -66,8 +66,8 @@ export function Header() {
           <Link to="/" className="flex min-w-0 flex-1 items-center gap-1 @md:gap-2 @lg:gap-3">
             <BrandLogo tone="light" className={HEADER_LOGO_SIZE} />
             <div className={HEADER_BRAND_BLOCK + ' header-brand-text'}>
-              <p className={HEADER_BRAND_TITLE}>Plan de instruire</p>
-              <p className={HEADER_BRAND_SUBTITLE}>Adaptare profesională</p>
+              <p className={`${HEADER_BRAND_TITLE} header-brand-title`}>Plan de instruire</p>
+              <p className={`${HEADER_BRAND_SUBTITLE} header-brand-subtitle`}>Adaptare profesională</p>
             </div>
           </Link>
         </div>

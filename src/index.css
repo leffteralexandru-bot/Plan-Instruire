@@ -253,9 +253,21 @@
       color: #b38f55;
     }
 
-    /* Antet: ascunde titlul lung ca să nu „mascheze” bara */
+    /* Antet telefon — text brand vizibil, compact */
     .header-brand-text {
-      display: none;
+      display: block;
+      min-width: 0;
+    }
+
+    .header-brand-text .header-brand-title {
+      font-size: 8px;
+      line-height: 1.15;
+      letter-spacing: 0.04em;
+    }
+
+    .header-brand-text .header-brand-subtitle {
+      font-size: 7px;
+      line-height: 1.15;
     }
   }
 
@@ -315,7 +327,19 @@
   }
 
   html.phone-layout .header-brand-text {
-    display: none;
+    display: block;
+    min-width: 0;
+  }
+
+  html.phone-layout .header-brand-text .header-brand-title {
+    font-size: 8px;
+    line-height: 1.15;
+    letter-spacing: 0.04em;
+  }
+
+  html.phone-layout .header-brand-text .header-brand-subtitle {
+    font-size: 7px;
+    line-height: 1.15;
   }
 
   html.phone-layout .artgranit-panel {
