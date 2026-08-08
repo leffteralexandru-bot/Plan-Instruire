@@ -432,7 +432,7 @@ const TYPE_SPECS: TypeGuideSpec[] = [
     typeChapters: [
       {
         title: 'Etapa 3 — Placare cămin',
-        summary: 'Proiect pe loc · termoizolare · grilă',
+        summary: 'Condiții obligatorii: cămin, termo, grilă, proiect + Proliner',
         pages: [5],
       },
     ],
