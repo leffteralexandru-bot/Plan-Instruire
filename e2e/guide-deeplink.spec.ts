@@ -61,8 +61,10 @@ test.describe('artGRANIT guide deep-link', () => {
     await expect(page.getByText(/carte utilaj|PROLINER|Proliner/i).first()).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.getByRole('button', { name: 'Descarcă' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Trimite' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Înapoi la ghid măsurare/i })).toBeVisible();
+    // Overlay carte (dialog) — „Trimite” apare și pe carduri din ghidul de sub overlay
+    const overlay = page.getByRole('dialog');
+    await expect(overlay.getByRole('button', { name: 'Descarcă', exact: true })).toBeVisible();
+    await expect(overlay.getByRole('button', { name: 'Trimite', exact: true })).toBeVisible();
+    await expect(overlay.getByRole('button', { name: /Înapoi la ghid măsurare/i })).toBeVisible();
   });
 });
