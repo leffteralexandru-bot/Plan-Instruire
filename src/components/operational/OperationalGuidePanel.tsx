@@ -278,9 +278,9 @@ export function OperationalGuidePanel({
     <ProfessionalPanel
       variant="neutral"
       icon="training"
-      eyebrow="Referință teren"
+      eyebrow="Referință teren & proiectare"
       title="Ghid Operațional"
-      subtitle="7 categorii — reguli pre-măsurare, echipament, pași, video"
+      subtitle="Pe tip: Etapa 1–2 comune + doar fișa tipului selectat"
       collapsible
       expanded={expanded}
       onToggle={handleToggle}
@@ -296,7 +296,7 @@ export function OperationalGuidePanel({
       }
       collapsedPeek={
         <p className="text-sm text-corporate-muted">
-          Apăsați pentru tipul de măsurare — reguli obligatorii, echipament, pași și video.
+          Apăsați tipul — ghid pe etape (Full Kit, reguli, fișă tip), ca Utilaje teren.
         </p>
       }
     >

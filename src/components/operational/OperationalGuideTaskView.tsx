@@ -1,17 +1,20 @@
 import { useMemo, useState } from 'react';
 import { ExpandableModuleRow } from '@/components/ui/ExpandableModuleRow';
+import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import {
   OPERATIONAL_GUIDE_LABELS,
   type OperationalGuideTask,
 } from '@/data/operationalGuide';
-import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
-import { OperationalGuideEquipmentSection } from '@/components/operational/OperationalGuideEquipmentSection';
 import {
-  OperationalGuidePreDesignRules,
-  OperationalGuidePreMeasurementRules,
-} from '@/components/operational/OperationalGuidePreMeasurementRules';
+  getFieldGuideDevice,
+  getFieldGuideStartChapterId,
+} from '@/data/fieldGuideChapters';
+import { EquipmentManualOverlay } from '@/components/operational/OperationalGuideEquipmentManualLinks';
+import { FieldGuideDocOverlay } from '@/components/operational/FieldGuideDocOverlay';
+import { OperationalGuidePreDesignRules } from '@/components/operational/OperationalGuidePreMeasurementRules';
 import { OperationalGuideStepsSection } from '@/components/operational/OperationalGuideStepsSection';
 import { OperationalGuideToggleTile } from '@/components/operational/OperationalGuideToggleTile';
+import { DEFAULT_EQUIPMENT_OPERATIONS, type EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -21,33 +24,75 @@ interface OperationalGuideTaskViewProps {
 
 type ActiveGuide = 'measurer' | 'design';
 
-function MeasurerGuideBody({ task, label }: { task: OperationalGuideTask; label: string }) {
+function MeasurerGuideBody({
+  task,
+  onCloseManual,
+}: {
+  task: OperationalGuideTask;
+  onCloseManual: () => void;
+}) {
+  const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
+  const initialChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
+  const [openEquipmentId, setOpenEquipmentId] = useState<string | null>(null);
+  const [openDoc, setOpenDoc] = useState<{ url: string; fileName: string; title: string } | null>(
+    null,
+  );
+
+  const openEquipment = useMemo(
+    () =>
+      openEquipmentId
+        ? DEFAULT_EQUIPMENT_OPERATIONS.devices.find((d) => d.id === openEquipmentId)
+        : undefined,
+    [openEquipmentId],
+  );
+
+  const handleActionHotspot = (spot: EquipmentManualPageActionHotspot) => {
+    if (spot.docUrl && spot.docFileName) {
+      setOpenDoc({ url: spot.docUrl, fileName: spot.docFileName, title: spot.label });
+      return;
+    }
+    if (spot.deviceId) {
+      setOpenEquipmentId(spot.deviceId);
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <OperationalGuidePreMeasurementRules
-        conditions={task.preMeasurementConditions}
-        categoryLabel={label}
-        defaultExpanded={false}
-        pdfUrl={task.checklistPdfUrl}
-        pdfFileName={task.checklistPdfFileName}
-        pageImageUrl={task.checklistPageImageUrl}
+      <EquipmentGuideDeviceView
+        key={`${device.id}-${task.id}`}
+        device={device}
+        manualNumber={1}
+        initialChapterId={initialChapterId}
+        onBack={onCloseManual}
+        onActionHotspot={handleActionHotspot}
       />
-      <OperationalGuideEquipmentSection
-        items={task.equipment}
-        defaultExpanded={false}
-        pdfUrl={task.equipmentPdfUrl}
-        pdfFileName={task.equipmentPdfFileName}
-        pageImageUrl={task.equipmentPageImageUrl}
-      />
-      <OperationalGuideStepsSection
-        taskId={task.id}
-        steps={task.steps}
-        defaultExpanded={false}
-        pdfUrl={task.stepsPdfUrl}
-        pdfFileName={task.stepsPdfFileName}
-        pageImageUrl={task.stepsPageImageUrl}
-      />
-      <OperationalGuideVideo url={task.videoUrl} title={task.videoTitle} />
+
+      {openEquipment ? (
+        <EquipmentManualOverlay
+          device={openEquipment}
+          onClose={() => setOpenEquipmentId(null)}
+        />
+      ) : null}
+
+      {openDoc ? (
+        <FieldGuideDocOverlay
+          pdfUrl={openDoc.url}
+          pdfFileName={openDoc.fileName}
+          title={openDoc.title}
+          eyebrow={
+            openDoc.title.includes('Checklist')
+              ? `Checklist Client · șablon · ${label}`
+              : openDoc.title.includes('Fișe tehnice')
+                ? 'Fișe tehnice accesorii · exemple'
+                : openDoc.title.includes('CTG') || openDoc.title.includes('Comanda_Material')
+                  ? 'CTG · Comandă material · șablon'
+                  : openDoc.title === 'Canting'
+                    ? 'Canting · șablon nesting'
+                    : 'Anexa 1 · șablon'
+          }
+          onClose={() => setOpenDoc(null)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -81,6 +126,9 @@ function OperationalGuideTaskContextHeader({ task }: { task: OperationalGuideTas
       Ghidurile <span className="font-medium text-corporate-dark">Măsurare</span> și{' '}
       <span className="font-medium text-corporate-dark">Proiectare</span>:{' '}
       <span className="font-semibold text-corporate-dark">{label}</span>
+      {task.categorySubtitle ? (
+        <span className="text-corporate-muted"> · {task.categorySubtitle}</span>
+      ) : null}
     </p>
   );
 }
@@ -108,7 +156,7 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
             ariaLabel={`Ghid măsurător — Măsurare ${label}`}
           />
         ),
-        body: <MeasurerGuideBody task={task} label={label} />,
+        body: <MeasurerGuideBody task={task} onCloseManual={() => setActive(null)} />,
       },
       {
         id: 'design' as const,

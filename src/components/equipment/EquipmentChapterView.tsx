@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/Button';
 import { EquipmentChapterBlocks } from '@/components/equipment/EquipmentChapterBlocks';
 import { EquipmentChapterMedia } from '@/components/equipment/EquipmentChapterMedia';
 import { EquipmentManualPage } from '@/components/equipment/EquipmentManualPage';
-import type { EquipmentChapter, EquipmentDevice } from '@/data/equipmentOperations';
+import type { EquipmentChapter, EquipmentDevice, EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
 import { downloadEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
 
@@ -12,6 +12,7 @@ interface EquipmentChapterViewProps {
   chapter: EquipmentChapter;
   showPdfButton?: boolean;
   pdfButtonFullWidth?: boolean;
+  onActionHotspot?: (spot: EquipmentManualPageActionHotspot) => void;
 }
 
 export function EquipmentChapterView({
@@ -19,6 +20,7 @@ export function EquipmentChapterView({
   chapter,
   showPdfButton = true,
   pdfButtonFullWidth = false,
+  onActionHotspot,
 }: EquipmentChapterViewProps) {
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,11 @@ export function EquipmentChapterView({
           </svg>
         }
       >
-        {downloading ? 'Se descarcă…' : 'Descarcă Manual (PDF)'}
+        {downloading
+          ? 'Se descarcă…'
+          : pdfName.toLowerCase().endsWith('.zip')
+            ? 'Descarcă pachet (ZIP)'
+            : 'Descarcă Manual (PDF)'}
       </Button>
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
     </div>
@@ -77,6 +83,8 @@ export function EquipmentChapterView({
             videoUrl={page.videoUrl}
             hotspot={page.hotspot}
             videoHotspots={page.videoHotspots}
+            actionHotspots={page.actionHotspots}
+            onActionHotspot={onActionHotspot}
             compactPlayHotspots={device.id !== 'eq-proliner'}
             filmIconShift={
               device.id === 'eq-factory-fabricator' ? 'fabricator' : 'none'

@@ -34,8 +34,12 @@ interface TaskDraft {
   introText: string;
   preMeasurementText: string;
   preDesignText: string;
+  obligationsText: string;
+  typeRulesText: string;
   equipmentText: string;
+  kitDocumentsText: string;
   stepsText: string;
+  finalChecklistText: string;
   designStepsText: string;
 }
 
@@ -48,8 +52,12 @@ function draftFromTask(id: OperationalGuideTaskId): TaskDraft {
     introText: task.introText ?? '',
     preMeasurementText: textFromLines(task.preMeasurementConditions),
     preDesignText: textFromLines(task.preDesignConditions ?? []),
+    obligationsText: textFromLines(task.fieldObligations ?? []),
+    typeRulesText: textFromLines(task.typeFieldRules ?? []),
     equipmentText: textFromLines(task.equipment),
+    kitDocumentsText: textFromLines(task.kitDocuments ?? []),
     stepsText: textFromLines(task.steps),
+    finalChecklistText: textFromLines(task.finalChecklist ?? []),
     designStepsText: textFromLines(task.designSteps ?? []),
   };
 }
@@ -66,8 +74,12 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
   const [introText, setIntroText] = useState('');
   const [preMeasurementText, setPreMeasurementText] = useState('');
   const [preDesignText, setPreDesignText] = useState('');
+  const [obligationsText, setObligationsText] = useState('');
+  const [typeRulesText, setTypeRulesText] = useState('');
   const [equipmentText, setEquipmentText] = useState('');
+  const [kitDocumentsText, setKitDocumentsText] = useState('');
   const [stepsText, setStepsText] = useState('');
+  const [finalChecklistText, setFinalChecklistText] = useState('');
   const [designStepsText, setDesignStepsText] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
@@ -80,8 +92,12 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
     setIntroText(draft.introText);
     setPreMeasurementText(draft.preMeasurementText);
     setPreDesignText(draft.preDesignText);
+    setObligationsText(draft.obligationsText);
+    setTypeRulesText(draft.typeRulesText);
     setEquipmentText(draft.equipmentText);
+    setKitDocumentsText(draft.kitDocumentsText);
     setStepsText(draft.stepsText);
+    setFinalChecklistText(draft.finalChecklistText);
     setDesignStepsText(draft.designStepsText);
     setMessage(null);
   }, []);
@@ -98,8 +114,12 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
       introText,
       preMeasurementText,
       preDesignText,
+      obligationsText,
+      typeRulesText,
       equipmentText,
+      kitDocumentsText,
       stepsText,
+      finalChecklistText,
       designStepsText,
     }),
     [
@@ -109,8 +129,12 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
       introText,
       preMeasurementText,
       preDesignText,
+      obligationsText,
+      typeRulesText,
       equipmentText,
+      kitDocumentsText,
       stepsText,
+      finalChecklistText,
       designStepsText,
     ],
   );
@@ -133,8 +157,12 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
           introText: d.introText,
           preMeasurementConditions: linesFromText(d.preMeasurementText),
           preDesignConditions: linesFromText(d.preDesignText),
+          fieldObligations: linesFromText(d.obligationsText),
+          typeFieldRules: linesFromText(d.typeRulesText),
           equipment: linesFromText(d.equipmentText),
+          kitDocuments: linesFromText(d.kitDocumentsText),
           steps: linesFromText(d.stepsText),
+          finalChecklist: linesFromText(d.finalChecklistText),
           designSteps: linesFromText(d.designStepsText),
         },
         user,
@@ -227,6 +255,22 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
               placeholder={'Prezența persoanei cu putere de decizie\nAcces liber pentru măsurare\n…'}
             />
             <Textarea
+              label="Obligații măsurător pe loc (câte una pe linie)"
+              value={obligationsText}
+              readOnly={readOnly}
+              onChange={(e) => setObligationsText(e.target.value)}
+              rows={8}
+              placeholder={'Mobila este completă?\nSe mai montează ceva după măsurare?\n…'}
+            />
+            <Textarea
+              label="Reguli pe teren — specifice tipului (câte una pe linie)"
+              value={typeRulesText}
+              readOnly={readOnly}
+              onChange={(e) => setTypeRulesText(e.target.value)}
+              rows={6}
+              placeholder={'Spațiul de dilatare se prevede pe loc…\n…'}
+            />
+            <Textarea
               label="Condiții obligatorii — înainte de proiectare (câte o regulă pe linie)"
               value={preDesignText}
               readOnly={readOnly}
@@ -251,12 +295,28 @@ export function OperationalGuideEditor({ embedded }: { embedded?: boolean } = {}
               placeholder={'Proliner\nRuletă 5 m\nNivellă'}
             />
             <Textarea
+              label="Kit documente Full Kit (câte un element pe linie)"
+              value={kitDocumentsText}
+              readOnly={readOnly}
+              onChange={(e) => setKitDocumentsText(e.target.value)}
+              rows={5}
+              placeholder={'Checklist client din Bitrix\nAnexa 1 din Bitrix\n…'}
+            />
+            <Textarea
               label="Pași de măsurare — Ghid măsurător (câte un pas pe linie)"
               value={stepsText}
               readOnly={readOnly}
               onChange={(e) => setStepsText(e.target.value)}
-              rows={6}
+              rows={8}
               placeholder={'Verificați accesul\nMăsurați perimetrul\n…'}
+            />
+            <Textarea
+              label="Checklist final — înainte să pleci (câte un punct pe linie)"
+              value={finalChecklistText}
+              readOnly={readOnly}
+              onChange={(e) => setFinalChecklistText(e.target.value)}
+              rows={5}
+              placeholder={'Anexa 1 semnată\nProliner complet\n…'}
             />
             <Textarea
               label="Pași de proiectare — Ghid Proiectare (câte un pas pe linie)"

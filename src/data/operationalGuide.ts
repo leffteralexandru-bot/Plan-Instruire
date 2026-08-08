@@ -1,5 +1,6 @@
 /** Tipuri de măsurare — Ghid Operațional artGRANIT (7 categorii) */
 import { PROLINER_LOCAL_VIDEOS } from '@/data/prolinerVideos';
+import { MEASURER_TYPE_CONTENT } from '@/data/operationalGuideMeasurerContent';
 
 export type OperationalGuideTaskId =
   | 'blat'
@@ -19,22 +20,29 @@ export interface OperationalGuideTask {
   /** URL video: YouTube, fișier .mp4/.webm sau pagină HTML */
   videoUrl?: string;
   videoTitle?: string;
-  /** Explicații generale — completat de HR */
+  /** Explicații generale pe tip — din ghidul teren */
   introText?: string;
-  /** Condiții de îndeplinit ÎNAINTE de măsurare (checklist client/șantier) — editabil HR */
+  /** A — condiții ÎNAINTE de măsurare (checklist client/șantier) */
   preMeasurementConditions: string[];
-  /** Condiții de îndeplinit ÎNAINTE de proiectare — editabil HR */
+  /** Condiții ÎNAINTE de proiectare (Ghid Proiectare — separat) */
   preDesignConditions: string[];
-  /** Echipament tehnic — listă oficială artGRANIT */
+  /** B — obligații măsurător pe loc (întrebări + verificări) */
+  fieldObligations: string[];
+  /** D — reguli pe teren specifice tipului */
+  typeFieldRules: string[];
+  /** Echipament tehnic — listă comună */
   equipment: string[];
-  /** Pași numerotați la măsurare (Ghid măsurător) */
+  /** Documente Full Kit înainte de drum (Bitrix + organizare) */
+  kitDocuments: string[];
+  /** E — pași numerotați la măsurare */
   steps: string[];
+  /** F — checklist final înainte de plecare */
+  finalChecklist: string[];
   /** Pași numerotați la proiectare (Ghid Proiectare) — conținut separat */
   designSteps: string[];
-  /** PDF checklist oficial (o pagină per categorie) — extras din documentul HR */
+  /** PDF checklist oficial (o pagină per categorie) */
   checklistPdfUrl?: string;
   checklistPdfFileName?: string;
-  /** Imagine pagină checklist pentru vizualizare în app */
   checklistPageImageUrl?: string;
   /** PDF / PNG — Echipament necesar (Pregătire teren) */
   equipmentPdfUrl?: string;
@@ -44,6 +52,9 @@ export interface OperationalGuideTask {
   stepsPdfUrl?: string;
   stepsPdfFileName?: string;
   stepsPageImageUrl?: string;
+  /** PDF ghid teren complet (toate tipurile) */
+  fieldGuidePdfUrl?: string;
+  fieldGuidePdfFileName?: string;
   updatedAt?: string;
   updatedByName?: string;
 }
@@ -68,25 +79,64 @@ export const OPERATIONAL_GUIDE_LABELS: Record<OperationalGuideTaskId, string> = 
   placare_exterior: 'Placări ext.',
 };
 
-const COMMON_DECISION = 'Prezența obligatorie a persoanei cu putere de decizie.';
-const COMMON_ACCESS =
-  'Acces pentru măsurare — fără obstacole care restricționează accesul inginerului spre obiectul de măsurat.';
+/** C — reguli pe teren comune (toate tipurile) */
+export const COMMON_FIELD_RULES: string[] = [
+  'Fiecare cotă se notează în clipa măsurării, pe loc — nu se lasă nimic pe memorie și nu se completează ulterior din cap.',
+  'La cotele critice se citesc valorile cu voce tare, ca să se evite transpozițiile (exemplu: 1180 scris greșit ca 1810).',
+  'Unghiurile se măsoară întotdeauna — nu se presupune că sunt 90°. Dacă sunt mai mult de 2 îmbinări, se face șablon.',
+  'Detaliile se finalizează cu clientul pe loc și se semnează pe schiță / Anexa 1 înainte de a pleca de pe șantier.',
+  'FAȚA VĂZUTĂ și orientarea pieselor se marchează pe schiță și se confirmă cu fotografie, ca să nu se monteze invers.',
+  'Dacă condițiile de pe teren sunt improprii pentru o măsurare corectă, se anunță managerul: fie se reprogramează, fie se asigură condițiile înainte de continuare.',
+];
 
-/** Condiții înainte de proiectare — Blat (Ghid Proiectare). */
+/** Regula de bază din ghidul teren */
+export const FIELD_GUIDE_BASE_RULE =
+  'Chiar dacă arată montat vizual — TU întrebi și verifici fizic.';
+
+/** PDF ghid teren — fallback master; în task-uri se folosește PDF-ul pe tip. */
+export const FIELD_GUIDE_PDF_URL =
+  '/docs/operational-guide/field-guide/Ghid-teren-masurare.pdf';
+export const FIELD_GUIDE_PDF_NAME = 'Ghid-teren-masurare.pdf';
+
+function fieldGuidePdfForTask(taskId: OperationalGuideTaskId): {
+  fieldGuidePdfUrl: string;
+  fieldGuidePdfFileName: string;
+} {
+  return {
+    fieldGuidePdfUrl: `/docs/operational-guide/field-guide/by-type/${taskId}/Ghid-teren-masurare.pdf`,
+    fieldGuidePdfFileName: `Ghid-teren-${taskId}.pdf`,
+  };
+}
+
+/** Condiții înainte de proiectare — Blat (Ghid Proiectare — se va completa separat). */
 const PRE_DESIGN_BLAT = [
   'Conturul Proliner coincide cu schița și cotele de pe ruletă.',
   'Fișe tehnice pentru accesoriile clientului montate pe blat.',
   'Respectați cartea tehnică a materialului (Repository tehnic).',
 ];
 
-/** Echipament standard — aceeași listă și ordine pentru toate tipurile de măsurare. */
+/** Echipament standard — aceeași listă pentru toate tipurile. Fără trusă completă, nu pleacă spre măsurare. */
 const EQUIPMENT_BASE = [
-  'ANEXA Nr. 1',
-  'Ochelari de înregistrare video',
+  'ANEXA Nr. 1 (șablon) + fișe tehnice',
   'Carnet măsurători + creion',
   'Aparatul de măsurat Proliner',
   'Nivelă laser Bosch GLL 3-80',
   'Ruletă Bosch 5 m',
+  'Ochelari de înregistrare video',
+];
+
+/**
+ * Full Kit documente — înainte de drum.
+ * ATENȚIE: exemplele din ghid sunt șabloane; documentele REALE se descarcă din Bitrix.
+ */
+export const FULL_KIT_DOCUMENTS: string[] = [
+  'Programare confirmată (dată, oră, adresă, acces) — verifici în planificare / calendar (nu e fișier Bitrix).',
+  'Checklist condiții client — semnat pe tip produs → fișierul REAL din Bitrix (nu exemplul din ghid).',
+  'Anexa 1 — citită înainte de drum (muchie, finisaj, decupaje, accesorii) → din Bitrix, atașată la proiectul tău.',
+  'Canting + fișe tehnice accesorii — din task / Bitrix.',
+  'Comandă de material / fișa comenzii (CTG) — material, muchie, decupări, sens vene → din Bitrix.',
+  'Fișa tehnică a materialului — Documentație tehnică în app (după tipul de pe comandă).',
+  'Regulă Full Kit: COMPLET sau INCOMPLET — nu există „aproape gata”. Fără documentele Bitrix (punctele 2–5) + echipament, nu pleacă spre măsurare.',
 ];
 
 const CHECKLIST_BASE = '/docs/operational-guide/checklists';
@@ -99,231 +149,125 @@ const STEPS_PDF = (slug: string) => `${STEPS_BASE}/Pasi-masurare-${slug}.pdf`;
 const STEPS_PDF_NAME = (slug: string) => `Pasi-masurare-${slug}.pdf`;
 const STEPS_PAGE = (slug: string) => `${STEPS_BASE}/pages/${slug}.png`;
 
-const FIELD_DOCS = (slug: string) => ({
+const FIELD_DOCS = (slug: string, taskId: OperationalGuideTaskId) => ({
   equipmentPdfUrl: EQUIPMENT_PDF_URL,
   equipmentPdfFileName: EQUIPMENT_PDF_NAME,
   equipmentPageImageUrl: EQUIPMENT_PAGE,
   stepsPdfUrl: STEPS_PDF(slug),
   stepsPdfFileName: STEPS_PDF_NAME(slug),
   stepsPageImageUrl: STEPS_PAGE(slug),
+  ...fieldGuidePdfForTask(taskId),
 });
 
-/**
- * Ordine pe teren (confirmată de artGRANIT) — text adaptat pe tip:
- * 1 ANEXA → 2 carnet → 3 nivelă → 4 ochelari+Proliner → 5 ruletă → 6 carnet final → 7 Bitrix + salvare Proliner.
- */
-
-export const DEFAULT_OPERATIONAL_GUIDE: OperationalGuideTask[] = [
+const META: Record<
+  OperationalGuideTaskId,
   {
-    id: 'blat',
+    label: string;
+    categorySubtitle: string;
+    checklistSlug: string;
+    checklistFile: string;
+    pageSlug: string;
+    stepsSlug: string;
+    videoUrl?: string;
+    videoTitle?: string;
+    preDesignConditions: string[];
+  }
+> = {
+  blat: {
     label: 'Blat',
-    categorySubtitle: 'Blat / șorț',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Blat.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Blat.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('blat'),
-    ...FIELD_DOCS('blat'),
+    categorySubtitle: 'Blat (șorțul = Placare)',
+    checklistSlug: 'Checklist-masuratori-Blat',
+    checklistFile: 'Checklist_Client_ArtGranit-Blat.pdf',
+    pageSlug: 'blat',
+    stepsSlug: 'blat',
     videoUrl: PROLINER_LOCAL_VIDEOS[14],
     videoTitle: 'Demonstrație măsurare blat — Proliner (măsurare în 5 pași)',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      'Mobila montată complet, fixată și reglată pe orizontal.',
-      'Dacă există mașină de spălat vase, este recomandat să fie montată.',
-      'Prezența accesoriilor: baterie, chiuvetă, aragaz, dozator, filtru, buton mărunțitor etc.',
-      COMMON_ACCESS,
-    ],
     preDesignConditions: [...PRE_DESIGN_BLAT],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru blat / șorț), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare blat / șorț, observații din discuția cu managerul).',
-      'Verificați cu nivela laser Bosch GLL 3-80 nivelul / orizontalitatea mobilierului (dulapuri, blat).',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner conturul blatului, suportul dulapurilor, șorțul și decupajele (chiuvetă, aragaz, baterie).',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (lungimi, adâncimi, decupaje chiuvetă / aragaz / baterie).',
-      'Completați pe carnet notele finale pentru blat (grosime, finisaj, abateri, observații teren).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de blat în Proliner.',
-    ],
   },
-  {
-    id: 'placare',
+  placare: {
     label: 'Placare',
-    categorySubtitle: 'Placare perete',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Placare.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Placare.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('placare'),
-    ...FIELD_DOCS('placare'),
-    introText: 'Checklist condiții înainte de măsurarea placării pe perete.',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      COMMON_ACCESS,
-      'Pereții pregătiți pentru placare (se interzice placare pe bază de gips).',
-      'Montate toate prizele și conexiunile (apă, canalizare).',
-      'Suportul TV montat în perete.',
-      'Prezența grilei de ventilare.',
-    ],
+    categorySubtitle: 'Placare perete / șorț',
+    checklistSlug: 'Checklist-masuratori-Placare',
+    checklistFile: 'Checklist_Client_ArtGranit-Placare.pdf',
+    pageSlug: 'placare',
+    stepsSlug: 'placare',
     preDesignConditions: [],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru placare perete), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare placare perete, observații din discuția cu managerul).',
-      'Verificați cu nivela laser Bosch GLL 3-80 verticalitatea și planeitatea peretelui / mobilierului adiacent.',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner conturul zonei de placare și golurile (prize, ventilare, suport TV).',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (înălțimi, lățimi, poziții prize / ventilare / suport TV).',
-      'Completați pe carnet notele finale pentru placare (grosime, finisaj, abateri planeitate, observații teren).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de placare în Proliner.',
-    ],
   },
-  {
-    id: 'scara',
+  scara: {
     label: 'Scară',
     categorySubtitle: 'Scări interior',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Scara.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Scara.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('scara'),
-    ...FIELD_DOCS('scara'),
-    introText: 'Checklist condiții înainte de măsurarea scărilor interioare.',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      COMMON_ACCESS,
-      'Fără lucrări cu praf în imediata apropiere a obiectului măsurat.',
-      'Dacă scările sunt cu LED — profilul pentru LED montat.',
-      'Pe suprafața scărilor să nu fie montată schelă.',
-      'Tipul treptelor stabilit (ex. secțiune).',
-    ],
+    checklistSlug: 'Checklist-masuratori-Scara',
+    checklistFile: 'Checklist_Client_ArtGranit-Scara.pdf',
+    pageSlug: 'scara',
+    stepsSlug: 'scara',
     preDesignConditions: [],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru scară interior), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare scară interior, tip trepte, observații din discuția cu managerul).',
-      'Verificați cu nivela laser Bosch GLL 3-80 referințele pe trepte / perete (nivel și aliniere).',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner (Stairs) treptele, contratrepele și profilul scării.',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (lățime treaptă, înălțime contratreaptă, lungime rampă).',
-      'Completați pe carnet notele finale pentru scară (grosime, finisaj, tip trepte / LED, abateri, observații teren).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de scară în Proliner.',
-    ],
   },
-  {
-    id: 'semineu',
+  semineu: {
     label: 'Șemineu',
     categorySubtitle: 'Placare cămin',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Semineu.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Semineu.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('semineu'),
-    ...FIELD_DOCS('semineu'),
-    introText: 'Checklist condiții înainte de măsurarea placării căminului.',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      COMMON_ACCESS,
-      'Căminul construit.',
-      'Termoizolarea executată.',
-      'Grila de ventilare prezentă.',
-      'Schiță conceptuală / proiectul căminului disponibil.',
-    ],
+    checklistSlug: 'Checklist-masuratori-Semineu',
+    checklistFile: 'Checklist_Client_ArtGranit-Semineu.pdf',
+    pageSlug: 'semineu',
+    stepsSlug: 'semineu',
     preDesignConditions: [],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru placare șemineu / cămin), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare șemineu, observații din discuția cu managerul și din proiectul căminului).',
-      'Verificați cu nivela laser Bosch GLL 3-80 verticalitatea portalului / elementelor de mobilier adiacente.',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner conturul de placare și deschiderile (focar, grilă, nișe).',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (lățimi portal, deschidere focar, poziție grilă / nișe).',
-      'Completați pe carnet notele finale pentru șemineu (grosime, finisaj, abateri, observații teren).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de șemineu în Proliner.',
-    ],
   },
-  {
-    id: 'glaf',
+  glaf: {
     label: 'Glaf',
     categorySubtitle: 'Pervazuri interior / exterior',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Glaf.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Glaf.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('glaf'),
-    ...FIELD_DOCS('glaf'),
-    introText: 'Checklist condiții înainte de măsurarea pervazurilor.',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      COMMON_ACCESS,
-      'Schele pentru pervazuri la înălțime (dacă e cazul).',
-      'Baza pregătită ~30 mm sub toc fereastră.',
-      'Strat final de tencuială sau termoizolare executat.',
-      'La exterior: elemente decorative sub-pervaz și/sau împrejurul acestuia.',
-    ],
+    checklistSlug: 'Checklist-masuratori-Glaf',
+    checklistFile: 'Checklist_Client_ArtGranit-Glaf.pdf',
+    pageSlug: 'glaf',
+    stepsSlug: 'glaf',
     preDesignConditions: [],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru glaf / pervaz), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare glaf interior / exterior, observații din discuția cu managerul).',
-      'Verificați cu nivela laser Bosch GLL 3-80 planeitatea bazei pervazului / nivelului față de toc.',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner lungimea, adâncimea și unghiurile fiecărui glaf.',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (lungime, adâncime, ieșire față de toc) pe fiecare glaf.',
-      'Completați pe carnet notele finale pentru glaf (grosime, finisaj, abateri, observații teren — interior / exterior).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de glaf în Proliner.',
-    ],
   },
-  {
-    id: 'scara_exterior',
+  scara_exterior: {
     label: 'Scări ext.',
     categorySubtitle: 'Scări exterioare',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Scari-exterioare.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Scari-exterioare.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('scara-exterior'),
-    ...FIELD_DOCS('scara-exterior'),
-    introText: 'Checklist condiții înainte de măsurarea scărilor exterioare.',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      COMMON_ACCESS,
-      'Schele prezente pentru măsurători la înălțime (dacă e cazul).',
-      'Placare existentă demontată până la măsurare, pentru studierea bazei.',
-      'La ploaie sau ninsoare — măsurarea se reprogramează.',
-    ],
+    checklistSlug: 'Checklist-masuratori-Scari-exterioare',
+    checklistFile: 'Checklist_Client_ArtGranit-Scari-exterioare.pdf',
+    pageSlug: 'scara-exterior',
+    stepsSlug: 'scara-exterior',
     preDesignConditions: [],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru scări exterioare), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare scări exterioare, observații din discuția cu managerul).',
-      'Verificați cu nivela laser Bosch GLL 3-80 nivelul / alinierea treptelor exterioare și a bazei.',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner (Stairs) profilul treptelor exterioare.',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (lățime treaptă, înălțime, adâncime, aliniere bază).',
-      'Completați pe carnet notele finale pentru scări exterioare (grosime, finisaj, stare bază, abateri, observații teren / vreme).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de scări exterioare în Proliner.',
-    ],
   },
-  {
-    id: 'placare_exterior',
+  placare_exterior: {
     label: 'Placări ext.',
     categorySubtitle: 'Placări exterioare / parapet (atic)',
-    checklistPdfUrl: `${CHECKLIST_BASE}/Checklist-masuratori-Placari-exterioare.pdf`,
-    checklistPdfFileName: 'Checklist-masuratori-Placari-exterioare.pdf',
-    checklistPageImageUrl: CHECKLIST_PAGE('placare-exterior'),
-    ...FIELD_DOCS('placare-exterior'),
-    introText: 'Checklist condiții înainte de măsurarea placărilor exterioare.',
-    preMeasurementConditions: [
-      COMMON_DECISION,
-      COMMON_ACCESS,
-      'Schele prezente pentru măsurători la înălțime (dacă e cazul).',
-      'La ploaie sau ninsoare — măsurarea se reprogramează.',
-      'Placare existentă demontată până la măsurare, pentru studierea bazei.',
-      'Aceste lucrări necesită prindere mecanică.',
-    ],
+    checklistSlug: 'Checklist-masuratori-Placari-exterioare',
+    checklistFile: 'Checklist_Client_ArtGranit-Placari-exterioare.pdf',
+    pageSlug: 'placare-exterior',
+    stepsSlug: 'placare-exterior',
     preDesignConditions: [],
-    equipment: [...EQUIPMENT_BASE],
-    designSteps: [],
-    steps: [
-      'Discutați ANEXA Nr. 1 cu clientul (informațiile agreate cu managerul pentru placări exterioare / parapet), confirmați-le și obțineți semnătura clientului — înainte de măsurarea cu Proliner.',
-      'Notați pe carnet datele esențiale (client, măsurare placare exterioară / parapet, observații din discuția cu managerul).',
-      'Verificați cu nivela laser Bosch GLL 3-80 verticalitatea fațadei / parapetului și nivelul bazei.',
-      'Porniți ochelarii de înregistrare video și măsurați cu Proliner conturul de placare și cotele pentru prindere mecanică.',
-      'Controlați cu ruleta Bosch 5 m cotele primite de aparatul Proliner (înălțimi, lățimi, cote prindere mecanică).',
-      'Completați pe carnet notele finale pentru placare exterioară (grosime, finisaj, prindere mecanică, stare bază, abateri, observații teren / vreme).',
-      'Încărcați ANEXA Nr. 1 semnată și pozele de la locație + video-ul înregistrat de ochelari în Bitrix; salvați proiectul de placare exterioară în Proliner.',
-    ],
   },
-];
+};
+
+function buildTask(id: OperationalGuideTaskId): OperationalGuideTask {
+  const meta = META[id];
+  const content = MEASURER_TYPE_CONTENT[id];
+  return {
+    id,
+    label: meta.label,
+    categorySubtitle: meta.categorySubtitle,
+    checklistPdfUrl: `${CHECKLIST_BASE}/${meta.checklistFile}`,
+    checklistPdfFileName: meta.checklistFile,
+    checklistPageImageUrl: CHECKLIST_PAGE(meta.pageSlug),
+    ...FIELD_DOCS(meta.stepsSlug, id),
+    videoUrl: meta.videoUrl,
+    videoTitle: meta.videoTitle,
+    introText: content.introText,
+    preMeasurementConditions: [...content.preMeasurementConditions],
+    preDesignConditions: [...meta.preDesignConditions],
+    fieldObligations: [...content.fieldObligations],
+    typeFieldRules: [...content.typeFieldRules],
+    equipment: [...EQUIPMENT_BASE],
+    kitDocuments: [...FULL_KIT_DOCUMENTS],
+    steps: [...content.steps],
+    finalChecklist: [...content.finalChecklist],
+    designSteps: [],
+  };
+}
+
+export const DEFAULT_OPERATIONAL_GUIDE: OperationalGuideTask[] =
+  OPERATIONAL_GUIDE_TASK_ORDER.map(buildTask);
 
 export const OPERATIONAL_GUIDE_TASK_COUNT = OPERATIONAL_GUIDE_TASK_ORDER.length;
 

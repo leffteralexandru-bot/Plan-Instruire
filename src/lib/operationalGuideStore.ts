@@ -34,37 +34,37 @@ function defaultPreDesignConditions(id: OperationalGuideTaskId): string[] {
   return DEFAULT_OPERATIONAL_GUIDE.find((d) => d.id === id)?.preDesignConditions ?? [];
 }
 
+/**
+ * Migrare ghid teren (A–F): forțează conținutul oficial din defaults dacă lipsește
+ * sau dacă e versiunea veche (fără obligații / checklist final / kit).
+ */
+function needsFieldGuideRefresh(found: OperationalGuideTask, def: OperationalGuideTask): boolean {
+  if (!found.fieldObligations?.length) return true;
+  if (!found.typeFieldRules?.length) return true;
+  if (!found.finalChecklist?.length) return true;
+  if (!found.kitDocuments?.length) return true;
+  if (!found.steps?.length || found.steps.length < def.steps.length) return true;
+  if (!found.equipment?.[0]?.includes('ANEXA')) return true;
+  return false;
+}
+
 function mergeWithDefaults(stored: OperationalGuideTask[]): OperationalGuideTask[] {
   return DEFAULT_OPERATIONAL_GUIDE.map((def) => {
     const found = stored.find((t) => t.id === def.id);
     if (!found) return { ...def };
-    const preFromStore = found.preMeasurementConditions;
-    const useDefaultPre = !preFromStore || preFromStore.length === 0;
+
+    const refreshField = needsFieldGuideRefresh(found, def);
     const designFromStore = found.preDesignConditions;
     const useDefaultDesign = !designFromStore || designFromStore.length === 0;
-    const equipFromStore = found.equipment;
-    const useDefaultEquip =
-      !equipFromStore ||
-      equipFromStore.length === 0 ||
-      equipFromStore[0] !== 'ANEXA Nr. 1' ||
-      !equipFromStore.some((item) => item.includes('Aparatul de măsurat Proliner'));
-    const stepsFromStore = found.steps;
-    // Forțează pașii oficiali adaptați pe tip (ANEXA primul, ochelari+Proliner, Bitrix cu poze+video + „proiectul de …”).
-    const useDefaultSteps =
-      !stepsFromStore ||
-      stepsFromStore.length === 0 ||
-      !stepsFromStore[0]?.includes('ANEXA Nr. 1') ||
-      !stepsFromStore.some((s) => s.includes('ochelarii de înregistrare video') && s.includes('Proliner')) ||
-      !stepsFromStore.some(
-        (s) => s.includes('Bitrix') && s.includes('pozele de la locație') && s.includes('proiectul de'),
-      );
     const designStepsFromStore = found.designSteps;
     const useDefaultDesignSteps = designStepsFromStore === undefined;
+
     return {
       ...def,
       ...found,
       label: def.label,
-      categorySubtitle: found.categorySubtitle ?? def.categorySubtitle,
+      categorySubtitle: def.categorySubtitle,
+      introText: refreshField ? def.introText : found.introText?.trim() || def.introText,
       checklistPdfUrl: def.checklistPdfUrl,
       checklistPdfFileName: def.checklistPdfFileName,
       checklistPageImageUrl: def.checklistPageImageUrl,
@@ -74,12 +74,22 @@ function mergeWithDefaults(stored: OperationalGuideTask[]): OperationalGuideTask
       stepsPdfUrl: def.stepsPdfUrl,
       stepsPdfFileName: def.stepsPdfFileName,
       stepsPageImageUrl: def.stepsPageImageUrl,
+      fieldGuidePdfUrl: def.fieldGuidePdfUrl,
+      fieldGuidePdfFileName: def.fieldGuidePdfFileName,
       videoUrl: found.videoUrl?.trim() || def.videoUrl,
       videoTitle: found.videoTitle?.trim() || def.videoTitle,
-      preMeasurementConditions: useDefaultPre ? def.preMeasurementConditions : preFromStore,
+      preMeasurementConditions: refreshField
+        ? def.preMeasurementConditions
+        : found.preMeasurementConditions?.length
+          ? found.preMeasurementConditions
+          : def.preMeasurementConditions,
       preDesignConditions: useDefaultDesign ? def.preDesignConditions : designFromStore,
-      equipment: useDefaultEquip ? def.equipment : equipFromStore,
-      steps: useDefaultSteps ? def.steps : stepsFromStore,
+      fieldObligations: refreshField ? def.fieldObligations : found.fieldObligations,
+      typeFieldRules: refreshField ? def.typeFieldRules : found.typeFieldRules,
+      equipment: refreshField ? def.equipment : found.equipment,
+      kitDocuments: refreshField ? def.kitDocuments : found.kitDocuments,
+      steps: refreshField ? def.steps : found.steps,
+      finalChecklist: refreshField ? def.finalChecklist : found.finalChecklist,
       designSteps: useDefaultDesignSteps ? def.designSteps : designStepsFromStore,
     };
   });
@@ -129,8 +139,12 @@ export const operationalGuideStore = {
         patch.preMeasurementConditions ?? base.preMeasurementConditions ?? defaultPreConditions(id),
       preDesignConditions:
         patch.preDesignConditions ?? base.preDesignConditions ?? defaultPreDesignConditions(id),
+      fieldObligations: patch.fieldObligations ?? base.fieldObligations,
+      typeFieldRules: patch.typeFieldRules ?? base.typeFieldRules,
       equipment: patch.equipment ?? base.equipment,
+      kitDocuments: patch.kitDocuments ?? base.kitDocuments,
       steps: patch.steps ?? base.steps,
+      finalChecklist: patch.finalChecklist ?? base.finalChecklist,
       designSteps: patch.designSteps ?? base.designSteps ?? [],
       updatedAt: nowIso(),
       updatedByName: actor.name,

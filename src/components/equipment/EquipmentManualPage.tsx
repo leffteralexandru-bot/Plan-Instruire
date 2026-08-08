@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
 import type {
+  EquipmentManualPageActionHotspot,
   EquipmentManualPageHotspot,
   EquipmentManualPageVideoHotspot,
 } from '@/data/equipmentOperations';
@@ -145,6 +146,8 @@ interface EquipmentManualPageProps {
   videoUrl?: string;
   hotspot?: EquipmentManualPageHotspot;
   videoHotspots?: EquipmentManualPageVideoHotspot[];
+  actionHotspots?: EquipmentManualPageActionHotspot[];
+  onActionHotspot?: (spot: EquipmentManualPageActionHotspot) => void;
   /** Înlocuiește iconița film — bbox din PDF; Fabricator are offset vizual suplimentar. */
   compactPlayHotspots?: boolean;
   filmIconShift?: 'fabricator' | 'none';
@@ -152,13 +155,15 @@ interface EquipmentManualPageProps {
   playButtonSize?: PlayButtonSize;
 }
 
-/** Pagină manual — imagine clară; video la apăsarea zonei play din desen. */
+/** Pagină manual — imagine clară; video / acțiuni pe hotspot-uri. */
 export function EquipmentManualPage({
   imageUrl,
   alt,
   videoUrl,
   hotspot,
   videoHotspots,
+  actionHotspots,
+  onActionHotspot,
   compactPlayHotspots = false,
   filmIconShift = 'none',
   playButtonSize = 'default',
@@ -215,6 +220,34 @@ export function EquipmentManualPage({
                 aria-label={`Redare video ${index + 1}: ${alt}`}
               >
                 {!thumbnail && <ManualPlayIcon compact={compactIcon} size={playButtonSize} />}
+              </button>
+            );
+          })}
+
+          {(actionHotspots ?? []).map((spot, index) => {
+            const hitOnly = spot.hitOnly === true;
+            const spotKey = spot.deviceId ?? spot.docUrl ?? spot.label;
+            return (
+              <button
+                key={`action-${spotKey}-${spot.y}-${index}`}
+                type="button"
+                className={
+                  hitOnly
+                    ? 'absolute z-30 border-0 bg-transparent p-0 text-transparent cursor-pointer touch-manipulation focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/45'
+                    : 'absolute z-30 flex items-center border-0 bg-white px-0 text-left font-medium leading-tight text-[#2f6fed]/90 shadow-none transition-colors hover:text-[#1a4fbf] hover:underline hover:underline-offset-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/50 touch-manipulation'
+                }
+                style={{
+                  left: `${spot.x}%`,
+                  top: `${spot.y}%`,
+                  width: `${spot.w}%`,
+                  height: `${Math.max(spot.h, 1.4)}%`,
+                  fontSize: hitOnly ? undefined : 'clamp(0.55rem, 1.35vw, 0.78rem)',
+                }}
+                onClick={() => onActionHotspot?.(spot)}
+                aria-label={`Deschide ${spot.label}`}
+                title={`Deschide — ${spot.label}`}
+              >
+                {hitOnly ? <span className="sr-only">{spot.label}</span> : spot.label}
               </button>
             );
           })}

@@ -17,6 +17,10 @@ interface EquipmentGuideDeviceViewProps {
   device: EquipmentDevice;
   manualNumber?: number;
   onBack: () => void;
+  /** Capitol de deschis la start (ex. tip măsurare Blat → ch-4) */
+  initialChapterId?: string | null;
+  /** Acțiune pe hotspot din pagină (ex. Deschide manual Proliner din lista echipament). */
+  onActionHotspot?: (spot: import('@/data/equipmentOperations').EquipmentManualPageActionHotspot) => void;
 }
 
 function PhoneReachabilityBar({
@@ -50,18 +54,31 @@ function PhoneReachabilityBar({
   );
 }
 
-export function EquipmentGuideDeviceView({ device, manualNumber, onBack }: EquipmentGuideDeviceViewProps) {
+export function EquipmentGuideDeviceView({
+  device,
+  manualNumber,
+  onBack,
+  initialChapterId = null,
+  onActionHotspot,
+}: EquipmentGuideDeviceViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layoutMode = useEquipmentLayoutMode(containerRef);
   const chapters = device.chapters ?? [];
-  const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
-  const [phoneExpandedId, setPhoneExpandedId] = useState<string | null>(null);
+  const [activeChapterId, setActiveChapterId] = useState<string | null>(initialChapterId);
+  const [phoneExpandedId, setPhoneExpandedId] = useState<string | null>(initialChapterId);
   const [downloading, setDownloading] = useState(false);
   const [safetyReady, setSafetyReady] = useState(!device.safetyWarning);
 
   const activeChapter = chapters.find((c) => c.id === activeChapterId) ?? null;
   const isPhone = layoutMode === 'phone';
   const isSidebar = layoutMode === 'laptop' || layoutMode === 'desktop';
+
+  useEffect(() => {
+    if (!initialChapterId) return;
+    if (!chapters.some((c) => c.id === initialChapterId)) return;
+    setActiveChapterId(initialChapterId);
+    setPhoneExpandedId(initialChapterId);
+  }, [initialChapterId, chapters]);
 
   useEffect(() => {
     if (isSidebar && !activeChapterId && chapters[0]) {
@@ -125,6 +142,7 @@ export function EquipmentGuideDeviceView({ device, manualNumber, onBack }: Equip
                     chapter={chapter}
                     showPdfButton={!!chapter.pdfUrl}
                     pdfButtonFullWidth
+                    onActionHotspot={onActionHotspot}
                   />
                 </div>
               )}
@@ -189,6 +207,7 @@ export function EquipmentGuideDeviceView({ device, manualNumber, onBack }: Equip
                 device={device}
                 chapter={activeChapter}
                 showPdfButton={!!activeChapter.pdfUrl}
+                onActionHotspot={onActionHotspot}
               />
             ) : (
               <p className="text-sm text-corporate-muted">Selectați un capitol din meniul din stânga.</p>
@@ -207,6 +226,7 @@ export function EquipmentGuideDeviceView({ device, manualNumber, onBack }: Equip
                 device={device}
                 chapter={activeChapter}
                 showPdfButton={!!activeChapter.pdfUrl}
+                onActionHotspot={onActionHotspot}
               />
             </>
           )}

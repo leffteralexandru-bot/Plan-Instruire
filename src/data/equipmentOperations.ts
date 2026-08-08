@@ -39,6 +39,21 @@ export interface EquipmentManualPageVideoHotspot extends EquipmentManualPageHots
   videoUrl: string;
 }
 
+/** Buton pe pagină (ex. Deschide manual Utilaje / document Anexa). */
+export interface EquipmentManualPageActionHotspot extends EquipmentManualPageHotspot {
+  label: string;
+  /** ID dispozitiv din Utilaje teren (mutually exclusive cu docUrl) */
+  deviceId?: string;
+  /** PDF document (ex. Anexa 1 șablon) — deschide overlay cu vizualizare / descărcare / print */
+  docUrl?: string;
+  docFileName?: string;
+  /**
+   * Dacă true: zonă click invizibilă (textul e deja în PDF/PNG).
+   * Folosit când linkurile sunt integrate nativ în document.
+   */
+  hitOnly?: boolean;
+}
+
 export interface EquipmentManualPage {
   id: string;
   imageUrl: string;
@@ -46,6 +61,8 @@ export interface EquipmentManualPage {
   hotspot?: EquipmentManualPageHotspot;
   /** Zone play multiple pe aceeași pagină (ex. manual Prodim CT). */
   videoHotspots?: EquipmentManualPageVideoHotspot[];
+  /** Butoane acțiune pe pagină (ex. deschide manual aparat). */
+  actionHotspots?: EquipmentManualPageActionHotspot[];
 }
 
 export type EquipmentChapterCalloutVariant = 'warning' | 'attention' | 'tip' | 'note';

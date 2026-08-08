@@ -35,3 +35,14 @@ dist-ssr
 # OS
 .DS_Store
 Thumbs.db
+
+# Local agent / build scratch
+build-check.txt
+build-result.txt
+tsc-*.txt
+vitest-*.txt
+
+# Field guide ZIP packs (app downloads per-type PDF; ZIPs are local/offline only)
+public/docs/operational-guide/field-guide/**/*.zip
+public/docs/operational-guide/field-guide/*.zip
+public/docs/operational-guide/field-guide/fise-tehnice-exemple/_source/

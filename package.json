@@ -38,13 +38,17 @@
     "dekton-kitchen-pages": "python scripts/setup_dekton_kitchen_manual.py",
     "operational-checklist-pages": "python scripts/setup_operational_checklist_pdfs.py",
     "operational-field-pages": "python scripts/setup_operational_field_pdfs.py",
+    "field-guide-pages": "python scripts/setup_field_guide_manual.py",
+    "field-guide-equipment-links": "python scripts/patch_field_guide_equipment_links.py",
+    "field-guide-fise-tehnice": "python scripts/setup_fise_tehnice_accesorii.py",
     "docs": "node scripts/generate-docs.mjs",
     "setup": "npm run icons && npm run docs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "field-guide-equipment-photos": "python scripts/extract_field_guide_equipment_photos.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
