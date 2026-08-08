@@ -72,7 +72,7 @@ TYPE_SPECS: list[dict] = [
         "keep_pages": [1, 2, 3, 4, 9],
         "trim": {
             # pagina 9 (0-based 8): păstrează 4.1, ascunde 4.2
-            9: {"keep_from": 78.0, "keep_to": 295.0},
+            9: {"keep_from": 78.0, "keep_to": 282.0},
         },
     },
     {
@@ -85,7 +85,7 @@ TYPE_SPECS: list[dict] = [
         """,
         "keep_pages": [1, 2, 3, 4, 9],
         "trim": {
-            9: {"keep_from": 293.0, "keep_to": CONTENT_FOOTER_Y},
+            9: {"keep_from": 280.0, "keep_to": CONTENT_FOOTER_Y},
         },
     },
     {

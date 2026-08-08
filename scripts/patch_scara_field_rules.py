@@ -114,10 +114,6 @@ def main() -> None:
         "fiecare treaptă + schimbări de direcție.</p>",
         12,
     )
-    block(
-        "<p class='body'>5. Fiecare gol / treaptă se măsoară individual — nu din serie.</p>",
-        10,
-    )
 
     block('<p class="sub">De ce</p>', 9)
     block(
