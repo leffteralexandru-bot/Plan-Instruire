@@ -5,25 +5,28 @@ test.describe('artGRANIT login', () => {
     await page.goto('/login');
     await expect(page.getByAltText('artGRANIT')).toBeVisible();
     await expect(page.getByText('Plan de Instruire')).toBeVisible();
-    await expect(page.getByText('Profile organizaționale')).toBeVisible();
+    await expect(page.getByText('Cont demo (public)')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Autentificare' })).toBeVisible();
   });
 
   test('login angajat → redirect automat panou angajat', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Profil (email artGRANIT)').fill('angajat@artgranit.ro');
+    await page.getByLabel('Nume').fill('Angajat');
     await page.getByLabel('Parolă').fill('artgranit2026');
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL('/ingineri/panou-angajat');
-    await expect(page.getByRole('heading', { name: 'Andrei Popescu' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /Demo Angajat/i })).toBeVisible({
+      timeout: 10000,
+    });
   });
 
-  test('login HR → hub departamente și plan în curând producție', async ({ page }) => {
+  test('login admin → hub departamente și plan în curând producție', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Profil (email artGRANIT)').fill('e.vasilescu@artgranit.ro');
-    await page.getByLabel('Parolă').fill('artgranit2026');
+    await page.getByLabel('Nume').fill('Lefter');
+    await page.getByLabel('Parolă').fill('122312');
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL('/ingineri/admin');
-    await expect(page.getByRole('heading', { name: /Panou HR/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Panou Administrator/i })).toBeVisible();
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Plan Instruire/i })).toBeVisible();
     await page.getByRole('link', { name: 'Producție' }).click();
@@ -31,12 +34,12 @@ test.describe('artGRANIT login', () => {
     await expect(page.getByText('Plan în pregătire')).toBeVisible();
   });
 
-  test('login HR → panou HR ingineri', async ({ page }) => {
+  test('login admin → panou administrator', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Profil (email artGRANIT)').fill('e.vasilescu@artgranit.ro');
-    await page.getByLabel('Parolă').fill('artgranit2026');
+    await page.getByLabel('Nume').fill('Lefter');
+    await page.getByLabel('Parolă').fill('122312');
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL('/ingineri/admin');
-    await expect(page.getByRole('heading', { name: /Panou HR/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Panou Administrator/i })).toBeVisible();
   });
 });
