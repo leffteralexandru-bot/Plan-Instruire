@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
@@ -11,6 +12,7 @@ import {
 import { useEquipmentOperations } from '@/hooks/useEquipmentOperations';
 import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import { EquipmentOperationsSectionView } from '@/components/equipment/EquipmentOperationsSectionView';
+import { EquipmentManualOverlay } from '@/components/operational/OperationalGuideEquipmentManualLinks';
 
 type EquipmentDisplay = 'inline' | 'header' | 'body';
 
@@ -66,14 +68,53 @@ function DeviceCard({
 
 function EquipmentOperationsContent() {
   const data = useEquipmentOperations();
-  const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deviceFromUrl = searchParams.get('device');
+  const [deviceId, setDeviceId] = useState<string | null>(() => deviceFromUrl);
   const [sectionId, setSectionId] = useState<EquipmentGuideSectionId | null>(null);
+  const [overlayDeviceId, setOverlayDeviceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (deviceFromUrl && data.devices.some((d) => d.id === deviceFromUrl)) {
+      setDeviceId(deviceFromUrl);
+      // carte pe ecran plin (ca din ghid)
+      setOverlayDeviceId(deviceFromUrl);
+    }
+  }, [deviceFromUrl, data.devices]);
+
+  const clearDeviceFromUrl = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('device');
+    setSearchParams(next, { replace: true });
+  };
+
+  const selectDevice = (id: string) => {
+    setDeviceId(id);
+    setSectionId(null);
+    const next = new URLSearchParams(searchParams);
+    next.set('ref', 'equipment');
+    next.set('device', id);
+    setSearchParams(next, { replace: true });
+  };
 
   const device = data.devices.find((d) => d.id === deviceId) ?? null;
+  const overlayDevice = data.devices.find((d) => d.id === overlayDeviceId) ?? null;
   const manualNumber = device ? data.devices.findIndex((d) => d.id === device.id) + 1 : undefined;
   const sectionMeta = sectionId
     ? EQUIPMENT_GUIDE_SECTIONS.find((s) => s.id === sectionId)
     : null;
+
+  if (overlayDevice) {
+    return (
+      <EquipmentManualOverlay
+        device={overlayDevice}
+        onClose={() => {
+          setOverlayDeviceId(null);
+          clearDeviceFromUrl();
+        }}
+      />
+    );
+  }
 
   if (!device) {
     return (
@@ -88,7 +129,7 @@ function EquipmentOperationsContent() {
                 key={d.id}
                 device={d}
                 number={index + 1}
-                onClick={() => setDeviceId(d.id)}
+                onClick={() => selectDevice(d.id)}
               />
             ))}
           </div>
@@ -103,7 +144,10 @@ function EquipmentOperationsContent() {
         <EquipmentGuideDeviceView
           device={device}
           manualNumber={manualNumber}
-          onBack={() => setDeviceId(null)}
+          onBack={() => {
+            setDeviceId(null);
+            clearDeviceFromUrl();
+          }}
         />
       );
     }
@@ -125,7 +169,15 @@ function EquipmentOperationsContent() {
               <p className="text-sm font-semibold text-corporate-dark">{device.name}</p>
             </div>
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setDeviceId(null)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setDeviceId(null);
+              clearDeviceFromUrl();
+            }}
+          >
             ← Înapoi la aparate
           </Button>
         </div>

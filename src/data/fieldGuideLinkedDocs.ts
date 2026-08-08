@@ -35,6 +35,8 @@ export interface FieldGuideLinkedDoc {
   fileName: string;
   /** Deschide Repository tehnic în loc de overlay PDF */
   openRepo?: boolean;
+  /** Deschide cartea din Mentenanță / Utilaje teren */
+  equipmentDeviceId?: string;
 }
 
 const STATIC_DOCS: Record<
@@ -55,21 +57,24 @@ const STATIC_DOCS: Record<
   },
   proliner: {
     title: 'Aparatul de măsurat Proliner',
-    eyebrow: 'Echipament · Proliner · același fișier ca în PDF',
+    eyebrow: 'Utilaje teren · Proliner · carte Mentenanță',
     url: `${LINKED}/proliner-manual.pdf`,
     fileName: 'proliner-manual.pdf',
+    equipmentDeviceId: 'eq-proliner',
   },
   gll: {
     title: 'Nivelă laser Bosch GLL 3-80',
-    eyebrow: 'Echipament · GLL 3-80 · același fișier ca în PDF',
+    eyebrow: 'Utilaje teren · GLL 3-80 · carte Mentenanță',
     url: `${LINKED}/bosch-gll-3-80-manual.pdf`,
     fileName: 'bosch-gll-3-80-manual.pdf',
+    equipmentDeviceId: 'eq-bosch-gll-3-80',
   },
   ruleta: {
     title: 'Ruletă Bosch 5 m',
-    eyebrow: 'Echipament · Ruletă · același fișier ca în PDF',
+    eyebrow: 'Utilaje teren · Ruletă · carte Mentenanță',
     url: `${LINKED}/bosch-ruleta-5m.pdf`,
     fileName: 'bosch-ruleta-5m.pdf',
+    equipmentDeviceId: 'eq-bosch-tape-5m',
   },
   canting: {
     title: 'Canting',

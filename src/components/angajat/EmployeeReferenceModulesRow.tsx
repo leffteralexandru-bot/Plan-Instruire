@@ -22,8 +22,9 @@ function moduleFromSearch(params: URLSearchParams): ActiveModule | null {
   const ref = params.get('ref');
   const doc = params.get('doc');
   const ghid = params.get('ghid');
+  const device = params.get('device');
   if (ref === 'repo' || doc === 'doc-tehnica') return 'repo';
-  if (ref === 'equipment') return 'equipment';
+  if (ref === 'equipment' || device) return 'equipment';
   if (ref === 'guide' || ghid === 'teren' || ghid === 'proiectare' || (doc && doc !== 'doc-tehnica')) {
     return 'guide';
   }

@@ -5,7 +5,7 @@ import {
   OperationalGuideCollapsibleShell,
 } from '@/components/operational/OperationalGuideDocActions';
 import { DEFAULT_EQUIPMENT_OPERATIONS, type EquipmentDevice } from '@/data/equipmentOperations';
-import { downloadEquipmentPdf } from '@/lib/downloadEquipmentPdf';
+import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 
 /** Echipament din Etapa 1.1 — legături către manualele Utilaje teren. */
 export interface FieldEquipmentManualLink {
@@ -64,6 +64,12 @@ export function EquipmentManualOverlay({
   device: EquipmentDevice;
   onClose: () => void;
 }) {
+  const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [shareHint, setShareHint] = useState<string | null>(null);
+  const pdf = useMemo(() => devicePdf(device), [device]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -77,6 +83,49 @@ export function EquipmentManualOverlay({
     };
   }, [onClose]);
 
+  const handleDownload = async () => {
+    if (!pdf) {
+      setError('PDF indisponibil pentru acest aparat.');
+      return;
+    }
+    setDownloading(true);
+    setError(null);
+    setShareHint(null);
+    try {
+      await downloadEquipmentPdf(pdf.url, pdf.fileName);
+    } catch {
+      setError('Descărcarea a eșuat. Încercați din nou.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!pdf) {
+      setError('PDF indisponibil pentru acest aparat.');
+      return;
+    }
+    setSharing(true);
+    setError(null);
+    setShareHint(null);
+    try {
+      const result = await shareEquipmentPdf(pdf.url, pdf.fileName, {
+        title: device.name,
+        text: `Manual utilaje artGRANIT — ${device.name}`,
+      });
+      if (result === 'mailto') {
+        setShareHint('S-a deschis emailul cu linkul documentului.');
+      } else if (result === 'copied') {
+        setShareHint('Linkul a fost copiat — poți să-l trimiți oricui.');
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError('Trimiterea a eșuat. Încercați din nou.');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm"
@@ -84,17 +133,50 @@ export function EquipmentManualOverlay({
       aria-modal="true"
       aria-label={`Manual ${device.name}`}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
-            Manual Utilaje · separat
+            Mentenanță & operare · carte utilaj
           </p>
           <p className="truncate text-sm font-semibold text-corporate-dark">{device.name}</p>
+          <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">
+            Aceeași carte ca în Modul Mentenanță — vizualizare pe capitole, Descarcă / Trimite PDF.
+          </p>
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-          Închide
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={!pdf || downloading || sharing}
+            onClick={() => void handleDownload()}
+          >
+            {downloading ? '…' : 'Descarcă'}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={!pdf || downloading || sharing}
+            onClick={() => void handleShare()}
+          >
+            {sharing ? '…' : 'Trimite'}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Închide
+          </Button>
+        </div>
       </div>
+      {shareHint ? (
+        <p className="border-b border-corporate-border bg-corporate-surface/40 px-3 py-1.5 text-[11px] text-corporate-muted">
+          {shareHint}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="border-b border-red-200 bg-red-50 px-3 py-1.5 text-[11px] text-red-700">
+          {error}
+        </p>
+      ) : null}
       <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
         <EquipmentGuideDeviceView
           device={device}

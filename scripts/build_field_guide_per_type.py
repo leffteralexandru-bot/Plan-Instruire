@@ -36,6 +36,13 @@ FILENAME_TO_DOC_ID = {
     "Exemplu_Comanda_Material.pdf": "ctg",
 }
 
+# Utilaje → carte Mentenanță (nu overlay PDF simplu)
+DOC_ID_TO_EQUIPMENT_DEVICE = {
+    "proliner": "eq-proliner",
+    "gll": "eq-bosch-gll-3-80",
+    "ruleta": "eq-bosch-tape-5m",
+}
+
 # Zona cuprins tipuri pe pagina 1 (de la Etapa 3 până înainte de ATENȚIE Bitrix)
 TOC_TYPE_TOP = 348.0
 TOC_TYPE_BOTTOM = 560.0
@@ -167,9 +174,13 @@ def rewrite_links_to_panou(doc: fitz.Document, tip: str) -> int:
                 else:
                     doc_id = FILENAME_TO_DOC_ID.get(name)
                 if doc_id:
-                    new_uri = (
-                        f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
-                    )
+                    device = DOC_ID_TO_EQUIPMENT_DEVICE.get(doc_id)
+                    if device:
+                        new_uri = f"{APP_PANOU}?ref=equipment&device={device}"
+                    else:
+                        new_uri = (
+                            f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
+                        )
             elif "/ingineri/panou-angajat" in uri and "doc=" not in uri:
                 # Vanity / „deschide ghidul” → tipul curent, nu repository
                 new_uri = f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}"

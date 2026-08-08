@@ -28,13 +28,15 @@ function PanelLoading() {
   );
 }
 
-/** Deep-link din PDF / hotspot: ref, ghid sau doc pe panou. */
+/** Deep-link din PDF / hotspot: ref, ghid, doc sau device utilaj. */
 function hasReferenceDeepLink(params: URLSearchParams): boolean {
   const ref = params.get('ref');
   const doc = params.get('doc');
   const ghid = params.get('ghid');
+  const device = params.get('device');
   if (ref === 'guide' || ref === 'repo' || ref === 'equipment') return true;
   if (ghid === 'teren' || ghid === 'proiectare') return true;
+  if (device) return true;
   return !!doc;
 }
 

@@ -103,7 +103,13 @@ function MeasurerGuideBody({
   useEffect(() => {
     if (!deepDocId || deepDocId === 'doc-tehnica') return;
     const resolved = resolveFieldGuideLinkedDoc(deepDocId, task.id);
-    if (!resolved || resolved.openRepo || !resolved.url) return;
+    if (!resolved || resolved.openRepo) return;
+    if (resolved.equipmentDeviceId) {
+      setOpenEquipmentId(resolved.equipmentDeviceId);
+      setOpenDoc(null);
+      return;
+    }
+    if (!resolved.url) return;
     setOpenDoc({
       url: resolved.url,
       fileName: resolved.fileName,
@@ -128,6 +134,12 @@ function MeasurerGuideBody({
         openHref('/ingineri/panou-angajat?ref=repo&doc=doc-tehnica');
         return;
       }
+      if (resolved?.equipmentDeviceId) {
+        syncDocToUrl(resolved.id, 'measurer');
+        setOpenEquipmentId(resolved.equipmentDeviceId);
+        setOpenDoc(null);
+        return;
+      }
       if (resolved?.url) {
         syncDocToUrl(resolved.id, 'measurer');
         setOpenDoc({
@@ -139,6 +151,10 @@ function MeasurerGuideBody({
         return;
       }
     }
+    if (spot.deviceId) {
+      setOpenEquipmentId(spot.deviceId);
+      return;
+    }
     if (spot.docUrl && spot.docFileName) {
       setOpenDoc({
         url: spot.docUrl,
@@ -147,9 +163,6 @@ function MeasurerGuideBody({
         eyebrow: 'Document ghid · același fișier ca în PDF',
       });
       return;
-    }
-    if (spot.deviceId) {
-      setOpenEquipmentId(spot.deviceId);
     }
   };
 
@@ -167,7 +180,16 @@ function MeasurerGuideBody({
       {openEquipment ? (
         <EquipmentManualOverlay
           device={openEquipment}
-          onClose={() => setOpenEquipmentId(null)}
+          onClose={() => {
+            setOpenEquipmentId(null);
+            if (
+              deepDocId === 'proliner' ||
+              deepDocId === 'gll' ||
+              deepDocId === 'ruleta'
+            ) {
+              onClearDeepDoc();
+            }
+          }}
         />
       ) : null}
 
