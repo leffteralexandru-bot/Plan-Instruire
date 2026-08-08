@@ -443,7 +443,7 @@ const TYPE_SPECS: TypeGuideSpec[] = [
     typeChapters: [
       {
         title: 'Etapa 3 — Scări exterioare',
-        summary: 'Schele · meteo · picurător · pantă',
+        summary: 'Reguli pe teren: schele, picurător, pantă, fiecare treaptă',
         pages: [5],
       },
     ],
