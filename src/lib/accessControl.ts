@@ -155,3 +155,22 @@ export function getPostLoginPath(user: User): string {
   if (getSupervisedEmployeeIds(user.id).length > 0) return ingineriPath('/panou-supervizor');
   return INGINERI_ANGAJAT_PANEL_PATH;
 }
+
+/**
+ * Path intern din `?next=` după login (deep-link ghid / document).
+ * Respinge URL-uri externe, protocol-relative și /login.
+ */
+export function getSafeInternalNextPath(next: string | null | undefined): string | null {
+  if (!next?.trim()) return null;
+  let decoded = next.trim();
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch {
+    /* păstrează valoarea brută */
+  }
+  if (!decoded.startsWith('/') || decoded.startsWith('//')) return null;
+  if (decoded === '/login' || decoded.startsWith('/login?') || decoded.startsWith('/login#')) {
+    return null;
+  }
+  return decoded;
+}

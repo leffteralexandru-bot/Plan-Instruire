@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { AppShell } from '@/components/layout/AppShell';
 import { LoginPage } from '@/pages/LoginPage';
@@ -30,6 +30,7 @@ import { PhoneLayoutClassEffect } from '@/components/layout/PhoneLayoutClassEffe
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -39,7 +40,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    const next = `${location.pathname}${location.search}${location.hash}`;
+    const loginTo =
+      next && next !== '/' ? `/login?next=${encodeURIComponent(next)}` : '/login';
+    return <Navigate to={loginTo} replace />;
+  }
   return <>{children}</>;
 }
 

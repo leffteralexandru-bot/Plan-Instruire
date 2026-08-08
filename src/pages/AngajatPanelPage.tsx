@@ -18,6 +18,7 @@ import { adminPath } from '@/lib/adminRoutes';
 import { hrPerformanceStore } from '@/lib/hrPerformanceStore';
 import { isAngajatUser, hasRole } from '@/lib/roles';
 import { isSupervisorOf } from '@/lib/supervisor';
+import { DEMO_ANGAJAT_ID } from '@/lib/seedMinimalDemo';
 
 function PanelLoading() {
   return (
@@ -27,25 +28,48 @@ function PanelLoading() {
   );
 }
 
+/** Deep-link din PDF / hotspot: ref, ghid sau doc pe panou. */
+function hasReferenceDeepLink(params: URLSearchParams): boolean {
+  const ref = params.get('ref');
+  const doc = params.get('doc');
+  const ghid = params.get('ghid');
+  if (ref === 'guide' || ref === 'repo' || ref === 'equipment') return true;
+  if (ghid === 'teren' || ghid === 'proiectare') return true;
+  return !!doc;
+}
+
 /** Hub principal angajat — date personale, instruire, evaluări (izolat) */
 export function AngajatPanelPage() {
   const { user, loading, canAccessAdmin, isAdmin, isHr } = useAuth();
   const { canViewEmployee, canOpenMentorPanel, canOpenSupervisorPanel } = useAccessControl();
   const [searchParams] = useSearchParams();
   const viewAs = searchParams.get('viewAs');
+  const referenceDeepLink = hasReferenceDeepLink(searchParams);
   const { setSelectedStagiarId } = useStagiarSelection();
 
+  /** Staff pe deep-link ghid → preview pe demo angajat (deschide modulele din query). */
+  const effectiveViewAs =
+    viewAs ||
+    (!isAngajatUser(user) && referenceDeepLink ? DEMO_ANGAJAT_ID : null);
+
   useEffect(() => {
-    if (viewAs) setSelectedStagiarId(viewAs);
-  }, [viewAs, setSelectedStagiarId]);
+    if (effectiveViewAs) setSelectedStagiarId(effectiveViewAs);
+  }, [effectiveViewAs, setSelectedStagiarId]);
 
   if (loading) return <PanelLoading />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    const next = `/ingineri/panou-angajat${searchParams.toString() ? `?${searchParams}` : ''}`;
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  }
 
-  if (viewAs && canViewEmployee(viewAs)) {
-    const profile = hrPerformanceStore.getProfile(viewAs);
-    const name = profile ? `${profile.prenume} ${profile.nume}`.trim() : viewAs;
-    const isSupervisorView = isSupervisorOf(user.id, viewAs);
+  if (effectiveViewAs && (canViewEmployee(effectiveViewAs) || referenceDeepLink)) {
+    const profile = hrPerformanceStore.getProfile(effectiveViewAs);
+    const name = profile
+      ? `${profile.prenume} ${profile.nume}`.trim()
+      : effectiveViewAs === DEMO_ANGAJAT_ID
+        ? 'Demo Angajat'
+        : effectiveViewAs;
+    const isSupervisorView = isSupervisorOf(user.id, effectiveViewAs);
     const backTo = canAccessAdmin
       ? ingineriPath('/admin')
       : isSupervisorView && canOpenSupervisorPanel
@@ -58,25 +82,31 @@ export function AngajatPanelPage() {
       : isSupervisorView && canOpenSupervisorPanel
         ? 'Panou Supervizor'
         : 'Panou Mentor';
+    const isDeepLinkPreview = !viewAs && referenceDeepLink && !isAngajatUser(user);
 
     return (
       <div className="space-y-6">
-        <Link to={backTo} className="text-sm text-corporate-gold font-medium hover:underline">
-          ← Înapoi la {backLabel}
-        </Link>
+        {!isAngajatUser(user) && (
+          <Link to={backTo} className="text-sm text-corporate-gold font-medium hover:underline">
+            ← Înapoi la {backLabel}
+          </Link>
+        )}
         <div>
           <Badge variant="info" className="mb-2">
-            Vedere ca angajat
+            {isDeepLinkPreview ? 'Documentație ghid · preview' : 'Vedere ca angajat'}
           </Badge>
           <DesktopPageHeader>
-            <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">Panou Angajat — {name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-corporate-dark">
+              Panou Angajat — {name}
+            </h1>
           </DesktopPageHeader>
           <DesktopPageIntro>
-            Aceeași interfață pe care o vede angajatul în contul său — doar citire, fără acțiuni în
-            numele lui.
+            {isDeepLinkPreview
+              ? 'Deschidere din linkul ghidului — același document ca în PDF / pe site.'
+              : 'Aceeași interfață pe care o vede angajatul în contul său — doar citire, fără acțiuni în numele lui.'}
           </DesktopPageIntro>
         </div>
-        <AngajatPanelView viewAsId={viewAs} />
+        <AngajatPanelView viewAsId={effectiveViewAs} />
       </div>
     );
   }
@@ -90,7 +120,16 @@ export function AngajatPanelPage() {
           </DesktopPageHeader>
           <p className="text-sm text-corporate-muted mt-2 leading-relaxed">
             Această pagină este pentru conturile cu rol <strong>Angajat</strong>. Sunteți conectat ca{' '}
-            <strong>{isAdmin ? 'Administrator' : isHr ? 'HR' : hasRole(user, 'mentor') ? 'Mentor' : 'utilizator staff'}</strong>.
+            <strong>
+              {isAdmin
+                ? 'Administrator'
+                : isHr
+                  ? 'HR'
+                  : hasRole(user, 'mentor')
+                    ? 'Mentor'
+                    : 'utilizator staff'}
+            </strong>
+            .
           </p>
           <ul className="mt-4 text-sm text-corporate-muted space-y-2 list-disc list-inside">
             <li>Pentru a vedea panoul unui inginer: deschideți fișa din Panou HR → Angajați.</li>

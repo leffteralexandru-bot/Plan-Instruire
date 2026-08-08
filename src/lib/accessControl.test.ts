@@ -3,6 +3,7 @@ import {
   canViewEmployee,
   canOpenMentorPanel,
   getAccessibleEmployeeIds,
+  getSafeInternalNextPath,
 } from '@/lib/accessControl';
 import { isSubordinateOf } from '@/lib/supervisor';
 import type { User } from '@/types';
@@ -109,5 +110,22 @@ describe('accessControl', () => {
     expect(Array.isArray(ids)).toBe(true);
     expect(ids).toContain('u-stagiar-1');
     expect(ids).not.toContain('u-hr');
+  });
+
+  it('getSafeInternalNextPath acceptă doar path-uri interne', () => {
+    expect(
+      getSafeInternalNextPath(
+        '/ingineri/panou-angajat?ref=guide&ghid=teren&tip=scara&doc=anexa1',
+      ),
+    ).toBe('/ingineri/panou-angajat?ref=guide&ghid=teren&tip=scara&doc=anexa1');
+    expect(
+      getSafeInternalNextPath(
+        encodeURIComponent('/ingineri/panou-angajat?ref=guide&doc=anexa1'),
+      ),
+    ).toBe('/ingineri/panou-angajat?ref=guide&doc=anexa1');
+    expect(getSafeInternalNextPath('https://evil.example/x')).toBeNull();
+    expect(getSafeInternalNextPath('//evil.example')).toBeNull();
+    expect(getSafeInternalNextPath('/login')).toBeNull();
+    expect(getSafeInternalNextPath(null)).toBeNull();
   });
 });

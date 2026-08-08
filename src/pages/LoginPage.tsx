@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { getPostLoginPath } from '@/lib/accessControl';
+import { getPostLoginPath, getSafeInternalNextPath } from '@/lib/accessControl';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -57,12 +57,19 @@ function DemoAngajatCard({
 
 export function LoginPage() {
   const { login, isAuthenticated, loading, user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState('');
   const [nume, setNume] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [profileTick, setProfileTick] = useState(0);
+
+  const postLoginPath = useMemo(() => {
+    const fromNext = getSafeInternalNextPath(searchParams.get('next'));
+    if (fromNext) return fromNext;
+    return user ? getPostLoginPath(user) : '/';
+  }, [searchParams, user]);
 
   useEffect(() => {
     repairLoginCredentials();
@@ -95,7 +102,7 @@ export function LoginPage() {
     );
   }
 
-  if (isAuthenticated && user) return <Navigate to={getPostLoginPath(user)} replace />;
+  if (isAuthenticated && user) return <Navigate to={postLoginPath} replace />;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
