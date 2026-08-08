@@ -67,12 +67,12 @@ TYPE_SPECS: list[dict] = [
         "toc_html": """
             <p class="h">Etapa 3 · Tip măsurare SCĂRI</p>
             <p class="n">Doar pentru tipul Scări — nu include Blat sau alte tipuri.</p>
-            <p class="i">3.1  Scări (condiții, tip trepte, LED, plintă, Proliner)</p>
+            <p class="i">3.1  Scări (obligații pe loc, reguli pe teren, Bitrix)</p>
         """,
         "keep_pages": [1, 2, 3, 4, 9],
         "trim": {
             # pagina 9 (0-based 8): păstrează 4.1, ascunde 4.2
-            9: {"keep_from": 78.0, "keep_to": 336.0},
+            9: {"keep_from": 78.0, "keep_to": 295.0},
         },
     },
     {
@@ -85,7 +85,7 @@ TYPE_SPECS: list[dict] = [
         """,
         "keep_pages": [1, 2, 3, 4, 9],
         "trim": {
-            9: {"keep_from": 336.0, "keep_to": CONTENT_FOOTER_Y},
+            9: {"keep_from": 293.0, "keep_to": CONTENT_FOOTER_Y},
         },
     },
     {

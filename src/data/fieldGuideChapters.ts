@@ -410,7 +410,7 @@ const TYPE_SPECS: TypeGuideSpec[] = [
     typeChapters: [
       {
         title: 'Etapa 3 — Scări',
-        summary: 'Tip trepte, LED, plintă — fiecare treaptă individual',
+        summary: 'Obligații pe loc + reguli: tip trepte, LED/plintă, Proliner, Bitrix',
         pages: [5],
       },
     ],
