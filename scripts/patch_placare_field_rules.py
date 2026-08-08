@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-Extinde Etapa 4.2 · Placare perete în Ghid teren cu:
-«Reguli pe teren — specifice acestui tip» (5 puncte).
+Placare perete: Condiții obligatorii + Obligații măsurător + Reguli pe teren.
 Apoi: python scripts/build_field_guide_per_type.py
 """
 
@@ -18,9 +17,9 @@ LEFT = 42.52
 
 PAGE_CSS = """
 * { font-family: sans-serif; }
-.title { font-size: 11.5pt; font-weight: bold; color: #0f375f; margin: 0; padding: 0; }
-.sub { font-size: 9pt; font-weight: bold; color: #0f375f; margin: 0; padding: 0; }
-.body { font-size: 8.4pt; color: #1c1915; margin: 0; padding: 0; line-height: 1.22; }
+.title { font-size: 10.5pt; font-weight: bold; color: #0f375f; margin: 0; padding: 0; }
+.sub { font-size: 8.2pt; font-weight: bold; color: #0f375f; margin: 0; padding: 0; }
+.body { font-size: 7.5pt; color: #1c1915; margin: 0; padding: 0; line-height: 1.14; }
 """
 
 
@@ -29,15 +28,14 @@ def main() -> None:
         raise SystemExit(f"Lipsește: {MASTER}")
 
     doc = fitz.open(MASTER)
-    page = doc[8]  # pagina 9 — 4.1 Scări + 4.2 Placare
+    page = doc[8]  # pagina 9
     hits = page.search_for("Etapa 4.2")
     if not hits:
-        raise SystemExit("Nu găsesc «Etapa 4.2» pe pagina 9")
+        raise SystemExit("Nu găsesc «Etapa 4.2»")
 
     top = min(h.y0 for h in hits) - 2
     width = page.rect.width - LEFT - 42
 
-    # păstrează Scări; șterge doar blocul Placare până la footer
     for link in list(page.get_links()):
         fr = link.get("from")
         if fr and fr.y0 >= top - 2:
@@ -49,80 +47,110 @@ def main() -> None:
         graphics=getattr(fitz, "PDF_REDACT_LINE_ART_REMOVE", 1),
     )
 
-    y = top + 2
+    y = top + 1
 
     def block(html: str, height: float) -> None:
         nonlocal y
         rect = fitz.Rect(LEFT, y, LEFT + width, y + height)
         page.insert_htmlbox(rect, html, css=PAGE_CSS)
-        y = rect.y1 + 2.5
+        y = rect.y1 + 1.3
 
-    block('<p class="title">Etapa 4.2 · Placare perete</p>', 15)
-    block('<p class="sub">Ce se face</p>', 12)
+    block('<p class="title">Etapa 4.2 · Placare perete</p>', 13)
     block(
         "<p class='body'>• NOTĂ: Șorțul (placarea pe perete / spate la bucătărie) urmează "
         "ACELEAȘI reguli ca placarea de perete — nu se tratează în capitolul Blat.</p>",
-        22,
+        16,
+    )
+
+    block('<p class="sub">Condiții obligatorii (înainte de măsurare)</p>', 11)
+    block(
+        "<p class='body'>1. Prezența obligatorie a persoanei cu putere de decizie.</p>",
+        10,
     )
     block(
-        "<p class='body'>• Condiții: persoană cu putere de decizie; acces; pereți pregătiți "
-        "(interzis pe gips); prize și conexiuni montate; suport TV; grilă ventilare.</p>",
-        22,
+        "<p class='body'>2. Acces pentru măsurare. Să nu fie obstacole care să restricționeze "
+        "accesul inginerului spre obiectul care urmează a fi măsurat.</p>",
+        16,
     )
     block(
-        "<p class='body'>• Verifici planeitatea / verticalitatea cu laser — nu doar pe ochi.</p>",
+        "<p class='body'>3. Pereții să fie pregătiți pentru placare (se interzice placare pe "
+        "bază de gips).</p>",
+        14,
+    )
+    block(
+        "<p class='body'>4. Să fie montate toate prizele și conexiunile (apă, canalizare).</p>",
+        12,
+    )
+    block("<p class='body'>5. Suportul TV montat în perete.</p>", 10)
+    block("<p class='body'>6. Prezența grilei de ventilare.</p>", 10)
+
+    block('<p class="sub">Obligații măsurător (pe loc)</p>', 11)
+    block(
+        "<p class='body'>1. Verifici planeitatea / verticalitatea cu laser — nu doar pe ochi.</p>",
+        11,
+    )
+    block(
+        "<p class='body'>2. Fotografiază prizele, întrerupătoarele și golurile tehnice perete "
+        "cu perete și le numeri.</p>",
+        14,
+    )
+    block(
+        "<p class='body'>3. Întrebi prize: păstrați / anulați / adăugați / măriți? Aliniere OK?</p>",
         12,
     )
     block(
-        "<p class='body'>• Fotografiază prizele, întrerupătoarele și golurile tehnice perete cu "
-        "perete și le numeri; întrebi: păstrați / anulați / adăugați / măriți?</p>",
-        22,
+        "<p class='body'>4. Găuri prindere hotă/poliță: înainte de măsurare. Decupaje doar în "
+        "fabrică (Waterjet) — interzis pe loc.</p>",
+        16,
     )
     block(
-        "<p class='body'>• Găuri prindere hotă/poliță: înainte de măsurare. Decupaje doar în "
-        "fabrică (Waterjet) — interzis pe loc.</p>",
-        20,
+        "<p class='body'>5. Clarifici LED sub mobilă, hotă (buză vs. mobilă), "
+        "pardoseală→tavan / parchet.</p>",
+        14,
+    )
+    block(
+        "<p class='body'>6. Predai în Bitrix: Anexa 1 + poze + video + Proliner.</p>",
+        11,
     )
 
-    block('<p class="sub">Reguli pe teren — specifice acestui tip</p>', 13)
+    block('<p class="sub">Reguli pe teren — specifice acestui tip</p>', 11)
     block(
         "<p class='body'>1. Linie orizontală laser + verticală Proliner = reper; trasezi pe "
         "perete cu creionul, apoi conturul.</p>",
-        20,
+        14,
     )
     block(
         "<p class='body'>2. Laser vertical: adeziv min 3–4 mm / max ~15 mm; creion = linia din "
         "față a placării.</p>",
-        20,
+        14,
     )
     block(
         "<p class='body'>3. Îmbinări: canting + Comanda de transfer (dimensiuni placă) + "
         "lift/scări/persoane.</p>",
-        20,
+        14,
     )
     block(
         "<p class='body'>4. Proliner: contur + întoarceri + goluri (prize, ventilare, TV); "
         "planeitate/verticalitate.</p>",
-        20,
+        14,
     )
     block(
         "<p class='body'>5. Măsoară tot ce e posibil — inclusiv contururi care par "
         "„nefolositoare”.</p>",
-        18,
+        12,
     )
 
-    block('<p class="sub">De ce</p>', 12)
+    block('<p class="sub">De ce</p>', 10)
     block(
-        "<p class='body'>Prizele și golurile netrecute pe poză dispar din proiect. Laserul + "
-        "Proliner dau reperul pentru planeitate și adeziv; șorțul = placare, ca să nu se "
-        "amestece cu blatul. Cantingul și comanda de transfer fixează îmbinările pe placa "
-        "reală.</p>",
-        36,
+        "<p class='body'>Fără condiții (gips, prize, TV, grilă) măsurarea e incompletă. "
+        "Obligațiile pe loc prind golurile și LED-ul; kitul Bitrix închide setul. Laser + "
+        "Proliner + canting fixează reperul și îmbinările.</p>",
+        24,
     )
 
-    print(f"  Placare rules end y={y:.0f} (footer ~{FOOTER_Y})")
-    if y > FOOTER_Y - 10:
-        print("  WARN: conținut aproape de footer")
+    print(f"  end y={y:.0f}")
+    if y > FOOTER_Y - 4:
+        print("  WARN: overflow")
 
     tmp = MASTER.with_suffix(".placare-patched.pdf")
     doc.save(tmp, garbage=3, deflate=True)

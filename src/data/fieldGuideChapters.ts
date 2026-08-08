@@ -421,7 +421,7 @@ const TYPE_SPECS: TypeGuideSpec[] = [
     typeChapters: [
       {
         title: 'Etapa 3 — Placare perete',
-        summary: 'Reguli pe teren: laser+Proliner, adeziv 3–15 mm, canting, goluri',
+        summary: 'Condiții + obligații pe loc + reguli laser/Proliner/canting',
         pages: [5],
       },
     ],
