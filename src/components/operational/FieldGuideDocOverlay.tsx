@@ -15,12 +15,16 @@ export function FieldGuideDocOverlay({
   pdfFileName,
   title,
   eyebrow = 'Document ghid',
+  returnLabel = 'Înapoi la ghid',
+  contextHint = 'Același document ca linkul din PDF / de pe site. După închidere rămâi în ghidul de pe panou. Șablon de lucru — documentul real semnat rămâne în Bitrix.',
   onClose,
 }: {
   pdfUrl: string;
   pdfFileName: string;
   title: string;
   eyebrow?: string;
+  returnLabel?: string;
+  contextHint?: string;
   onClose: () => void;
 }) {
   const [downloading, setDownloading] = useState(false);
@@ -100,10 +104,7 @@ export function FieldGuideDocOverlay({
             {eyebrow}
           </p>
           <p className="truncate text-sm font-semibold text-corporate-dark">{title}</p>
-          <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">
-            Același document ca linkul din PDF-ul ghid (sau din poza de pe site). Șablon de lucru —
-            documentul real semnat rămâne în Bitrix.
-          </p>
+          <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">{contextHint}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <Button
@@ -128,7 +129,7 @@ export function FieldGuideDocOverlay({
             Printează
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Închide
+            {returnLabel}
           </Button>
         </div>
       </div>

@@ -60,9 +60,14 @@ function devicePdf(device: EquipmentDevice): { url: string; fileName: string } |
 export function EquipmentManualOverlay({
   device,
   onClose,
+  returnLabel = 'Înapoi la ghid',
+  contextHint = 'Deschis din ghidul de pe site — după închidere rămâi în același ghid (poți continua citirea).',
 }: {
   device: EquipmentDevice;
   onClose: () => void;
+  /** Text pe butonul de întoarcere — rămâi pe ghidul de pe site */
+  returnLabel?: string;
+  contextHint?: string;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -139,9 +144,7 @@ export function EquipmentManualOverlay({
             Mentenanță & operare · carte utilaj
           </p>
           <p className="truncate text-sm font-semibold text-corporate-dark">{device.name}</p>
-          <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">
-            Aceeași carte ca în Modul Mentenanță — vizualizare pe capitole, Descarcă / Trimite PDF.
-          </p>
+          <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">{contextHint}</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">
           <Button
@@ -163,7 +166,7 @@ export function EquipmentManualOverlay({
             {sharing ? '…' : 'Trimite'}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            Închide
+            {returnLabel}
           </Button>
         </div>
       </div>

@@ -75,9 +75,16 @@ function EquipmentOperationsContent() {
   const [overlayDeviceId, setOverlayDeviceId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (deviceFromUrl && data.devices.some((d) => d.id === deviceFromUrl)) {
+    // Proliner / GLL / Ruletă din URL sunt redirecționate la ghid (EmployeeReferenceModulesRow).
+    // Aici rămân doar alte aparate Mentenanță cu ?device=
+    if (
+      deviceFromUrl &&
+      data.devices.some((d) => d.id === deviceFromUrl) &&
+      deviceFromUrl !== 'eq-proliner' &&
+      deviceFromUrl !== 'eq-bosch-gll-3-80' &&
+      deviceFromUrl !== 'eq-bosch-tape-5m'
+    ) {
       setDeviceId(deviceFromUrl);
-      // carte pe ecran plin (ca din ghid)
       setOverlayDeviceId(deviceFromUrl);
     }
   }, [deviceFromUrl, data.devices]);
@@ -91,6 +98,11 @@ function EquipmentOperationsContent() {
   const selectDevice = (id: string) => {
     setDeviceId(id);
     setSectionId(null);
+    // Utilaje din ghid: overlay local, fără ?device= (altfel te aruncă în Ghid operațional)
+    if (id === 'eq-proliner' || id === 'eq-bosch-gll-3-80' || id === 'eq-bosch-tape-5m') {
+      setOverlayDeviceId(id);
+      return;
+    }
     const next = new URLSearchParams(searchParams);
     next.set('ref', 'equipment');
     next.set('device', id);
@@ -108,6 +120,8 @@ function EquipmentOperationsContent() {
     return (
       <EquipmentManualOverlay
         device={overlayDevice}
+        returnLabel="Înapoi la Mentenanță"
+        contextHint="Carte din Modul Mentenanță — Descarcă / Trimite PDF."
         onClose={() => {
           setOverlayDeviceId(null);
           clearDeviceFromUrl();

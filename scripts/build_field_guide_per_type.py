@@ -36,7 +36,7 @@ FILENAME_TO_DOC_ID = {
     "Exemplu_Comanda_Material.pdf": "ctg",
 }
 
-# Utilaje → carte Mentenanță (nu overlay PDF simplu)
+# (păstrat pentru referință; linkurile PDF folosesc doc=, nu Mentenanță)
 DOC_ID_TO_EQUIPMENT_DEVICE = {
     "proliner": "eq-proliner",
     "gll": "eq-bosch-gll-3-80",
@@ -174,13 +174,10 @@ def rewrite_links_to_panou(doc: fitz.Document, tip: str) -> int:
                 else:
                     doc_id = FILENAME_TO_DOC_ID.get(name)
                 if doc_id:
-                    device = DOC_ID_TO_EQUIPMENT_DEVICE.get(doc_id)
-                    if device:
-                        new_uri = f"{APP_PANOU}?ref=equipment&device={device}"
-                    else:
-                        new_uri = (
-                            f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
-                        )
+                    # Inclusiv Proliner/GLL/Ruletă: rămâi în ghid pe site; cartea se deschide peste
+                    new_uri = (
+                        f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
+                    )
             elif "/ingineri/panou-angajat" in uri and "doc=" not in uri:
                 # Vanity / „deschide ghidul” → tipul curent, nu repository
                 new_uri = f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}"

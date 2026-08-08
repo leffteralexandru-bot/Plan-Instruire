@@ -180,6 +180,8 @@ function MeasurerGuideBody({
       {openEquipment ? (
         <EquipmentManualOverlay
           device={openEquipment}
+          returnLabel={`Înapoi la ghid măsurare · ${OPERATIONAL_GUIDE_LABELS[task.id]}`}
+          contextHint={`Ești pe site, în Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Închide cartea ca să continui ghidul de unde ai deschis linkul.`}
           onClose={() => {
             setOpenEquipmentId(null);
             if (
@@ -199,6 +201,8 @@ function MeasurerGuideBody({
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
+          returnLabel={`Înapoi la ghid măsurare · ${OPERATIONAL_GUIDE_LABELS[task.id]}`}
+          contextHint={`Ești pe site, în Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Închide documentul ca să continui ghidul de unde ai deschis linkul.`}
           onClose={closeDoc}
         />
       ) : null}
@@ -281,6 +285,8 @@ function DesignGuideBody({
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
+          returnLabel={`Înapoi la ghid proiectare · ${label}`}
+          contextHint={`Ești pe site, în Ghid proiectare (${label}). Închide documentul ca să continui ghidul de unde ai deschis linkul.`}
           onClose={closeDoc}
         />
       ) : null}

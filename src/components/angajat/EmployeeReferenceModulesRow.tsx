@@ -12,6 +12,13 @@ interface EmployeeReferenceModulesRowProps {
 
 type ActiveModule = 'guide' | 'repo' | 'equipment';
 
+/** Utilaje din ghidul de măsurare → deschise în Ghid (nu Mentenanță), ca să rămâi pe ghid */
+const GUIDE_EQUIPMENT_DEVICE_TO_DOC: Record<string, string> = {
+  'eq-proliner': 'proliner',
+  'eq-bosch-gll-3-80': 'gll',
+  'eq-bosch-tape-5m': 'ruleta',
+};
+
 const EXPAND_LABELS: Record<ActiveModule, string> = {
   guide: 'Ghid operațional · măsurători',
   repo: 'Repository tehnic · documentație',
@@ -24,6 +31,8 @@ function moduleFromSearch(params: URLSearchParams): ActiveModule | null {
   const ghid = params.get('ghid');
   const device = params.get('device');
   if (ref === 'repo' || doc === 'doc-tehnica') return 'repo';
+  // Proliner/GLL/Ruletă din link → ghid (chiar dacă URL vechi are ref=equipment)
+  if (device && GUIDE_EQUIPMENT_DEVICE_TO_DOC[device]) return 'guide';
   if (ref === 'equipment' || device) return 'equipment';
   if (ref === 'guide' || ghid === 'teren' || ghid === 'proiectare' || (doc && doc !== 'doc-tehnica')) {
     return 'guide';
@@ -35,6 +44,24 @@ function moduleFromSearch(params: URLSearchParams): ActiveModule | null {
 export function EmployeeReferenceModulesRow({ userId, readOnly = false }: EmployeeReferenceModulesRowProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [active, setActive] = useState<ActiveModule | null>(() => moduleFromSearch(searchParams));
+
+  // Linkuri vechi PDF (?ref=equipment&device=eq-proliner) → ghid pe site cu tip + carte
+  useEffect(() => {
+    const device = searchParams.get('device');
+    const docId = device ? GUIDE_EQUIPMENT_DEVICE_TO_DOC[device] : null;
+    if (!docId) return;
+    if (searchParams.get('doc') === docId && !device) return;
+
+    const tip = searchParams.get('tip') || 'blat';
+    const ghid = searchParams.get('ghid') === 'proiectare' ? 'proiectare' : 'teren';
+    const next = new URLSearchParams(searchParams);
+    next.set('ref', 'guide');
+    next.set('ghid', ghid);
+    next.set('tip', tip);
+    next.set('doc', docId);
+    next.delete('device');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     const fromUrl = moduleFromSearch(searchParams);
@@ -50,10 +77,14 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
         next.delete('ghid');
         next.delete('doc');
       }
+      if (id !== 'equipment') {
+        next.delete('device');
+      }
     } else {
       next.delete('ref');
       next.delete('ghid');
       next.delete('doc');
+      next.delete('device');
     }
     setSearchParams(next, { replace: true });
   };
