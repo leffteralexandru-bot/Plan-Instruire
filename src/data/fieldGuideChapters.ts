@@ -465,7 +465,7 @@ const TYPE_SPECS: TypeGuideSpec[] = [
     typeChapters: [
       {
         title: 'Etapa 3 — Placări exterioare',
-        summary: 'Parapet / atic · prindere mecanică',
+        summary: 'Reguli pe teren: prindere mecanică, laser, canting/CTG, livrare',
         pages: [5],
       },
     ],
