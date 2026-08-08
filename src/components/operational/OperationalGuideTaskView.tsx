@@ -33,6 +33,7 @@ function MeasurerGuideBody({
 }) {
   const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
   const initialChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
+  const label = OPERATIONAL_GUIDE_LABELS[task.id];
   const [openEquipmentId, setOpenEquipmentId] = useState<string | null>(null);
   const [openDoc, setOpenDoc] = useState<{ url: string; fileName: string; title: string } | null>(
     null,
