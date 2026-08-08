@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Generează câte un ghid teren per tip de măsurare:
-  - cuprins (pagina 1) doar cu Etapa 1–2 + tipul curent
-  - pagini tip fără secțiunile altor tipuri
+  - cuprins (pagina 1) COMPLET — toate etapele pentru toate tipurile
+  - pagini conținut: Etapa 1–2 comune + doar tipul curent
   - PDF + ZIP download per tip
 """
 
@@ -209,7 +209,8 @@ def build_type_pdf(master: fitz.Document, spec: dict) -> fitz.Document:
         new_page = out[-1]
 
         if page_no == 1:
-            customize_toc(new_page, spec["toc_html"], spec["label"])
+            # Cuprins complet: Etapa 1–2 + Blat + toate tipurile (Etapa 4) —
+            # același cuprins indiferent de tipul selectat în app.
             continue
 
         if page_no in trim:

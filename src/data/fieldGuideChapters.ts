@@ -326,7 +326,7 @@ function buildCommonChapters(prefix: string, taskId: OperationalGuideTaskId): Eq
       prefix,
       2,
       'Cuprins — etape',
-      'Pregătire · reguli · doar tipul curent · Bitrix real',
+      'Etapa 1–2 comune · Blat · Scări · Placare · Cămin · Ext. · Glaf — toate tipurile',
       [1],
     ),
     chapter(
