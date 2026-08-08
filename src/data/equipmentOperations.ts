@@ -48,6 +48,13 @@ export interface EquipmentManualPageActionHotspot extends EquipmentManualPageHot
   docUrl?: string;
   docFileName?: string;
   /**
+   * Id din fieldGuideLinkedDocs — același document ca linkul din PDF-ul descărcat.
+   * Folosit pentru deep-link pe panou (?doc=…).
+   */
+  linkedDocId?: string;
+  /** Navigare în app (ex. Repository tehnic pentru Etapa 1.7). */
+  href?: string;
+  /**
    * Dacă true: zonă click invizibilă (textul e deja în PDF/PNG).
    * Folosit când linkurile sunt integrate nativ în document.
    */

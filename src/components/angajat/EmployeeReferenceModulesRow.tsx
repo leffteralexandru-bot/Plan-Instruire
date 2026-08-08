@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ExpandableModuleRow } from '@/components/ui/ExpandableModuleRow';
 import { OperationalGuidePanel } from '@/components/operational/OperationalGuidePanel';
 import { TechnicalRepositoryPanel } from '@/components/technicalRepository/TechnicalRepositoryPanel';
@@ -17,12 +18,43 @@ const EXPAND_LABELS: Record<ActiveModule, string> = {
   equipment: 'Mentenanță și operare echipament',
 };
 
+function moduleFromSearch(params: URLSearchParams): ActiveModule | null {
+  const ref = params.get('ref');
+  const doc = params.get('doc');
+  const ghid = params.get('ghid');
+  if (ref === 'repo' || doc === 'doc-tehnica') return 'repo';
+  if (ref === 'equipment') return 'equipment';
+  if (ref === 'guide' || ghid === 'teren' || ghid === 'proiectare' || (doc && doc !== 'doc-tehnica')) {
+    return 'guide';
+  }
+  return null;
+}
+
 /** Ghid + Repository + Mentenanță — butoane fixe pe rând, un singur modul deschis */
 export function EmployeeReferenceModulesRow({ userId, readOnly = false }: EmployeeReferenceModulesRowProps) {
-  const [active, setActive] = useState<ActiveModule | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [active, setActive] = useState<ActiveModule | null>(() => moduleFromSearch(searchParams));
+
+  useEffect(() => {
+    const fromUrl = moduleFromSearch(searchParams);
+    if (fromUrl) setActive(fromUrl);
+  }, [searchParams]);
 
   const toggle = (id: ActiveModule) => (open: boolean) => {
     setActive(open ? id : null);
+    const next = new URLSearchParams(searchParams);
+    if (open) {
+      next.set('ref', id === 'guide' ? 'guide' : id === 'repo' ? 'repo' : 'equipment');
+      if (id !== 'guide') {
+        next.delete('ghid');
+        next.delete('doc');
+      }
+    } else {
+      next.delete('ref');
+      next.delete('ghid');
+      next.delete('doc');
+    }
+    setSearchParams(next, { replace: true });
   };
 
   const modules = useMemo(
@@ -38,9 +70,7 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
             onExpandedChange={toggle('guide')}
           />
         ),
-        body: (
-          <OperationalGuidePanel userId={userId} readOnly={readOnly} display="body" />
-        ),
+        body: <OperationalGuidePanel userId={userId} readOnly={readOnly} display="body" />,
       },
       {
         id: 'repo' as const,
@@ -53,9 +83,7 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
             onExpandedChange={toggle('repo')}
           />
         ),
-        body: (
-          <TechnicalRepositoryPanel userId={userId} readOnly={readOnly} display="body" />
-        ),
+        body: <TechnicalRepositoryPanel userId={userId} readOnly={readOnly} display="body" />,
       },
       {
         id: 'equipment' as const,
@@ -70,7 +98,9 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
         body: <EquipmentOperationsPanel display="body" />,
       },
     ],
-    [active, readOnly, userId],
+    // toggle closes over latest searchParams; rebuild when active/user changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [active, readOnly, userId, searchParams],
   );
 
   const activeIndex = active !== null ? modules.findIndex((m) => m.id === active) : null;

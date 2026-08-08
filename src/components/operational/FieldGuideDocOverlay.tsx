@@ -101,8 +101,8 @@ export function FieldGuideDocOverlay({
           </p>
           <p className="truncate text-sm font-semibold text-corporate-dark">{title}</p>
           <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">
-            Șablon de lucru pe tipul selectat — documentul real semnat rămâne cel din Bitrix
-            (proiectul tău).
+            Același document ca linkul din PDF-ul ghid (sau din poza de pe site). Șablon de lucru —
+            documentul real semnat rămâne în Bitrix.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-1.5">

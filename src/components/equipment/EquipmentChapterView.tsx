@@ -114,7 +114,7 @@ export function EquipmentChapterView({
             </svg>
           }
         >
-          {sharing ? 'Se trimite…' : 'Trimite cuiva'}
+          {sharing ? 'Se trimite…' : 'Trimite'}
         </Button>
       </div>
       {shareHint && <p className="text-xs text-corporate-muted">{shareHint}</p>}

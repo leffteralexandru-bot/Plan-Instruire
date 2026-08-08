@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 import {
   OPERATIONAL_GUIDE_TASK_ORDER,
@@ -237,8 +238,21 @@ export function OperationalGuidePanel({
   onExpandedChange,
 }: OperationalGuidePanelProps) {
   const tasks = useOperationalGuide();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tipParam = searchParams.get('tip');
   const [expandedInternal, setExpandedInternal] = useState(false);
-  const [activeId, setActiveId] = useState<OperationalGuideTaskId>('blat');
+  const [activeId, setActiveId] = useState<OperationalGuideTaskId>(() => {
+    if (tipParam && (OPERATIONAL_GUIDE_TASK_ORDER as string[]).includes(tipParam)) {
+      return tipParam as OperationalGuideTaskId;
+    }
+    return 'blat';
+  });
+
+  useEffect(() => {
+    if (tipParam && (OPERATIONAL_GUIDE_TASK_ORDER as string[]).includes(tipParam)) {
+      setActiveId(tipParam as OperationalGuideTaskId);
+    }
+  }, [tipParam]);
 
   const expanded = display === 'header' ? !!expandedProp : expandedInternal;
 
@@ -263,13 +277,21 @@ export function OperationalGuidePanel({
     });
   };
 
+  const handleActiveIdChange = (id: OperationalGuideTaskId) => {
+    setActiveId(id);
+    const next = new URLSearchParams(searchParams);
+    next.set('tip', id);
+    next.set('ref', 'guide');
+    setSearchParams(next, { replace: true });
+  };
+
   if (display === 'body') {
     return (
       <OperationalGuideContent
         userId={userId}
         readOnly={readOnly}
         activeId={activeId}
-        onActiveIdChange={setActiveId}
+        onActiveIdChange={handleActiveIdChange}
       />
     );
   }
@@ -304,7 +326,7 @@ export function OperationalGuidePanel({
         userId={userId}
         readOnly={readOnly}
         activeId={activeId}
-        onActiveIdChange={setActiveId}
+        onActiveIdChange={handleActiveIdChange}
       />
     </ProfessionalPanel>
   );

@@ -20,6 +20,22 @@ LINKED_DIR = ROOT / "public/docs/operational-guide/field-guide/linked-manuals"
 BY_TYPE_DIR = ROOT / "public/docs/operational-guide/field-guide/by-type"
 RENDER_DPI = 300
 
+APP_PUBLIC_BASE = "https://argranit-instruire-adaptare.vercel.app"
+APP_PANOU = f"{APP_PUBLIC_BASE}/ingineri/panou-angajat"
+
+# Fișier din linked-manuals → ?doc= pe panou (același destinație ca pe site)
+FILENAME_TO_DOC_ID = {
+    "anexa-1-sablon.pdf": "anexa1",
+    "Carnet-masuratori-creion.pdf": "carnet",
+    "proliner-manual.pdf": "proliner",
+    "bosch-gll-3-80-manual.pdf": "gll",
+    "bosch-ruleta-5m.pdf": "ruleta",
+    "Checklist_Client_ArtGranit.pdf": "checklist",
+    "Canting.pdf": "canting",
+    "Exemple_Fise_Tehnice_Accesorii.pdf": "fise",
+    "Exemplu_Comanda_Material.pdf": "ctg",
+}
+
 # Zona cuprins tipuri pe pagina 1 (de la Etapa 3 până înainte de ATENȚIE Bitrix)
 TOC_TYPE_TOP = 348.0
 TOC_TYPE_BOTTOM = 560.0
@@ -132,6 +148,38 @@ p { margin: 0 0 6px 0; font-family: sans-serif; color: #1c1915; }
 """
 
 
+def rewrite_links_to_panou(doc: fitz.Document, tip: str) -> int:
+    """
+    Linkurile din PDF-ul descărcat duc pe panou la același document
+    ca butonul de pe poza din site (?ghid=teren&tip=&doc=).
+    """
+    changed = 0
+    for page in doc:
+        for link in list(page.get_links()):
+            if link.get("kind") != fitz.LINK_URI:
+                continue
+            uri = link.get("uri") or ""
+            new_uri = None
+            if "linked-manuals/" in uri:
+                name = uri.rsplit("/", 1)[-1].split("?")[0]
+                if name.startswith("Checklist_Client_ArtGranit"):
+                    doc_id = "checklist"
+                else:
+                    doc_id = FILENAME_TO_DOC_ID.get(name)
+                if doc_id:
+                    new_uri = (
+                        f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
+                    )
+            elif "/ingineri/panou-angajat" in uri and "doc=" not in uri:
+                new_uri = f"{APP_PANOU}?ref=repo&doc=doc-tehnica"
+            if new_uri and new_uri != uri:
+                page.delete_link(link)
+                link["uri"] = new_uri
+                page.insert_link(link)
+                changed += 1
+    return changed
+
+
 def customize_toc(page: fitz.Page, toc_html: str, label: str) -> None:
     """Înlocuiește Etapa 3–4 din cuprins cu un singur tip."""
     for link in list(page.get_links()):
@@ -230,10 +278,14 @@ def main() -> None:
 
         print(f"Build tip: {tid} ({spec['label']})…")
         doc = build_type_pdf(master, spec)
+        n_links = rewrite_links_to_panou(doc, tid)
         pdf_path = out_dir / "Ghid-teren-masurare.pdf"
         doc.save(pdf_path, garbage=3, deflate=True)
         doc.close()
-        print(f"  PDF {pdf_path.relative_to(ROOT)} ({len(spec['keep_pages'])} pagini)")
+        print(
+            f"  PDF {pdf_path.relative_to(ROOT)} "
+            f"({len(spec['keep_pages'])} pagini, {n_links} linkuri → panou)"
+        )
 
         render_pdf_pages(pdf_path, out_dir / "pages")
         write_zip(pdf_path, out_dir / "Ghid-teren-masurare-cu-manuale.zip")

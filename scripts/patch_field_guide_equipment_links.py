@@ -30,14 +30,32 @@ APP_PUBLIC_BASE = "https://argranit-instruire-adaptare.vercel.app"
 APP_GHID_OPERATIONAL_URL = f"{APP_PUBLIC_BASE}/ingineri/panou-angajat"
 # Text vizibil în PDF (brand) — click-ul duce la APP_GHID_OPERATIONAL_URL
 APP_GHID_DISPLAY_URL = "https://argranit-instruire-adaptare@artgranit.ro"
-# Documentație tehnică = același panou (modul Repository tehnic)
-APP_DOC_TEHNICA_URL = f"{APP_PUBLIC_BASE}/ingineri/panou-angajat"
+# Documentație tehnică = Repository pe panou (același destinație ca pe site)
+APP_DOC_TEHNICA_URL = f"{APP_PUBLIC_BASE}/ingineri/panou-angajat?ref=repo&doc=doc-tehnica"
 LINKED_MANUALS_WEB = f"{APP_PUBLIC_BASE}/docs/operational-guide/field-guide/linked-manuals"
 
 
 def abs_manual(filename: str) -> str:
-    """Link HTTPS către un PDF din linked-manuals (funcționează pe telefon)."""
-    return f"{LINKED_MANUALS_WEB}/{filename.lstrip('/')}"
+    """
+    Link din PDF → panou (?doc=) ca pe site; tipul se completează la build by-type.
+    Fallback fără tip: panou deschide tipul curent / blat.
+    """
+    name = filename.lstrip("/")
+    mapping = {
+        "anexa-1-sablon.pdf": "anexa1",
+        "Carnet-masuratori-creion.pdf": "carnet",
+        "proliner-manual.pdf": "proliner",
+        "bosch-gll-3-80-manual.pdf": "gll",
+        "bosch-ruleta-5m.pdf": "ruleta",
+        "Checklist_Client_ArtGranit.pdf": "checklist",
+        "Canting.pdf": "canting",
+        "Exemple_Fise_Tehnice_Accesorii.pdf": "fise",
+        "Exemplu_Comanda_Material.pdf": "ctg",
+    }
+    doc_id = mapping.get(name)
+    if doc_id:
+        return f"{APP_GHID_OPERATIONAL_URL}?ref=guide&ghid=teren&doc={doc_id}"
+    return f"{LINKED_MANUALS_WEB}/{name}"
 
 
 # Albastru discret (aproape de UI)

@@ -1,0 +1,21 @@
+{
+  "pdf": "/docs/operational-guide/design-guide/Ghid-proiectare-cad.pdf",
+  "pagesDir": "/docs/operational-guide/design-guide/pages",
+  "pageCount": 19,
+  "source": "Ghid_Proiectare_Detaliat_v9_nou.pdf",
+  "byType": "/docs/operational-guide/design-guide/by-type",
+  "etapa1Hotspots": {
+    "anexa_page": 2.0,
+    "anexa_y": 24.658802977570783,
+    "anexa_x": 7.142856791319408,
+    "fise_page": 2.0,
+    "fise_y": 40.812932095825246,
+    "fise_x": 7.142856791319408,
+    "canting_page": 2.0,
+    "canting_y": 59.99596042375242,
+    "canting_x": 7.142856791319408,
+    "ctg_page": 2.0,
+    "ctg_y": 78.82264766818868,
+    "ctg_x": 7.142856791319408
+  }
+}

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ExpandableModuleRow } from '@/components/ui/ExpandableModuleRow';
 import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import {
@@ -9,12 +10,22 @@ import {
   getFieldGuideDevice,
   getFieldGuideStartChapterId,
 } from '@/data/fieldGuideChapters';
+import {
+  getDesignGuideDevice,
+  getDesignGuideStartChapterId,
+} from '@/data/designGuideChapters';
+import {
+  buildFieldGuideDocSearchParams,
+  resolveFieldGuideLinkedDoc,
+  type FieldGuideLinkedDocId,
+} from '@/data/fieldGuideLinkedDocs';
 import { EquipmentManualOverlay } from '@/components/operational/OperationalGuideEquipmentManualLinks';
 import { FieldGuideDocOverlay } from '@/components/operational/FieldGuideDocOverlay';
-import { OperationalGuidePreDesignRules } from '@/components/operational/OperationalGuidePreMeasurementRules';
-import { OperationalGuideStepsSection } from '@/components/operational/OperationalGuideStepsSection';
 import { OperationalGuideToggleTile } from '@/components/operational/OperationalGuideToggleTile';
-import { DEFAULT_EQUIPMENT_OPERATIONS, type EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
+import {
+  DEFAULT_EQUIPMENT_OPERATIONS,
+  type EquipmentManualPageActionHotspot,
+} from '@/data/equipmentOperations';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -24,20 +35,62 @@ interface OperationalGuideTaskViewProps {
 
 type ActiveGuide = 'measurer' | 'design';
 
+type OpenDocState = {
+  url: string;
+  fileName: string;
+  title: string;
+  eyebrow: string;
+};
+
+function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const ghidParam = searchParams.get('ghid');
+  const docParam = searchParams.get('doc');
+
+  const syncDocToUrl = (docId: FieldGuideLinkedDocId | null, ghid: ActiveGuide) => {
+    const next = new URLSearchParams(searchParams);
+    if (!docId) {
+      next.delete('doc');
+      setSearchParams(next, { replace: true });
+      return;
+    }
+    const built = buildFieldGuideDocSearchParams({
+      tip: taskId,
+      doc: docId,
+      ghid: ghid === 'design' ? 'proiectare' : 'teren',
+    });
+    built.forEach((value, key) => next.set(key, value));
+    // păstrează viewAs dacă există
+    const viewAs = searchParams.get('viewAs');
+    if (viewAs) next.set('viewAs', viewAs);
+    setSearchParams(next, { replace: true });
+  };
+
+  const openHref = (href: string) => {
+    navigate(href);
+  };
+
+  return { ghidParam, docParam, syncDocToUrl, openHref, searchParams, setSearchParams };
+}
+
 function MeasurerGuideBody({
   task,
   onCloseManual,
+  deepDocId,
+  onClearDeepDoc,
 }: {
   task: OperationalGuideTask;
   onCloseManual: () => void;
+  deepDocId: string | null;
+  onClearDeepDoc: () => void;
 }) {
   const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
   const initialChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
-  const label = OPERATIONAL_GUIDE_LABELS[task.id];
+  const { syncDocToUrl, openHref } = useGuideDeepLink(task.id);
   const [openEquipmentId, setOpenEquipmentId] = useState<string | null>(null);
-  const [openDoc, setOpenDoc] = useState<{ url: string; fileName: string; title: string } | null>(
-    null,
-  );
+  const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
 
   const openEquipment = useMemo(
     () =>
@@ -47,9 +100,52 @@ function MeasurerGuideBody({
     [openEquipmentId],
   );
 
+  useEffect(() => {
+    if (!deepDocId || deepDocId === 'doc-tehnica') return;
+    const resolved = resolveFieldGuideLinkedDoc(deepDocId, task.id);
+    if (!resolved || resolved.openRepo || !resolved.url) return;
+    setOpenDoc({
+      url: resolved.url,
+      fileName: resolved.fileName,
+      title: resolved.title,
+      eyebrow: resolved.eyebrow,
+    });
+  }, [deepDocId, task.id]);
+
+  const closeDoc = () => {
+    setOpenDoc(null);
+    onClearDeepDoc();
+  };
+
   const handleActionHotspot = (spot: EquipmentManualPageActionHotspot) => {
+    if (spot.href) {
+      openHref(spot.href);
+      return;
+    }
+    if (spot.linkedDocId) {
+      const resolved = resolveFieldGuideLinkedDoc(spot.linkedDocId, task.id);
+      if (resolved?.openRepo) {
+        openHref('/ingineri/panou-angajat?ref=repo&doc=doc-tehnica');
+        return;
+      }
+      if (resolved?.url) {
+        syncDocToUrl(resolved.id, 'measurer');
+        setOpenDoc({
+          url: resolved.url,
+          fileName: resolved.fileName,
+          title: resolved.title,
+          eyebrow: resolved.eyebrow,
+        });
+        return;
+      }
+    }
     if (spot.docUrl && spot.docFileName) {
-      setOpenDoc({ url: spot.docUrl, fileName: spot.docFileName, title: spot.label });
+      setOpenDoc({
+        url: spot.docUrl,
+        fileName: spot.docFileName,
+        title: spot.label,
+        eyebrow: 'Document ghid · același fișier ca în PDF',
+      });
       return;
     }
     if (spot.deviceId) {
@@ -80,41 +176,74 @@ function MeasurerGuideBody({
           pdfUrl={openDoc.url}
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
-          eyebrow={
-            openDoc.title.includes('Checklist')
-              ? `Checklist Client · șablon · ${label}`
-              : openDoc.title.includes('Fișe tehnice')
-                ? 'Fișe tehnice accesorii · exemple'
-                : openDoc.title.includes('CTG') || openDoc.title.includes('Comanda_Material')
-                  ? 'CTG · Comandă material · șablon'
-                  : openDoc.title === 'Canting'
-                    ? 'Canting · șablon nesting'
-                    : 'Anexa 1 · șablon'
-          }
-          onClose={() => setOpenDoc(null)}
+          eyebrow={openDoc.eyebrow}
+          onClose={closeDoc}
         />
       ) : null}
     </div>
   );
 }
 
-function DesignGuideBody({ task, label }: { task: OperationalGuideTask; label: string }) {
+function DesignGuideBody({
+  task,
+  onCloseManual,
+}: {
+  task: OperationalGuideTask;
+  onCloseManual: () => void;
+}) {
+  const device = useMemo(() => getDesignGuideDevice(task.id), [task.id]);
+  const initialChapterId = useMemo(() => getDesignGuideStartChapterId(task.id), [task.id]);
+  const label = OPERATIONAL_GUIDE_LABELS[task.id];
+  const { syncDocToUrl } = useGuideDeepLink(task.id);
+  const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
+
+  const handleActionHotspot = (spot: EquipmentManualPageActionHotspot) => {
+    if (spot.linkedDocId) {
+      const resolved = resolveFieldGuideLinkedDoc(spot.linkedDocId, task.id);
+      if (resolved?.url) {
+        syncDocToUrl(resolved.id, 'design');
+        setOpenDoc({
+          url: resolved.url,
+          fileName: resolved.fileName,
+          title: resolved.title,
+          eyebrow: resolved.eyebrow,
+        });
+        return;
+      }
+    }
+    if (spot.docUrl && spot.docFileName) {
+      setOpenDoc({
+        url: spot.docUrl,
+        fileName: spot.docFileName,
+        title: spot.label,
+        eyebrow: `Document proiectare · ${label}`,
+      });
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <OperationalGuidePreDesignRules
-        conditions={task.preDesignConditions ?? []}
-        categoryLabel={label}
-        defaultExpanded={false}
+      <EquipmentGuideDeviceView
+        key={`${device.id}-${task.id}`}
+        device={device}
+        manualNumber={2}
+        initialChapterId={initialChapterId}
+        onBack={onCloseManual}
+        onActionHotspot={handleActionHotspot}
       />
-      <OperationalGuideStepsSection
-        taskId={`design-${task.id}`}
-        steps={task.designSteps ?? []}
-        defaultExpanded={false}
-        eyebrow="La birou"
-        title="Pași de proiectare"
-        subtitle="Ordinea la proiectare — adaptată tipului selectat (diferită de pașii pe teren)."
-        emptyMessage="Pașii de proiectare vor fi adăugați separat — diferiți de pașii de măsurare."
-      />
+
+      {openDoc ? (
+        <FieldGuideDocOverlay
+          pdfUrl={openDoc.url}
+          pdfFileName={openDoc.fileName}
+          title={openDoc.title}
+          eyebrow={openDoc.eyebrow}
+          onClose={() => {
+            setOpenDoc(null);
+            syncDocToUrl(null, 'design');
+          }}
+        />
+      ) : null}
     </div>
   );
 }
@@ -136,10 +265,42 @@ function OperationalGuideTaskContextHeader({ task }: { task: OperationalGuideTas
 
 export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps) {
   const label = OPERATIONAL_GUIDE_LABELS[task.id];
-  const [active, setActive] = useState<ActiveGuide | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const ghidParam = searchParams.get('ghid');
+  const docParam = searchParams.get('doc');
+
+  const [active, setActive] = useState<ActiveGuide | null>(() => {
+    if (ghidParam === 'proiectare') return 'design';
+    if (ghidParam === 'teren' || docParam) return 'measurer';
+    return null;
+  });
+
+  useEffect(() => {
+    if (ghidParam === 'proiectare') setActive('design');
+    else if (ghidParam === 'teren' || (docParam && docParam !== 'doc-tehnica')) {
+      setActive('measurer');
+    }
+  }, [ghidParam, docParam]);
+
+  const clearDeepDoc = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('doc');
+    setSearchParams(next, { replace: true });
+  };
 
   const toggle = (id: ActiveGuide) => {
-    setActive((current) => (current === id ? null : id));
+    setActive((current) => {
+      const next = current === id ? null : id;
+      const params = new URLSearchParams(searchParams);
+      if (next === 'measurer') params.set('ghid', 'teren');
+      else if (next === 'design') params.set('ghid', 'proiectare');
+      else params.delete('ghid');
+      if (!next) params.delete('doc');
+      params.set('tip', task.id);
+      params.set('ref', 'guide');
+      setSearchParams(params, { replace: true });
+      return next;
+    });
   };
 
   const modules = useMemo(
@@ -157,7 +318,14 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
             ariaLabel={`Ghid măsurător — Măsurare ${label}`}
           />
         ),
-        body: <MeasurerGuideBody task={task} onCloseManual={() => setActive(null)} />,
+        body: (
+          <MeasurerGuideBody
+            task={task}
+            onCloseManual={() => setActive(null)}
+            deepDocId={active === 'measurer' ? docParam : null}
+            onClearDeepDoc={clearDeepDoc}
+          />
+        ),
       },
       {
         id: 'design' as const,
@@ -172,10 +340,12 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
             ariaLabel={`Ghid Proiectare — Proiectare ${label}`}
           />
         ),
-        body: <DesignGuideBody task={task} label={label} />,
+        body: <DesignGuideBody task={task} onCloseManual={() => setActive(null)} />,
       },
     ],
-    [active, label, task],
+    // toggle/clearDeepDoc are stable enough for this UI; params drive deep-link reopen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [active, label, task, docParam],
   );
 
   const activeIndex = active !== null ? modules.findIndex((m) => m.id === active) : null;

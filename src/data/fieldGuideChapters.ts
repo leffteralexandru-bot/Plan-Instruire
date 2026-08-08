@@ -112,6 +112,7 @@ export const FIELD_GUIDE_CHECKLIST_BY_TASK: Record<
 
 /**
  * Zone click pe Etapa 1.1 (echipament) — textul e deja albastru+link în PDF/PNG.
+ * docUrl = același fișier ca hyperlink-ul din PDF-ul descărcat.
  */
 export const FIELD_GUIDE_EQUIPMENT_ACTION_HOTSPOTS: EquipmentManualPageActionHotspot[] = [
   {
@@ -120,6 +121,7 @@ export const FIELD_GUIDE_EQUIPMENT_ACTION_HOTSPOTS: EquipmentManualPageActionHot
     w: 32,
     h: 1.35,
     label: 'ANEXA Nr. 1 (șablon)',
+    linkedDocId: 'anexa1',
     docUrl: FIELD_GUIDE_ANEXA1_PDF,
     docFileName: FIELD_GUIDE_ANEXA1_PDF_NAME,
     hitOnly: true,
@@ -130,6 +132,7 @@ export const FIELD_GUIDE_EQUIPMENT_ACTION_HOTSPOTS: EquipmentManualPageActionHot
     w: 28,
     h: 1.35,
     label: 'Carnet măsurători + creion',
+    linkedDocId: 'carnet',
     docUrl: FIELD_GUIDE_CARNET_PDF,
     docFileName: FIELD_GUIDE_CARNET_PDF_NAME,
     hitOnly: true,
@@ -140,7 +143,9 @@ export const FIELD_GUIDE_EQUIPMENT_ACTION_HOTSPOTS: EquipmentManualPageActionHot
     w: 28,
     h: 1.35,
     label: 'Aparatul de măsurat Proliner',
-    deviceId: 'eq-proliner',
+    linkedDocId: 'proliner',
+    docUrl: '/docs/operational-guide/field-guide/linked-manuals/proliner-manual.pdf',
+    docFileName: 'proliner-manual.pdf',
     hitOnly: true,
   },
   {
@@ -149,7 +154,9 @@ export const FIELD_GUIDE_EQUIPMENT_ACTION_HOTSPOTS: EquipmentManualPageActionHot
     w: 30,
     h: 1.35,
     label: 'Nivelă laser Bosch GLL 3-80',
-    deviceId: 'eq-bosch-gll-3-80',
+    linkedDocId: 'gll',
+    docUrl: '/docs/operational-guide/field-guide/linked-manuals/bosch-gll-3-80-manual.pdf',
+    docFileName: 'bosch-gll-3-80-manual.pdf',
     hitOnly: true,
   },
   {
@@ -158,7 +165,9 @@ export const FIELD_GUIDE_EQUIPMENT_ACTION_HOTSPOTS: EquipmentManualPageActionHot
     w: 20.5,
     h: 1.35,
     label: 'Ruletă Bosch 5 m',
-    deviceId: 'eq-bosch-tape-5m',
+    linkedDocId: 'ruleta',
+    docUrl: '/docs/operational-guide/field-guide/linked-manuals/bosch-ruleta-5m.pdf',
+    docFileName: 'bosch-ruleta-5m.pdf',
     hitOnly: true,
   },
 ];
@@ -175,6 +184,7 @@ export function fieldGuideChecklistHotspot(
     w: 28,
     h: 1.55,
     label: 'Checklist_Client_ArtGranit',
+    linkedDocId: 'checklist',
     docUrl: doc.url,
     docFileName: doc.fileName,
     hitOnly: true,
@@ -188,6 +198,7 @@ export const FIELD_GUIDE_ANEXA14_HOTSPOT: EquipmentManualPageActionHotspot = {
   w: 22,
   h: 1.55,
   label: 'Anexa 1 (șablon)',
+  linkedDocId: 'anexa1',
   docUrl: FIELD_GUIDE_ANEXA1_PDF,
   docFileName: FIELD_GUIDE_ANEXA1_PDF_NAME,
   hitOnly: true,
@@ -200,6 +211,7 @@ export const FIELD_GUIDE_CANTING_HOTSPOT: EquipmentManualPageActionHotspot = {
   w: 14,
   h: 1.55,
   label: 'Canting',
+  linkedDocId: 'canting',
   docUrl: FIELD_GUIDE_CANTING_PDF,
   docFileName: FIELD_GUIDE_CANTING_PDF_NAME,
   hitOnly: true,
@@ -212,6 +224,7 @@ export const FIELD_GUIDE_FISE_TEHNICE_HOTSPOT: EquipmentManualPageActionHotspot 
   w: 32,
   h: 1.55,
   label: 'Fișe tehnice accesorii (exemple)',
+  linkedDocId: 'fise',
   docUrl: FIELD_GUIDE_FISE_TEHNICE_PDF,
   docFileName: FIELD_GUIDE_FISE_TEHNICE_PDF_NAME,
   hitOnly: true,
@@ -224,8 +237,21 @@ export const FIELD_GUIDE_CTG_HOTSPOT: EquipmentManualPageActionHotspot = {
   w: 34,
   h: 1.55,
   label: 'CTG — Exemplu_Comanda_Material',
+  linkedDocId: 'ctg',
   docUrl: FIELD_GUIDE_CTG_PDF,
   docFileName: FIELD_GUIDE_CTG_PDF_NAME,
+  hitOnly: true,
+};
+
+/** Etapa 1.7 — Documentație tehnică (Repository pe panou). */
+export const FIELD_GUIDE_DOC_TEHNICA_HOTSPOT: EquipmentManualPageActionHotspot = {
+  x: 7.1,
+  y: 52.74,
+  w: 86,
+  h: 3.4,
+  label: 'Documentație tehnică',
+  linkedDocId: 'doc-tehnica',
+  href: '/ingineri/panou-angajat?ref=repo&doc=doc-tehnica',
   hitOnly: true,
 };
 
@@ -238,7 +264,12 @@ function page2Hotspots(taskId: OperationalGuideTaskId): EquipmentManualPageActio
 }
 
 function page3Hotspots(): EquipmentManualPageActionHotspot[] {
-  return [FIELD_GUIDE_CANTING_HOTSPOT, FIELD_GUIDE_FISE_TEHNICE_HOTSPOT, FIELD_GUIDE_CTG_HOTSPOT];
+  return [
+    FIELD_GUIDE_CANTING_HOTSPOT,
+    FIELD_GUIDE_FISE_TEHNICE_HOTSPOT,
+    FIELD_GUIDE_CTG_HOTSPOT,
+    FIELD_GUIDE_DOC_TEHNICA_HOTSPOT,
+  ];
 }
 
 function manualPage(
