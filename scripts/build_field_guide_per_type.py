@@ -98,7 +98,7 @@ TYPE_SPECS: list[dict] = [
         """,
         "keep_pages": [1, 2, 3, 4, 10],
         "trim": {
-            10: {"keep_from": 78.0, "keep_to": 292.0},
+            10: {"keep_from": 78.0, "keep_to": 290.0},
         },
     },
     {
@@ -111,7 +111,7 @@ TYPE_SPECS: list[dict] = [
         """,
         "keep_pages": [1, 2, 3, 4, 10],
         "trim": {
-            10: {"keep_from": 290.0, "keep_to": 523.0},
+            10: {"keep_from": 288.0, "keep_to": 513.0},
         },
     },
     {
@@ -124,7 +124,7 @@ TYPE_SPECS: list[dict] = [
         """,
         "keep_pages": [1, 2, 3, 4, 10],
         "trim": {
-            10: {"keep_from": 521.0, "keep_to": CONTENT_FOOTER_Y},
+            10: {"keep_from": 511.0, "keep_to": CONTENT_FOOTER_Y},
         },
     },
     {
