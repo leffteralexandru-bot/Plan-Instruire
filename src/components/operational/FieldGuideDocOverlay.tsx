@@ -4,10 +4,11 @@ import {
   downloadOperationalChecklistPdf,
   printOperationalChecklistPdf,
 } from '@/lib/operationalChecklistPdf';
+import { shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 
 /**
  * Overlay pentru documente din ghid (ex. Anexa 1 șablon):
- * vizualizare PDF + Descarcă + Printează.
+ * vizualizare PDF + Descarcă + Trimite + Printează.
  */
 export function FieldGuideDocOverlay({
   pdfUrl,
@@ -23,7 +24,9 @@ export function FieldGuideDocOverlay({
   onClose: () => void;
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shareHint, setShareHint] = useState<string | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -41,12 +44,37 @@ export function FieldGuideDocOverlay({
   const handleDownload = async () => {
     setDownloading(true);
     setError(null);
+    setShareHint(null);
     try {
       await downloadOperationalChecklistPdf(pdfUrl, pdfFileName);
     } catch {
       setError('Descărcarea a eșuat. Încercați din nou.');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    setSharing(true);
+    setError(null);
+    setShareHint(null);
+    try {
+      const result = await shareEquipmentPdf(pdfUrl, pdfFileName, {
+        title,
+        text: `Document ghid teren artGRANIT — ${title}`,
+      });
+      if (result === 'mailto') {
+        setShareHint('S-a deschis emailul cu linkul documentului.');
+      } else if (result === 'copied') {
+        setShareHint('Linkul a fost copiat — poți să-l trimiți oricui.');
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+      setError('Trimiterea a eșuat. Încercați din nou.');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -82,10 +110,19 @@ export function FieldGuideDocOverlay({
             type="button"
             variant="secondary"
             size="sm"
-            disabled={downloading}
+            disabled={downloading || sharing}
             onClick={() => void handleDownload()}
           >
             {downloading ? '…' : 'Descarcă'}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            disabled={downloading || sharing}
+            onClick={() => void handleShare()}
+          >
+            {sharing ? '…' : 'Trimite'}
           </Button>
           <Button type="button" variant="ghost" size="sm" onClick={handlePrint}>
             Printează
@@ -95,6 +132,11 @@ export function FieldGuideDocOverlay({
           </Button>
         </div>
       </div>
+      {shareHint ? (
+        <p className="border-b border-corporate-border bg-corporate-surface/40 px-3 py-1.5 text-[11px] text-corporate-muted">
+          {shareHint}
+        </p>
+      ) : null}
       {error ? (
         <p className="border-b border-red-200 bg-red-50 px-3 py-1.5 text-[11px] text-red-700">
           {error}

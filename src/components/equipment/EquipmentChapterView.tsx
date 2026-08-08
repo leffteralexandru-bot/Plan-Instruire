@@ -4,7 +4,7 @@ import { EquipmentChapterBlocks } from '@/components/equipment/EquipmentChapterB
 import { EquipmentChapterMedia } from '@/components/equipment/EquipmentChapterMedia';
 import { EquipmentManualPage } from '@/components/equipment/EquipmentManualPage';
 import type { EquipmentChapter, EquipmentDevice, EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
-import { downloadEquipmentPdf } from '@/lib/downloadEquipmentPdf';
+import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
 
 interface EquipmentChapterViewProps {
@@ -23,7 +23,9 @@ export function EquipmentChapterView({
   onActionHotspot,
 }: EquipmentChapterViewProps) {
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shareHint, setShareHint] = useState<string | null>(null);
 
   const pdfUrl = chapter.pdfUrl;
   const pdfName =
@@ -34,6 +36,7 @@ export function EquipmentChapterView({
     if (!pdfUrl) return;
     setDownloading(true);
     setError(null);
+    setShareHint(null);
     try {
       await downloadEquipmentPdf(pdfUrl, pdfName);
     } catch {
@@ -43,32 +46,79 @@ export function EquipmentChapterView({
     }
   };
 
+  const handleShare = async () => {
+    if (!pdfUrl) return;
+    setSharing(true);
+    setError(null);
+    setShareHint(null);
+    try {
+      const result = await shareEquipmentPdf(pdfUrl, pdfName, {
+        title: device.name,
+        text: `Manual ghid teren — ${device.name}`,
+      });
+      if (result === 'mailto') {
+        setShareHint('S-a deschis emailul cu linkul manualului.');
+      } else if (result === 'copied') {
+        setShareHint('Linkul manualului a fost copiat — poți să-l trimiți oricui.');
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+      setError('Trimiterea a eșuat. Încercați din nou sau folosiți Descarcă.');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const pdfButton = showPdfButton && chapter.pdfUrl && (
-    <div className="pt-1">
-      <Button
-        type="button"
-        variant="primary"
-        fullWidth={pdfButtonFullWidth}
-        disabled={downloading}
-        onClick={() => void handleDownload()}
-        icon={
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-        }
-      >
-        {downloading
-          ? 'Se descarcă…'
-          : pdfName.toLowerCase().endsWith('.zip')
-            ? 'Descarcă pachet (ZIP)'
-            : 'Descarcă Manual (PDF)'}
-      </Button>
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+    <div className="space-y-2 pt-1">
+      <div className={pdfButtonFullWidth ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'}>
+        <Button
+          type="button"
+          variant="primary"
+          fullWidth={pdfButtonFullWidth}
+          disabled={downloading || sharing}
+          onClick={() => void handleDownload()}
+          icon={
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          }
+        >
+          {downloading
+            ? 'Se descarcă…'
+            : pdfName.toLowerCase().endsWith('.zip')
+              ? 'Descarcă pachet (ZIP)'
+              : 'Descarcă Manual (PDF)'}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          fullWidth={pdfButtonFullWidth}
+          disabled={downloading || sharing}
+          onClick={() => void handleShare()}
+          icon={
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+              />
+            </svg>
+          }
+        >
+          {sharing ? 'Se trimite…' : 'Trimite cuiva'}
+        </Button>
+      </div>
+      {shareHint && <p className="text-xs text-corporate-muted">{shareHint}</p>}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 

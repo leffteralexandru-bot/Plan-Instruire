@@ -5,7 +5,7 @@ import { EquipmentChapterView } from '@/components/equipment/EquipmentChapterVie
 import { EquipmentSafetyWarningCard } from '@/components/equipment/EquipmentSafetyWarning';
 import type { EquipmentChapter, EquipmentDevice } from '@/data/equipmentOperations';
 import { useEquipmentLayoutMode } from '@/hooks/useEquipmentLayoutMode';
-import { downloadEquipmentPdf } from '@/lib/downloadEquipmentPdf';
+import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import {
   EQUIPMENT_CHAPTER_GRID,
   EQUIPMENT_PHONE_BOTTOM_PAD,
@@ -26,12 +26,16 @@ interface EquipmentGuideDeviceViewProps {
 function PhoneReachabilityBar({
   onNavigate,
   onDownloadPdf,
+  onSharePdf,
   downloading,
+  sharing,
   canDownload,
 }: {
   onNavigate: () => void;
   onDownloadPdf: () => void;
+  onSharePdf: () => void;
   downloading: boolean;
+  sharing: boolean;
   canDownload: boolean;
 }) {
   return (
@@ -40,15 +44,26 @@ function PhoneReachabilityBar({
         ← Navigare
       </Button>
       {canDownload && (
-        <Button
-          type="button"
-          variant="primary"
-          fullWidth
-          disabled={downloading}
-          onClick={onDownloadPdf}
-        >
-          {downloading ? '…' : 'Descarcă PDF'}
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            disabled={downloading || sharing}
+            onClick={onDownloadPdf}
+          >
+            {downloading ? '…' : 'Descarcă PDF'}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            disabled={downloading || sharing}
+            onClick={onSharePdf}
+          >
+            {sharing ? '…' : 'Trimite'}
+          </Button>
+        </>
       )}
     </div>
   );
@@ -67,6 +82,7 @@ export function EquipmentGuideDeviceView({
   const [activeChapterId, setActiveChapterId] = useState<string | null>(initialChapterId);
   const [phoneExpandedId, setPhoneExpandedId] = useState<string | null>(initialChapterId);
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [safetyReady, setSafetyReady] = useState(!device.safetyWarning);
 
   const activeChapter = chapters.find((c) => c.id === activeChapterId) ?? null;
@@ -115,6 +131,23 @@ export function EquipmentGuideDeviceView({
       /* silent on reachability bar */
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleShareActivePdf = async () => {
+    if (!pdfUrl) return;
+    setSharing(true);
+    try {
+      await shareEquipmentPdf(pdfUrl, pdfName, {
+        title: device.name,
+        text: `Manual ghid teren — ${device.name}`,
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -249,8 +282,10 @@ export function EquipmentGuideDeviceView({
             }
           }}
           onDownloadPdf={() => void handleDownloadActivePdf()}
+          onSharePdf={() => void handleShareActivePdf()}
           downloading={downloading}
-          canDownload={!!activeChapter?.pdfUrl}
+          sharing={sharing}
+          canDownload={!!activeChapter?.pdfUrl || !!pdfUrl}
         />
       )}
     </div>
