@@ -454,7 +454,7 @@ const TYPE_SPECS: TypeGuideSpec[] = [
     typeChapters: [
       {
         title: 'Etapa 3 — Pervazuri / glafuri',
-        summary: 'Coduri F1…Fn · pantă exterior',
+        summary: 'Reguli pe teren: pantă/picurător ext., interior fără, F1…Fn pe toc',
         pages: [5],
       },
     ],
