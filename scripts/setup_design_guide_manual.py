@@ -31,6 +31,26 @@ APP_DISPLAY = "https://argranit-instruire-adaptare@artgranit.ro"
 LINKED_WEB = f"{APP_PUBLIC_BASE}/docs/operational-guide/field-guide/linked-manuals"
 LINK_COLOR = (47 / 255, 111 / 255, 237 / 255)
 
+FILENAME_TO_DOC_ID = {
+    "anexa-1-sablon.pdf": "anexa1",
+    "Canting.pdf": "canting",
+    "Exemple_Fise_Tehnice_Accesorii.pdf": "fise",
+    "Exemplu_Comanda_Material.pdf": "ctg",
+}
+
+
+def panou_doc_url(tip: str, doc_id: str) -> str:
+    return f"{APP_GHID_URL}?ref=guide&ghid=proiectare&tip={tip}&doc={doc_id}"
+
+
+def abs_manual(name: str, tip: str = "blat") -> str:
+    """Link pe panou (același document ca pe site), nu fișier static gol."""
+    doc_id = FILENAME_TO_DOC_ID.get(name)
+    if doc_id:
+        return panou_doc_url(tip, doc_id)
+    return f"{LINKED_WEB}/{name}"
+
+
 # tip → interval y pe pagina 22 (keep_from, keep_to) — înainte de următorul tip / footer
 TYPE_PAGE22: dict[str, tuple[float, float, str]] = {
     "blat": (120.0, 185.0, "Blat / șorț"),
@@ -41,10 +61,6 @@ TYPE_PAGE22: dict[str, tuple[float, float, str]] = {
     "glaf": (385.0, 448.0, "Pervazuri int. / ext."),
     "placare_exterior": (446.0, 510.0, "Placări ext. / parapet (atic)"),
 }
-
-
-def abs_manual(name: str) -> str:
-    return f"{LINKED_WEB}/{name}"
 
 
 def draw_open_indicator(page: fitz.Page, near: fitz.Rect, color: tuple) -> fitz.Rect:
@@ -160,18 +176,19 @@ def fix_page1_link(doc: fitz.Document) -> None:
     page.add_redact_annot(union, fill=(1, 1, 1))
     page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
     box = fitz.Rect(42.52, union.y0, page.rect.x1 - 36, union.y0 + 26)
+    guide_uri = f"{APP_GHID_URL}?ref=guide&ghid=proiectare&tip=blat"
     page.insert_htmlbox(
         box,
         f'<p style="margin:0;font-family:sans-serif;font-size:8pt;color:#1c1915;line-height:1.3;">'
         f'Îl puteți găsi pe linkul: '
-        f'<a href="{APP_GHID_URL}" style="color:#2f6fed;">{APP_DISPLAY}</a>'
+        f'<a href="{guide_uri}" style="color:#2f6fed;">{APP_DISPLAY}</a>'
         f' — în containerul Ghid Operațional (referință teren &amp; proiectare).</p>',
     )
     page.insert_link(
         {
             "kind": fitz.LINK_URI,
             "from": fitz.Rect(42.52, union.y0, page.rect.x1 - 36, union.y0 + 22),
-            "uri": APP_GHID_URL,
+            "uri": guide_uri,
         }
     )
     print("  page1 vanity link OK")
@@ -461,9 +478,13 @@ def build_type_pdfs(master: Path) -> None:
         pdf_path = out_dir / "Ghid-proiectare-cad.pdf"
         out.save(pdf_path, garbage=3, deflate=True)
         out.close()
-        print(f"  type {tid} → {pdf_path.relative_to(ROOT)} ({len(list(out_dir.glob('*.pdf')))} pdf)")
+        print(f"  type {tid} → {pdf_path.relative_to(ROOT)}")
         render_pages(pdf_path, out_dir / "pages")
     src.close()
+    # Linkuri → panou (ghid=proiectare) pe toate tipurile
+    import runpy
+
+    runpy.run_path(str(ROOT / "scripts/patch_design_guide_links.py"), run_name="__main__")
 
 
 def main() -> None:

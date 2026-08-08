@@ -171,7 +171,8 @@ def rewrite_links_to_panou(doc: fitz.Document, tip: str) -> int:
                         f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
                     )
             elif "/ingineri/panou-angajat" in uri and "doc=" not in uri:
-                new_uri = f"{APP_PANOU}?ref=repo&doc=doc-tehnica"
+                # Vanity / „deschide ghidul” → tipul curent, nu repository
+                new_uri = f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}"
             if new_uri and new_uri != uri:
                 page.delete_link(link)
                 link["uri"] = new_uri

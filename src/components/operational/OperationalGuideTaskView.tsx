@@ -187,15 +187,36 @@ function MeasurerGuideBody({
 function DesignGuideBody({
   task,
   onCloseManual,
+  deepDocId,
+  onClearDeepDoc,
 }: {
   task: OperationalGuideTask;
   onCloseManual: () => void;
+  deepDocId: string | null;
+  onClearDeepDoc: () => void;
 }) {
   const device = useMemo(() => getDesignGuideDevice(task.id), [task.id]);
   const initialChapterId = useMemo(() => getDesignGuideStartChapterId(task.id), [task.id]);
   const label = OPERATIONAL_GUIDE_LABELS[task.id];
   const { syncDocToUrl } = useGuideDeepLink(task.id);
   const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
+
+  useEffect(() => {
+    if (!deepDocId || deepDocId === 'doc-tehnica') return;
+    const resolved = resolveFieldGuideLinkedDoc(deepDocId, task.id);
+    if (!resolved || resolved.openRepo || !resolved.url) return;
+    setOpenDoc({
+      url: resolved.url,
+      fileName: resolved.fileName,
+      title: resolved.title,
+      eyebrow: resolved.eyebrow,
+    });
+  }, [deepDocId, task.id]);
+
+  const closeDoc = () => {
+    setOpenDoc(null);
+    onClearDeepDoc();
+  };
 
   const handleActionHotspot = (spot: EquipmentManualPageActionHotspot) => {
     if (spot.linkedDocId) {
@@ -238,10 +259,7 @@ function DesignGuideBody({
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
-          onClose={() => {
-            setOpenDoc(null);
-            syncDocToUrl(null, 'design');
-          }}
+          onClose={closeDoc}
         />
       ) : null}
     </div>
@@ -271,15 +289,15 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
 
   const [active, setActive] = useState<ActiveGuide | null>(() => {
     if (ghidParam === 'proiectare') return 'design';
-    if (ghidParam === 'teren' || docParam) return 'measurer';
+    if (ghidParam === 'teren') return 'measurer';
+    if (docParam) return 'measurer';
     return null;
   });
 
   useEffect(() => {
     if (ghidParam === 'proiectare') setActive('design');
-    else if (ghidParam === 'teren' || (docParam && docParam !== 'doc-tehnica')) {
-      setActive('measurer');
-    }
+    else if (ghidParam === 'teren') setActive('measurer');
+    else if (docParam && docParam !== 'doc-tehnica') setActive('measurer');
   }, [ghidParam, docParam]);
 
   const clearDeepDoc = () => {
@@ -340,7 +358,14 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
             ariaLabel={`Ghid Proiectare — Proiectare ${label}`}
           />
         ),
-        body: <DesignGuideBody task={task} onCloseManual={() => setActive(null)} />,
+        body: (
+          <DesignGuideBody
+            task={task}
+            onCloseManual={() => setActive(null)}
+            deepDocId={active === 'design' ? docParam : null}
+            onClearDeepDoc={clearDeepDoc}
+          />
+        ),
       },
     ],
     // toggle/clearDeepDoc are stable enough for this UI; params drive deep-link reopen
