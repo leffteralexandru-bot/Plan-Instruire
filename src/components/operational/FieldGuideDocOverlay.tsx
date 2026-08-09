@@ -42,7 +42,16 @@ export function FieldGuideDocOverlay({
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const isOverlay = placement === 'overlay';
+
+  const scrollToolbarIntoView = () => {
+    const el = toolbarRef.current;
+    if (!el) return;
+    const headerOffset = 120;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -50,13 +59,13 @@ export function FieldGuideDocOverlay({
     };
     document.addEventListener('keydown', onKey);
     if (!isOverlay) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      const t = window.setTimeout(() => {
-        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
+      // Sus la butoane (Închide / Descarcă) — nu jos pe PDF
+      const t1 = window.setTimeout(scrollToolbarIntoView, 50);
+      const t2 = window.setTimeout(scrollToolbarIntoView, 350);
       return () => {
         document.removeEventListener('keydown', onKey);
-        window.clearTimeout(t);
+        window.clearTimeout(t1);
+        window.clearTimeout(t2);
       };
     }
     const prev = document.body.style.overflow;
@@ -65,7 +74,7 @@ export function FieldGuideDocOverlay({
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose, isOverlay]);
+  }, [onClose, isOverlay, pdfUrl]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -115,7 +124,7 @@ export function FieldGuideDocOverlay({
 
   const shellClass = isOverlay
     ? 'fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm'
-    : 'relative z-20 mb-3 flex scroll-mt-28 flex-col overflow-hidden rounded-xl border border-corporate-gold/40 bg-white shadow-md @md:scroll-mt-32';
+    : 'relative z-20 mb-3 flex flex-col overflow-hidden rounded-xl border border-corporate-gold/40 bg-white shadow-md';
 
   return (
     <div
@@ -125,8 +134,10 @@ export function FieldGuideDocOverlay({
       aria-modal={isOverlay ? true : undefined}
       aria-label={title}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/50 px-3 py-2.5 sm:px-4">
-        <div className="min-w-0">
+      <div
+        ref={toolbarRef}
+        className="flex scroll-mt-28 flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/50 px-3 py-2.5 sm:px-4 @md:scroll-mt-32"
+      >        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             {eyebrow}
           </p>
@@ -198,6 +209,10 @@ export function FieldGuideDocOverlay({
         <iframe
           title={title}
           src={pdfUrl}
+          tabIndex={-1}
+          onLoad={() => {
+            if (!isOverlay) scrollToolbarIntoView();
+          }}
           className={
             isOverlay
               ? 'h-full min-h-[70vh] w-full rounded-lg border border-corporate-border bg-white shadow-sm'

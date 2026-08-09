@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { EquipmentChapterBlocks } from '@/components/equipment/EquipmentChapterBlocks';
 import { EquipmentChapterMedia } from '@/components/equipment/EquipmentChapterMedia';
@@ -42,6 +42,25 @@ export function EquipmentChapterView({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  const scrollToolbarIntoView = () => {
+    const el = toolbarRef.current;
+    if (!el) return;
+    const headerOffset = 120;
+    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (!previewOpen) return;
+    const t1 = window.setTimeout(scrollToolbarIntoView, 50);
+    const t2 = window.setTimeout(scrollToolbarIntoView, 350);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [previewOpen]);
 
   const pdfUrl = chapter.pdfUrl;
   const pdfName =
@@ -91,7 +110,10 @@ export function EquipmentChapterView({
 
   const pdfButton = showPdfButton && chapter.pdfUrl && (
     <div className="space-y-2 pt-1">
-      <div className={pdfButtonFullWidth ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-2'}>
+      <div
+        ref={toolbarRef}
+        className={`${pdfButtonFullWidth ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-2'} scroll-mt-28 @md:scroll-mt-32`}
+      >
         <Button
           type="button"
           variant="ghost"
@@ -134,6 +156,8 @@ export function EquipmentChapterView({
           <iframe
             title={chapter.title}
             src={pdfUrl}
+            tabIndex={-1}
+            onLoad={scrollToolbarIntoView}
             className="h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm"
           />
         </div>
