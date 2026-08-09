@@ -699,8 +699,9 @@ def rebuild_page3_compact(doc: fitz.Document) -> dict[str, float]:
         14,
     )
     html_block(
-        f"<p class='body'>Link Documentație tehnică: "
-        f"<a href='{APP_DOC_TEHNICA_URL}'>{APP_GHID_DISPLAY_URL}</a> "
+        f"<p class='body'>"
+        f"<a href='{APP_DOC_TEHNICA_URL}' style='color:#2f6fed;text-decoration:underline'>"
+        f"Documentație tehnică:</a> "
         f"— panou angajat → Repository tehnic.</p>",
         28,
     )

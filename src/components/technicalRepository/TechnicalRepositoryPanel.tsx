@@ -6,7 +6,6 @@ import {
   TECH_REPO_SECTIONS,
   type TechnicalRepositorySection,
 } from '@/data/technicalRepository';
-import { OPERATIONAL_GUIDE_LABELS, type OperationalGuideTaskId } from '@/data/operationalGuide';
 import { useTechnicalRepository } from '@/hooks/useTechnicalRepository';
 import { TechnicalRepositoryProductsSection } from '@/components/technicalRepository/TechnicalRepositoryProductsSection';
 import { TechnicalRepositoryManualsSection } from '@/components/technicalRepository/TechnicalRepositoryManualsSection';
@@ -62,17 +61,8 @@ function GuideReturnBar() {
   const fromGuide = searchParams.get('from') === 'guide';
   const ghidParam = searchParams.get('ghid');
   const tipParam = searchParams.get('tip');
-  const tipLabel =
-    tipParam && tipParam in OPERATIONAL_GUIDE_LABELS
-      ? OPERATIONAL_GUIDE_LABELS[tipParam as OperationalGuideTaskId]
-      : null;
-  const guideKind = ghidParam === 'proiectare' ? 'proiectare' : 'măsurare';
 
   if (!fromGuide) return null;
-
-  const guideBackLabel = tipLabel
-    ? `Înapoi la ghid ${guideKind} · ${tipLabel}`
-    : `Înapoi la ghid ${guideKind}`;
 
   const returnToGuide = () => {
     const next = new URLSearchParams(searchParams);
@@ -93,16 +83,18 @@ function GuideReturnBar() {
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-corporate-gold/30 bg-corporate-gold-light/20 px-3 py-2 mb-4">
-      <p className="text-[11px] text-corporate-dark leading-snug">
-        Deschis din{' '}
-        <span className="font-semibold">
-          Ghid {guideKind}
-          {tipLabel ? ` · ${tipLabel}` : ''}
-        </span>
-      </p>
-      <Button type="button" variant="secondary" size="sm" onClick={returnToGuide}>
-        {guideBackLabel}
+    <div className="mb-3 flex items-center">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="!min-h-0 gap-1 px-2 py-1 text-sm text-corporate-dark hover:bg-corporate-surface"
+        onClick={returnToGuide}
+        aria-label="Înapoi"
+        data-testid="repo-guide-back"
+      >
+        <span aria-hidden>←</span>
+        <span>înapoi</span>
       </Button>
     </div>
   );
