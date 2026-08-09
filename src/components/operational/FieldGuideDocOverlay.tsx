@@ -224,6 +224,18 @@ export function FieldGuideDocOverlay({
               : 'h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm'
           }
         />
+        <p className="mt-2 text-[11px] text-corporate-muted px-0.5">
+          Dacă vezi saitul în loc de PDF,{' '}
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-corporate-gold hover:underline"
+          >
+            deschide documentul într-un tab nou
+          </a>{' '}
+          (apoi reîncarcă pagina cu Ctrl+F5).
+        </p>
       </div>
     </div>
   );

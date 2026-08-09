@@ -41,6 +41,23 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // SPA fallback doar pentru rutele app — NU pentru PDF/media din /docs
+        // (altfel iframe-ul „Documentație completă” afișează din nou saitul)
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [
+          /^\/api\//,
+          /^\/docs\//,
+          /^\/assets\//,
+          /^\/icons\//,
+          /^\/brand\//,
+          /\.pdf$/i,
+          /\.png$/i,
+          /\.jpe?g$/i,
+          /\.webp$/i,
+          /\.mp4$/i,
+          /\.webm$/i,
+          /\.zip$/i,
+        ],
         // Nu include toate PNG-urile — paginile Proliner (2–4 MB) depășesc limita Workbox
         globPatterns: [
           '**/*.{js,css,html,ico,svg,woff2}',

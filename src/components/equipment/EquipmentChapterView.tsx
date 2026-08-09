@@ -39,7 +39,9 @@ export function EquipmentChapterView({
 }: EquipmentChapterViewProps) {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(
+    () => !!chapter.pdfUrl && !(chapter.pages && chapter.pages.length > 0),
+  );
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -51,6 +53,13 @@ export function EquipmentChapterView({
     const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    // La schimbarea capitolului: PDF-only → deschide previzualizarea automat
+    setPreviewOpen(!!chapter.pdfUrl && !(chapter.pages && chapter.pages.length > 0));
+    setError(null);
+    setShareHint(null);
+  }, [chapter.id, chapter.pdfUrl, chapter.pages]);
 
   useEffect(() => {
     if (!previewOpen) return;
@@ -160,6 +169,18 @@ export function EquipmentChapterView({
             onLoad={scrollToolbarIntoView}
             className="h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm"
           />
+          <p className="mt-2 text-[11px] text-corporate-muted">
+            Dacă PDF-ul nu apare aici,{' '}
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-corporate-gold hover:underline"
+            >
+              deschide-l într-un tab nou
+            </a>
+            .
+          </p>
         </div>
       ) : null}
       {shareHint && <p className="text-xs text-corporate-muted">{shareHint}</p>}
