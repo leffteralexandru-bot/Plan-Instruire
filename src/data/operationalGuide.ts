@@ -93,18 +93,18 @@ export const COMMON_FIELD_RULES: string[] = [
 export const FIELD_GUIDE_BASE_RULE =
   'Chiar dacă arată montat vizual — TU întrebi și verifici fizic.';
 
-/** PDF ghid teren — fallback master; în task-uri se folosește PDF-ul pe tip. */
+/** PDF ghid teren — fișier general (toate tipurile); pe site capitolele rămân pe tip. */
 export const FIELD_GUIDE_PDF_URL =
   '/docs/operational-guide/field-guide/Ghid-teren-masurare.pdf';
 export const FIELD_GUIDE_PDF_NAME = 'Ghid-teren-masurare.pdf';
 
-function fieldGuidePdfForTask(taskId: OperationalGuideTaskId): {
+function fieldGuidePdfForTask(_taskId: OperationalGuideTaskId): {
   fieldGuidePdfUrl: string;
   fieldGuidePdfFileName: string;
 } {
   return {
-    fieldGuidePdfUrl: `/docs/operational-guide/field-guide/by-type/${taskId}/Ghid-teren-masurare.pdf`,
-    fieldGuidePdfFileName: `Ghid-teren-${taskId}.pdf`,
+    fieldGuidePdfUrl: FIELD_GUIDE_PDF_URL,
+    fieldGuidePdfFileName: FIELD_GUIDE_PDF_NAME,
   };
 }
 

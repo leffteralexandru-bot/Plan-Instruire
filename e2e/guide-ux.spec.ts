@@ -49,18 +49,16 @@ test.describe('guide UX acceptance', () => {
     expect(Number(guidePng.headers()['content-length'] || 0)).toBeGreaterThan(400_000);
   });
 
-  test('Documentație completă deschide PDF, nu saitul în iframe', async ({ page }) => {
+  test('Documentație completă deschide PDF general, nu pe tip', async ({ page }) => {
     await page.goto('/ingineri/panou-angajat?ref=guide&tip=blat&ghid=teren');
     await page.getByText(/Documentație completă/i).first().click();
     const frame = page.locator('iframe[title="Documentație completă"]');
     await expect(frame).toBeVisible({ timeout: 15000 });
     await expect(frame).toHaveAttribute(
       'src',
-      /\/docs\/operational-guide\/field-guide\/by-type\/blat\/Ghid-teren-masurare\.pdf$/,
+      /\/docs\/operational-guide\/field-guide\/Ghid-teren-masurare\.pdf$/,
     );
-    const pdfRes = await page.request.get(
-      '/docs/operational-guide/field-guide/by-type/blat/Ghid-teren-masurare.pdf',
-    );
+    const pdfRes = await page.request.get('/docs/operational-guide/field-guide/Ghid-teren-masurare.pdf');
     expect(pdfRes.ok()).toBeTruthy();
     expect(pdfRes.headers()['content-type'] || '').toMatch(/pdf/i);
   });

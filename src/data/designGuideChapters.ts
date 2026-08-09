@@ -18,22 +18,27 @@ import {
 } from '@/data/fieldGuideChapters';
 
 /**
- * Ghid proiectare CAD — pe tip (etape comune + puncte extra tip).
- * Etapa 1.1–1.4 sunt pe o singură pagină compactă (pagina 2).
+ * Ghid proiectare CAD — pe site: pagini pe tip (by-type/).
+ * Descărcare Documentație completă: PDF general (toate tipurile).
  */
 const BY_TYPE_BASE = '/docs/operational-guide/design-guide/by-type';
 
+export const DESIGN_GUIDE_MANUAL_PDF = '/docs/operational-guide/design-guide/Ghid-proiectare-cad.pdf';
+export const DESIGN_GUIDE_MANUAL_PDF_NAME = 'Ghid-proiectare-cad.pdf';
+
+/** PDF pe tip — referință; pe site se citesc paginile PNG pe tip. */
 export function getDesignGuideManualPdf(taskId: OperationalGuideTaskId): string {
   return `${BY_TYPE_BASE}/${taskId}/Ghid-proiectare-cad.pdf`;
 }
 
-export function getDesignGuideDownload(taskId: OperationalGuideTaskId): {
+/** Descărcare / previzualizare Documentație completă — același PDF general pentru orice tip. */
+export function getDesignGuideDownload(_taskId?: OperationalGuideTaskId): {
   url: string;
   fileName: string;
 } {
   return {
-    url: getDesignGuideManualPdf(taskId),
-    fileName: `Ghid-proiectare-${taskId}.pdf`,
+    url: DESIGN_GUIDE_MANUAL_PDF,
+    fileName: DESIGN_GUIDE_MANUAL_PDF_NAME,
   };
 }
 
@@ -133,7 +138,7 @@ function buildDesignDevice(taskId: OperationalGuideTaskId): EquipmentDevice {
   const label = OPERATIONAL_GUIDE_LABELS[taskId];
 
   const chapters: EquipmentChapter[] = [
-    chapter(taskId, prefix, 1, 'Documentație completă', 'Deschide · descarcă · trimite — ghid proiectare pe tip', [], {
+    chapter(taskId, prefix, 1, 'Documentație completă', 'Deschide · descarcă · trimite — ghid general (toate tipurile de proiectare)', [], {
       includePdf: true,
     }),
     chapter(taskId, prefix, 2, 'Cuprins — etape CAD', 'Resurse · import · schiță · legendă · Bitrix', [1]),

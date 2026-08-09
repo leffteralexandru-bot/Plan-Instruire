@@ -8,30 +8,31 @@ import type { OperationalGuideTaskId } from '@/data/operationalGuide';
 import { OPERATIONAL_GUIDE_LABELS } from '@/data/operationalGuide';
 
 /**
- * Ghid teren — câte un PDF/manual pe tip de măsurare.
- * Master (toate tipurile) rămâne pentru regenerare; în app se folosește by-type/.
+ * Ghid teren — pe site: pagini pe tip (by-type/).
+ * Descărcare Documentație completă: PDF general (toate tipurile), un singur fișier.
  */
 export const FIELD_GUIDE_MANUAL_PDF = '/docs/operational-guide/field-guide/Ghid-teren-masurare.pdf';
 export const FIELD_GUIDE_MANUAL_PDF_NAME = 'Ghid-teren-masurare.pdf';
-/** @deprecated — master ZIP (toate tipurile + linked-manuals). În app: PDF pe tip. */
+/** @deprecated — master ZIP (toate tipurile + linked-manuals). */
 export const FIELD_GUIDE_DOWNLOAD_URL =
   '/docs/operational-guide/field-guide/Ghid-teren-masurare-cu-manuale.zip';
 export const FIELD_GUIDE_DOWNLOAD_NAME = 'Ghid-teren-masurare-cu-manuale.zip';
 
 const FIELD_GUIDE_BY_TYPE_BASE = '/docs/operational-guide/field-guide/by-type';
 
+/** PDF pe tip — doar referință / regenerare; pe site se citesc paginile PNG pe tip. */
 export function getFieldGuideManualPdf(taskId: OperationalGuideTaskId): string {
   return `${FIELD_GUIDE_BY_TYPE_BASE}/${taskId}/Ghid-teren-masurare.pdf`;
 }
 
-/** Descărcare Documentație completă — PDF pe tip (ca la celelalte ghiduri). */
-export function getFieldGuideDownload(taskId: OperationalGuideTaskId): {
+/** Descărcare / previzualizare Documentație completă — același PDF general pentru orice tip. */
+export function getFieldGuideDownload(_taskId?: OperationalGuideTaskId): {
   url: string;
   fileName: string;
 } {
   return {
-    url: getFieldGuideManualPdf(taskId),
-    fileName: `Ghid-teren-${taskId}.pdf`,
+    url: FIELD_GUIDE_MANUAL_PDF,
+    fileName: FIELD_GUIDE_MANUAL_PDF_NAME,
   };
 }
 
@@ -320,7 +321,7 @@ function buildCommonChapters(prefix: string, taskId: OperationalGuideTaskId): Eq
       prefix,
       1,
       'Documentație completă',
-      'Deschide · descarcă · trimite — doar acest tip',
+      'Deschide · descarcă · trimite — ghid general (toate tipurile de măsurare)',
       [],
       { includePdf: true },
     ),
