@@ -104,6 +104,13 @@ function EquipmentOperationsContent() {
     next.set('ref', 'guide');
     next.set('ghid', ghidParam === 'proiectare' ? 'proiectare' : 'teren');
     next.set('tip', tipParam || 'blat');
+    // păstrează capitol/pagină ca să te întorci exact pe locul din ghid
+    const ch = searchParams.get('ch');
+    const page = searchParams.get('page');
+    if (ch) next.set('ch', ch);
+    else next.delete('ch');
+    if (page) next.set('page', page);
+    else next.delete('page');
     next.delete('device');
     next.delete('from');
     next.delete('doc');

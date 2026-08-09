@@ -7,12 +7,20 @@ import type { EquipmentChapter, EquipmentDevice, EquipmentManualPageActionHotspo
 import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
 
+export type GuideActionHotspotContext = {
+  chapterId: string;
+  pageId?: string;
+};
+
 interface EquipmentChapterViewProps {
   device: EquipmentDevice;
   chapter: EquipmentChapter;
   showPdfButton?: boolean;
   pdfButtonFullWidth?: boolean;
-  onActionHotspot?: (spot: EquipmentManualPageActionHotspot) => void;
+  onActionHotspot?: (
+    spot: EquipmentManualPageActionHotspot,
+    ctx?: GuideActionHotspotContext,
+  ) => void;
 }
 
 export function EquipmentChapterView({
@@ -128,13 +136,18 @@ export function EquipmentChapterView({
         {chapter.pages.map((page) => (
           <EquipmentManualPage
             key={page.id}
+            pageId={page.id}
             imageUrl={page.imageUrl}
             alt={`Capitol ${chapter.number} — ${chapter.title}`}
             videoUrl={page.videoUrl}
             hotspot={page.hotspot}
             videoHotspots={page.videoHotspots}
             actionHotspots={page.actionHotspots}
-            onActionHotspot={onActionHotspot}
+            onActionHotspot={
+              onActionHotspot
+                ? (spot) => onActionHotspot(spot, { chapterId: chapter.id, pageId: page.id })
+                : undefined
+            }
             compactPlayHotspots={device.id !== 'eq-proliner'}
             filmIconShift={
               device.id === 'eq-factory-fabricator' ? 'fabricator' : 'none'

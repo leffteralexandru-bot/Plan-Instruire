@@ -20,7 +20,10 @@ interface EquipmentGuideDeviceViewProps {
   /** Capitol de deschis la start (ex. tip măsurare Blat → ch-4) */
   initialChapterId?: string | null;
   /** Acțiune pe hotspot din pagină (ex. Deschide manual Proliner din lista echipament). */
-  onActionHotspot?: (spot: import('@/data/equipmentOperations').EquipmentManualPageActionHotspot) => void;
+  onActionHotspot?: (
+    spot: import('@/data/equipmentOperations').EquipmentManualPageActionHotspot,
+    ctx?: { chapterId: string; pageId?: string },
+  ) => void;
   /** Cum se afișează avertismentul de siguranță */
   safetyPlacement?: 'modal' | 'inline';
 }

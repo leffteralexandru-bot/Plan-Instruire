@@ -60,6 +60,7 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
     if (!next.get('ghid')) next.set('ghid', 'teren');
     if (!next.get('tip')) next.set('tip', 'blat');
     next.delete('doc');
+    // ch / page rămân dacă existau (Înapoi la aceeași pagină din ghid)
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 

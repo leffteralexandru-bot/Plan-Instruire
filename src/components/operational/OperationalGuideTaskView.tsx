@@ -22,6 +22,11 @@ import {
 import { FieldGuideDocOverlay } from '@/components/operational/FieldGuideDocOverlay';
 import { OperationalGuideToggleTile } from '@/components/operational/OperationalGuideToggleTile';
 import { type EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
+import {
+  consumeGuideReturnSnapshot,
+  guidePageDomId,
+  saveGuideReturnSnapshot,
+} from '@/lib/guideReturnState';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -38,14 +43,25 @@ type OpenDocState = {
   eyebrow: string;
 };
 
+type GuidePlace = {
+  chapterId?: string | null;
+  pageId?: string | null;
+};
+
 function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const ghidParam = searchParams.get('ghid');
   const docParam = searchParams.get('doc');
+  const chapterParam = searchParams.get('ch');
+  const pageParam = searchParams.get('page');
 
-  const syncDocToUrl = (docId: FieldGuideLinkedDocId | null, ghid: ActiveGuide) => {
+  const syncDocToUrl = (
+    docId: FieldGuideLinkedDocId | null,
+    ghid: ActiveGuide,
+    place?: GuidePlace,
+  ) => {
     const next = new URLSearchParams(searchParams);
     next.delete('doc');
     next.delete('device');
@@ -58,6 +74,8 @@ function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
       tip: taskId,
       doc: docId,
       ghid: ghid === 'design' ? 'proiectare' : 'teren',
+      chapterId: place?.chapterId,
+      pageId: place?.pageId,
     });
     built.forEach((value, key) => next.set(key, value));
     const viewAs = searchParams.get('viewAs');
@@ -69,7 +87,16 @@ function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
     navigate(href);
   };
 
-  return { ghidParam, docParam, syncDocToUrl, openHref, searchParams, setSearchParams };
+  return {
+    ghidParam,
+    docParam,
+    chapterParam,
+    pageParam,
+    syncDocToUrl,
+    openHref,
+    searchParams,
+    setSearchParams,
+  };
 }
 
 function MeasurerGuideBody({
@@ -84,17 +111,41 @@ function MeasurerGuideBody({
   onClearDeepDoc: () => void;
 }) {
   const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
-  const initialChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
-  const { syncDocToUrl, openHref } = useGuideDeepLink(task.id);
+  const defaultChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
+  const { syncDocToUrl, openHref, chapterParam, pageParam } = useGuideDeepLink(task.id);
   const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
+
+  const initialChapterId = chapterParam || defaultChapterId;
+
+  // După Înapoi din Mentenanță: același capitol + pagina + scroll
+  useEffect(() => {
+    if (!chapterParam && !pageParam) return;
+    const snap = consumeGuideReturnSnapshot();
+    const pageId = snap?.pageId || pageParam;
+    const scrollY = snap?.scrollY ?? 0;
+    const restore = () => {
+      if (pageId) {
+        const el = document.getElementById(guidePageDomId(pageId));
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+      }
+      if (snap) window.scrollTo({ top: scrollY, behavior: 'smooth' });
+    };
+    const t = window.setTimeout(restore, 120);
+    return () => window.clearTimeout(t);
+  }, [task.id, chapterParam, pageParam]);
 
   useEffect(() => {
     if (!deepDocId || deepDocId === 'doc-tehnica') return;
     const resolved = resolveFieldGuideLinkedDoc(deepDocId, task.id);
     if (!resolved || resolved.openRepo) return;
-    // Utilaje → Mentenanță (URL); nu overlay pe ghid
     if (resolved.equipmentDeviceId) {
-      syncDocToUrl(resolved.id, 'measurer');
+      syncDocToUrl(resolved.id, 'measurer', {
+        chapterId: chapterParam,
+        pageId: pageParam,
+      });
       return;
     }
     if (!resolved.url) return;
@@ -112,7 +163,21 @@ function MeasurerGuideBody({
     onClearDeepDoc();
   };
 
-  const handleActionHotspot = (spot: EquipmentManualPageActionHotspot) => {
+  const rememberPlaceAndOpen = (docId: FieldGuideLinkedDocId, place?: GuidePlace) => {
+    saveGuideReturnSnapshot({
+      ghid: 'teren',
+      tip: task.id,
+      chapterId: place?.chapterId ?? chapterParam,
+      pageId: place?.pageId ?? pageParam,
+      scrollY: window.scrollY,
+    });
+    syncDocToUrl(docId, 'measurer', place);
+  };
+
+  const handleActionHotspot = (
+    spot: EquipmentManualPageActionHotspot,
+    ctx?: { chapterId: string; pageId?: string },
+  ) => {
     if (spot.href) {
       openHref(spot.href);
       return;
@@ -124,12 +189,17 @@ function MeasurerGuideBody({
         return;
       }
       if (resolved?.equipmentDeviceId) {
-        // Carte utilaj → Mentenanță + origin ghid
-        syncDocToUrl(resolved.id, 'measurer');
+        rememberPlaceAndOpen(resolved.id, {
+          chapterId: ctx?.chapterId,
+          pageId: ctx?.pageId,
+        });
         return;
       }
       if (resolved?.url) {
-        syncDocToUrl(resolved.id, 'measurer');
+        syncDocToUrl(resolved.id, 'measurer', {
+          chapterId: ctx?.chapterId,
+          pageId: ctx?.pageId,
+        });
         setOpenDoc({
           url: resolved.url,
           fileName: resolved.fileName,
@@ -140,19 +210,18 @@ function MeasurerGuideBody({
       }
     }
     if (spot.deviceId) {
-      const built = buildFieldGuideDocSearchParams({
-        tip: task.id,
-        doc:
-          spot.deviceId === 'eq-proliner'
-            ? 'proliner'
-            : spot.deviceId === 'eq-bosch-gll-3-80'
-              ? 'gll'
-              : spot.deviceId === 'eq-bosch-tape-5m'
-                ? 'ruleta'
-                : 'proliner',
-        ghid: 'teren',
+      const docId: FieldGuideLinkedDocId =
+        spot.deviceId === 'eq-proliner'
+          ? 'proliner'
+          : spot.deviceId === 'eq-bosch-gll-3-80'
+            ? 'gll'
+            : spot.deviceId === 'eq-bosch-tape-5m'
+              ? 'ruleta'
+              : 'proliner';
+      rememberPlaceAndOpen(docId, {
+        chapterId: ctx?.chapterId,
+        pageId: ctx?.pageId,
       });
-      openHref(`/ingineri/panou-angajat?${built.toString()}`);
       return;
     }
     if (spot.docUrl && spot.docFileName) {
@@ -169,7 +238,7 @@ function MeasurerGuideBody({
   return (
     <div className="space-y-2">
       <EquipmentGuideDeviceView
-        key={`${device.id}-${task.id}`}
+        key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
         device={device}
         manualNumber={1}
         initialChapterId={initialChapterId}
@@ -204,10 +273,11 @@ function DesignGuideBody({
   onClearDeepDoc: () => void;
 }) {
   const device = useMemo(() => getDesignGuideDevice(task.id), [task.id]);
-  const initialChapterId = useMemo(() => getDesignGuideStartChapterId(task.id), [task.id]);
+  const defaultChapterId = useMemo(() => getDesignGuideStartChapterId(task.id), [task.id]);
   const label = OPERATIONAL_GUIDE_LABELS[task.id];
-  const { syncDocToUrl } = useGuideDeepLink(task.id);
+  const { syncDocToUrl, chapterParam } = useGuideDeepLink(task.id);
   const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
+  const initialChapterId = chapterParam || defaultChapterId;
 
   useEffect(() => {
     if (!deepDocId || deepDocId === 'doc-tehnica') return;
@@ -226,11 +296,17 @@ function DesignGuideBody({
     onClearDeepDoc();
   };
 
-  const handleActionHotspot = (spot: EquipmentManualPageActionHotspot) => {
+  const handleActionHotspot = (
+    spot: EquipmentManualPageActionHotspot,
+    ctx?: { chapterId: string; pageId?: string },
+  ) => {
     if (spot.linkedDocId) {
       const resolved = resolveFieldGuideLinkedDoc(spot.linkedDocId, task.id);
       if (resolved?.url) {
-        syncDocToUrl(resolved.id, 'design');
+        syncDocToUrl(resolved.id, 'design', {
+          chapterId: ctx?.chapterId,
+          pageId: ctx?.pageId,
+        });
         setOpenDoc({
           url: resolved.url,
           fileName: resolved.fileName,
@@ -253,7 +329,7 @@ function DesignGuideBody({
   return (
     <div className="space-y-2">
       <EquipmentGuideDeviceView
-        key={`${device.id}-${task.id}`}
+        key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
         device={device}
         manualNumber={2}
         initialChapterId={initialChapterId}

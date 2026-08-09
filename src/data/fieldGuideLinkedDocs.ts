@@ -159,6 +159,9 @@ export function buildFieldGuideDocSearchParams(input: {
   tip: OperationalGuideTaskId;
   doc: FieldGuideLinkedDocId;
   ghid?: 'teren' | 'proiectare';
+  /** Capitol/pagină ghid — pentru Înapoi exact pe locul din care ai deschis */
+  chapterId?: string | null;
+  pageId?: string | null;
 }): URLSearchParams {
   const params = new URLSearchParams();
   if (input.doc === 'doc-tehnica') {
@@ -174,11 +177,15 @@ export function buildFieldGuideDocSearchParams(input: {
     params.set('from', 'guide');
     params.set('ghid', input.ghid ?? 'teren');
     params.set('tip', input.tip);
+    if (input.chapterId) params.set('ch', input.chapterId);
+    if (input.pageId) params.set('page', input.pageId);
     return params;
   }
   params.set('ref', 'guide');
   params.set('ghid', input.ghid ?? 'teren');
   params.set('tip', input.tip);
   params.set('doc', input.doc);
+  if (input.chapterId) params.set('ch', input.chapterId);
+  if (input.pageId) params.set('page', input.pageId);
   return params;
 }

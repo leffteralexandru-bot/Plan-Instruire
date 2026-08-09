@@ -143,6 +143,8 @@ function ManualPlayIcon({
 interface EquipmentManualPageProps {
   imageUrl: string;
   alt: string;
+  /** Pentru restaurare scroll / Înapoi la ghid */
+  pageId?: string;
   videoUrl?: string;
   hotspot?: EquipmentManualPageHotspot;
   videoHotspots?: EquipmentManualPageVideoHotspot[];
@@ -159,6 +161,7 @@ interface EquipmentManualPageProps {
 export function EquipmentManualPage({
   imageUrl,
   alt,
+  pageId,
   videoUrl,
   hotspot,
   videoHotspots,
@@ -179,7 +182,10 @@ export function EquipmentManualPage({
 
   return (
     <>
-      <figure className="overflow-hidden rounded-xl border border-corporate-border bg-white shadow-sm">
+      <figure
+        id={pageId ? `guide-page-${pageId}` : undefined}
+        className="overflow-hidden rounded-xl border border-corporate-border bg-white shadow-sm scroll-mt-28 @md:scroll-mt-32"
+      >
         <div className="manual-page-canvas relative w-full bg-white">
           <img
             src={imageUrl}
