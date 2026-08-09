@@ -62,13 +62,15 @@ test.describe('artGRANIT guide deep-link', () => {
     await expect(page.getByText(/carte utilaj|PROLINER|Proliner|Mentenanță/i).first()).toBeVisible({
       timeout: 15000,
     });
-    const overlay = page.getByRole('dialog', { name: /Manual|Proliner|PROLINER/i });
-    await expect(overlay.getByRole('button', { name: 'Descarcă', exact: true })).toBeVisible();
-    await expect(overlay.getByRole('button', { name: 'Trimite', exact: true })).toBeVisible();
-    const back = overlay.getByRole('button', { name: /Înapoi la ghid măsurare/i });
+    // Meniul de sus (ca în panou) rămâne vizibil — cartea e în containerul Mentenanță
+    await expect(page.getByText('artGRANIT').first()).toBeVisible();
+    await expect(page.getByText('Panou Angajat').first()).toBeVisible();
+    const book = page.getByRole('region', { name: /Manual|Proliner|PROLINER/i });
+    await expect(book.getByRole('button', { name: 'Descarcă', exact: true })).toBeVisible();
+    await expect(book.getByRole('button', { name: 'Trimite', exact: true })).toBeVisible();
+    const back = book.getByRole('button', { name: /Înapoi la ghid măsurare/i });
     await expect(back).toBeVisible();
-    // Dialogul de siguranță din carte poate acoperi butonul — force pe headerul overlay
-    await back.click({ force: true });
+    await back.click();
     await expect(page).toHaveURL(/ref=guide/);
     await expect(page).toHaveURL(/ghid=teren/);
     await expect(page).toHaveURL(/tip=scara/);

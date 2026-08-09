@@ -21,6 +21,8 @@ interface EquipmentGuideDeviceViewProps {
   initialChapterId?: string | null;
   /** Acțiune pe hotspot din pagină (ex. Deschide manual Proliner din lista echipament). */
   onActionHotspot?: (spot: import('@/data/equipmentOperations').EquipmentManualPageActionHotspot) => void;
+  /** Cum se afișează avertismentul de siguranță */
+  safetyPlacement?: 'modal' | 'inline';
 }
 
 function PhoneReachabilityBar({
@@ -75,6 +77,7 @@ export function EquipmentGuideDeviceView({
   onBack,
   initialChapterId = null,
   onActionHotspot,
+  safetyPlacement = 'modal',
 }: EquipmentGuideDeviceViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layoutMode = useEquipmentLayoutMode(containerRef);
@@ -202,6 +205,7 @@ export function EquipmentGuideDeviceView({
       {device.safetyWarning && (
         <EquipmentSafetyWarningCard
           warning={device.safetyWarning}
+          placement={safetyPlacement}
           onAcknowledged={() => setSafetyReady(true)}
         />
       )}

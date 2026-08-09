@@ -62,31 +62,38 @@ export function EquipmentManualOverlay({
   onClose,
   returnLabel = 'Înapoi la ghid',
   contextHint = 'Deschis din ghidul de pe site — după închidere rămâi în același ghid (poți continua citirea).',
+  /** panel = în Mentenanță, meniul de sus rămâne vizibil; overlay = ecran plin */
+  placement = 'panel',
 }: {
   device: EquipmentDevice;
   onClose: () => void;
   /** Text pe butonul de întoarcere — rămâi pe ghidul de pe site */
   returnLabel?: string;
   contextHint?: string;
+  placement?: 'panel' | 'overlay';
 }) {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
   const pdf = useMemo(() => devicePdf(device), [device]);
+  const isOverlay = placement === 'overlay';
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
+    if (!isOverlay) {
+      return () => document.removeEventListener('keydown', onKey);
+    }
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, [onClose, isOverlay]);
 
   const handleDownload = async () => {
     if (!pdf) {
@@ -133,12 +140,16 @@ export function EquipmentManualOverlay({
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
+      className={
+        isOverlay
+          ? 'fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm'
+          : 'flex flex-col rounded-xl border border-corporate-border bg-white shadow-sm overflow-hidden'
+      }
+      role={isOverlay ? 'dialog' : 'region'}
+      aria-modal={isOverlay ? true : undefined}
       aria-label={`Manual ${device.name}`}
     >
-      <div className="relative z-[100] flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4">
+      <div className="relative z-[100] flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4 sticky top-0">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             Mentenanță & operare · carte utilaj
@@ -180,11 +191,12 @@ export function EquipmentManualOverlay({
           {error}
         </p>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+      <div className={isOverlay ? 'min-h-0 flex-1 overflow-y-auto p-3 sm:p-4' : 'p-3 sm:p-4'}>
         <EquipmentGuideDeviceView
           device={device}
           manualNumber={1}
           onBack={onClose}
+          safetyPlacement={isOverlay ? 'modal' : 'inline'}
         />
       </div>
     </div>

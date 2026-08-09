@@ -138,11 +138,12 @@ function EquipmentOperationsContent() {
     return (
       <EquipmentManualOverlay
         device={overlayDevice}
+        placement="panel"
         returnLabel={fromGuide ? guideBackLabel : 'Înapoi la Mentenanță'}
         contextHint={
           fromGuide
-            ? `Deschis din Ghid ${guideKind}${tipLabel ? ` (${tipLabel})` : ''}. Poți reveni la ghid sau rămâne în Mentenanță.`
-            : 'Carte din Modul Mentenanță — Descarcă / Trimite PDF.'
+            ? `Deschis din Ghid ${guideKind}${tipLabel ? ` (${tipLabel})` : ''}. Meniul de sus rămâne — poți reveni la ghid.`
+            : 'Carte din Modul Mentenanță — Descarcă / Trimite PDF. Meniul de sus rămâne vizibil.'
         }
         onClose={() => {
           if (fromGuide) {
