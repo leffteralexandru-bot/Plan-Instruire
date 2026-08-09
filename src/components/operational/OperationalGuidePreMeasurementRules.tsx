@@ -96,7 +96,7 @@ function IconSpinner({ className = 'h-3 w-3 md:h-3.5 md:w-3.5' }: { className?: 
 }
 
 const iconBtnClass =
-  'inline-flex h-6 w-6 md:h-8 md:w-8 shrink-0 items-center justify-center rounded-lg border border-corporate-border/80 bg-white text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/40 hover:text-corporate-black focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 shrink-0 items-center justify-center rounded-md border border-corporate-border/80 bg-white text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/40 hover:text-corporate-black focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
 
 function ChecklistViewerModal({
   imageUrl,

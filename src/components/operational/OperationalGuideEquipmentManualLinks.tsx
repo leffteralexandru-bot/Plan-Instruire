@@ -175,7 +175,7 @@ export function EquipmentManualOverlay({
           <p className="truncate text-sm font-semibold text-corporate-dark">{device.name}</p>
           <p className="mt-0.5 text-[10px] text-corporate-muted leading-snug">{contextHint}</p>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+        <div className="flex shrink-0 flex-wrap items-center gap-1 sm:gap-1.5">
           <Button
             type="button"
             variant="secondary"

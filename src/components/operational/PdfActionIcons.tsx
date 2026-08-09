@@ -1,8 +1,10 @@
-/** Icon-only toolbar buttons for PDF / document panels */
+/** Icon-only toolbar — compact pe telefon/tabletă, puțin mai mici și pe desktop */
 export const PDF_ICON_BTN =
-  '!min-h-[44px] !min-w-[44px] !px-0 !py-0 @md:!min-h-[40px] @md:!min-w-[40px]';
+  '!h-8 !w-8 !min-h-[32px] !min-w-[32px] !px-0 !py-0 !gap-0 !rounded-lg sm:!h-[34px] sm:!w-[34px] sm:!min-h-[34px] sm:!min-w-[34px] lg:!h-9 lg:!w-9 lg:!min-h-[36px] lg:!min-w-[36px]';
 
-export function IconDownload({ className = 'h-5 w-5' }: { className?: string }) {
+const PDF_ICON_SVG = 'h-3.5 w-3.5 sm:h-4 sm:w-4';
+
+export function IconDownload({ className = PDF_ICON_SVG }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path
@@ -15,7 +17,7 @@ export function IconDownload({ className = 'h-5 w-5' }: { className?: string }) 
   );
 }
 
-export function IconShare({ className = 'h-5 w-5' }: { className?: string }) {
+export function IconShare({ className = PDF_ICON_SVG }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path
@@ -28,7 +30,7 @@ export function IconShare({ className = 'h-5 w-5' }: { className?: string }) {
   );
 }
 
-export function IconPrint({ className = 'h-5 w-5' }: { className?: string }) {
+export function IconPrint({ className = PDF_ICON_SVG }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path
@@ -41,7 +43,7 @@ export function IconPrint({ className = 'h-5 w-5' }: { className?: string }) {
   );
 }
 
-export function IconClose({ className = 'h-5 w-5' }: { className?: string }) {
+export function IconClose({ className = PDF_ICON_SVG }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -49,7 +51,7 @@ export function IconClose({ className = 'h-5 w-5' }: { className?: string }) {
   );
 }
 
-export function IconOpenEye({ className = 'h-5 w-5' }: { className?: string }) {
+export function IconOpenEye({ className = PDF_ICON_SVG }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
       <path

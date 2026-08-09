@@ -123,7 +123,7 @@ export function EquipmentChapterView({
     <div className="space-y-2 pt-1">
       <div
         ref={toolbarRef}
-        className={`${pdfButtonFullWidth ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-2'} scroll-mt-28 @md:scroll-mt-32`}
+        className={`${pdfButtonFullWidth ? 'flex flex-col gap-1.5' : 'flex flex-wrap items-center gap-1 sm:gap-1.5'} scroll-mt-28 @md:scroll-mt-32`}
       >
         <Button
           type="button"
