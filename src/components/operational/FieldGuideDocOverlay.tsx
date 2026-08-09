@@ -5,9 +5,16 @@ import {
   printOperationalChecklistPdf,
 } from '@/lib/operationalChecklistPdf';
 import { shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
+import {
+  IconClose,
+  IconDownload,
+  IconPrint,
+  IconShare,
+  PDF_ICON_BTN,
+} from '@/components/operational/PdfActionIcons';
 
 /**
- * Document din ghid (ex. Anexa 1): vizualizare PDF + Descarcă / Trimite / Printează.
+ * Document din ghid (ex. Anexa 1): vizualizare PDF + acțiuni icon-only.
  * Implicit: panou deasupra manualului ghid (meniul site-ului rămâne vizibil).
  */
 export function FieldGuideDocOverlay({
@@ -43,7 +50,6 @@ export function FieldGuideDocOverlay({
     };
     document.addEventListener('keydown', onKey);
     if (!isOverlay) {
-      // Sus sub meniul site-ului — documentul e deasupra manualului ghid
       window.scrollTo({ top: 0, behavior: 'smooth' });
       const t = window.setTimeout(() => {
         panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -132,26 +138,44 @@ export function FieldGuideDocOverlay({
             type="button"
             variant="secondary"
             size="sm"
+            className={PDF_ICON_BTN}
             disabled={downloading || sharing}
+            aria-label={downloading ? 'Se descarcă' : 'Descarcă'}
+            title="Descarcă"
             onClick={() => void handleDownload()}
-          >
-            {downloading ? '…' : 'Descarcă'}
-          </Button>
+            icon={<IconDownload />}
+          />
           <Button
             type="button"
             variant="primary"
             size="sm"
+            className={PDF_ICON_BTN}
             disabled={downloading || sharing}
+            aria-label={sharing ? 'Se trimite' : 'Trimite'}
+            title="Trimite"
             onClick={() => void handleShare()}
-          >
-            {sharing ? '…' : 'Trimite'}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={handlePrint}>
-            Printează
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {returnLabel}
-          </Button>
+            icon={<IconShare />}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={PDF_ICON_BTN}
+            aria-label="Printează"
+            title="Printează"
+            onClick={handlePrint}
+            icon={<IconPrint />}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={PDF_ICON_BTN}
+            aria-label={returnLabel}
+            title={returnLabel}
+            onClick={onClose}
+            icon={<IconClose />}
+          />
         </div>
       </div>
       {shareHint ? (
