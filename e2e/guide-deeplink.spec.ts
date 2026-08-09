@@ -16,7 +16,9 @@ test.describe('artGRANIT guide deep-link', () => {
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL(/\/ingineri\/panou-angajat\?.*doc=anexa1/);
     await expect(page.getByText(/Anexa 1/i).first()).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole('dialog').getByRole('button', { name: 'Închide', exact: true })).toBeVisible();
+    await expect(page.getByRole('region').getByRole('button', { name: 'Închide', exact: true })).toBeVisible();
+    await expect(page.getByText('artGRANIT').first()).toBeVisible();
+    await expect(page.getByText('Panou Angajat').first()).toBeVisible();
   });
 
   test('admin pe deep-link măsurare → preview ghid, nu cardul „doar Angajat”', async ({ page }) => {

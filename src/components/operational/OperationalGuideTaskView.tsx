@@ -237,26 +237,28 @@ function MeasurerGuideBody({
 
   return (
     <div className="space-y-2">
-      <EquipmentGuideDeviceView
-        key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
-        device={device}
-        manualNumber={1}
-        initialChapterId={initialChapterId}
-        onBack={onCloseManual}
-        onActionHotspot={handleActionHotspot}
-      />
-
       {openDoc ? (
         <FieldGuideDocOverlay
+          placement="panel"
           pdfUrl={openDoc.url}
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
           returnLabel="Închide"
-          contextHint={`Document informativ peste site — Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Închide ca să continui ghidul.`}
+          contextHint={`Extindere deasupra manualului ghid — Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Meniul de sus rămâne vizibil.`}
           onClose={closeDoc}
         />
       ) : null}
+      <div className={openDoc ? 'opacity-45 pointer-events-none select-none' : undefined} aria-hidden={openDoc ? true : undefined}>
+        <EquipmentGuideDeviceView
+          key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
+          device={device}
+          manualNumber={1}
+          initialChapterId={initialChapterId}
+          onBack={onCloseManual}
+          onActionHotspot={handleActionHotspot}
+        />
+      </div>
     </div>
   );
 }
@@ -328,26 +330,28 @@ function DesignGuideBody({
 
   return (
     <div className="space-y-2">
-      <EquipmentGuideDeviceView
-        key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
-        device={device}
-        manualNumber={2}
-        initialChapterId={initialChapterId}
-        onBack={onCloseManual}
-        onActionHotspot={handleActionHotspot}
-      />
-
       {openDoc ? (
         <FieldGuideDocOverlay
+          placement="panel"
           pdfUrl={openDoc.url}
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
           returnLabel="Închide"
-          contextHint={`Document informativ peste site — Ghid proiectare (${label}). Închide ca să continui ghidul.`}
+          contextHint={`Extindere deasupra manualului ghid — Ghid proiectare (${label}). Meniul de sus rămâne vizibil.`}
           onClose={closeDoc}
         />
       ) : null}
+      <div className={openDoc ? 'opacity-45 pointer-events-none select-none' : undefined} aria-hidden={openDoc ? true : undefined}>
+        <EquipmentGuideDeviceView
+          key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
+          device={device}
+          manualNumber={2}
+          initialChapterId={initialChapterId}
+          onBack={onCloseManual}
+          onActionHotspot={handleActionHotspot}
+        />
+      </div>
     </div>
   );
 }

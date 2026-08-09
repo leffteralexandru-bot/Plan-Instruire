@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import {
   downloadOperationalChecklistPdf,
@@ -7,17 +7,19 @@ import {
 import { shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 
 /**
- * Overlay pentru documente din ghid (ex. Anexa 1 șablon):
- * vizualizare PDF + Descarcă + Trimite + Printează.
+ * Document din ghid (ex. Anexa 1): vizualizare PDF + Descarcă / Trimite / Printează.
+ * Implicit: panou deasupra manualului ghid (meniul site-ului rămâne vizibil).
  */
 export function FieldGuideDocOverlay({
   pdfUrl,
   pdfFileName,
   title,
   eyebrow = 'Document ghid',
-  returnLabel = 'Înapoi la ghid',
-  contextHint = 'Același document ca linkul din PDF / de pe site. După închidere rămâi în ghidul de pe panou. Șablon de lucru — documentul real semnat rămâne în Bitrix.',
+  returnLabel = 'Închide',
+  contextHint = 'Extindere peste manualul ghid — meniul de sus rămâne. Închide ca să continui ghidul.',
   onClose,
+  /** panel = deasupra manualului ghid; overlay = ecran plin (rar) */
+  placement = 'panel',
 }: {
   pdfUrl: string;
   pdfFileName: string;
@@ -26,24 +28,38 @@ export function FieldGuideDocOverlay({
   returnLabel?: string;
   contextHint?: string;
   onClose: () => void;
+  placement?: 'panel' | 'overlay';
 }) {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isOverlay = placement === 'overlay';
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
+    if (!isOverlay) {
+      // Sus sub meniul site-ului — documentul e deasupra manualului ghid
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const t = window.setTimeout(() => {
+        panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+      return () => {
+        document.removeEventListener('keydown', onKey);
+        window.clearTimeout(t);
+      };
+    }
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, [onClose, isOverlay]);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -91,14 +107,19 @@ export function FieldGuideDocOverlay({
     }
   };
 
+  const shellClass = isOverlay
+    ? 'fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm'
+    : 'relative z-20 mb-3 flex scroll-mt-28 flex-col overflow-hidden rounded-xl border border-corporate-gold/40 bg-white shadow-md @md:scroll-mt-32';
+
   return (
     <div
-      className="fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
+      ref={panelRef}
+      className={shellClass}
+      role={isOverlay ? 'dialog' : 'region'}
+      aria-modal={isOverlay ? true : undefined}
       aria-label={title}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/50 px-3 py-2.5 sm:px-4">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             {eyebrow}
@@ -143,11 +164,21 @@ export function FieldGuideDocOverlay({
           {error}
         </p>
       ) : null}
-      <div className="min-h-0 flex-1 bg-corporate-surface/30 p-2 sm:p-3">
+      <div
+        className={
+          isOverlay
+            ? 'min-h-0 flex-1 bg-corporate-surface/30 p-2 sm:p-3'
+            : 'bg-corporate-surface/30 p-2 sm:p-3'
+        }
+      >
         <iframe
           title={title}
           src={pdfUrl}
-          className="h-full min-h-[70vh] w-full rounded-lg border border-corporate-border bg-white shadow-sm"
+          className={
+            isOverlay
+              ? 'h-full min-h-[70vh] w-full rounded-lg border border-corporate-border bg-white shadow-sm'
+              : 'h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm'
+          }
         />
       </div>
     </div>
