@@ -6,6 +6,7 @@ import type {
   EquipmentManualPageVideoHotspot,
 } from '@/data/equipmentOperations';
 import { hasEquipmentVideo, isYoutubeVideo } from '@/lib/equipmentVideoUrl';
+import { manualPageImageSources } from '@/lib/manualPageSrc';
 
 /** Încarcă PNG-ul doar când pagina e aproape de viewport (economie pe net slab). */
 function useNearViewportLoad(enabled: boolean, rootMargin = '700px 0px') {
@@ -209,6 +210,7 @@ export function EquipmentManualPage({
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const { ref: figureRef, shouldLoad } = useNearViewportLoad(priority);
+  const imageSources = manualPageImageSources(imageUrl);
 
   useEffect(() => {
     setImgLoaded(false);
@@ -231,7 +233,9 @@ export function EquipmentManualPage({
         <div className="manual-page-canvas relative w-full bg-white">
           {shouldLoad ? (
             <img
-              src={imageUrl}
+              src={imageSources.src}
+              srcSet={imageSources.srcSet}
+              sizes={imageSources.sizes}
               alt={alt}
               className="manual-page-img mx-auto block h-auto w-full max-w-none object-contain @min-[640px]:max-h-[min(96vh,1600px)] @lg:max-h-[min(98vh,1800px)]"
               loading={priority ? 'eager' : 'lazy'}

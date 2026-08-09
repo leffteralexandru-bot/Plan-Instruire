@@ -5,7 +5,7 @@ import {
   printOperationalChecklistPdf,
 } from '@/lib/operationalChecklistPdf';
 
-function IconView({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
+function IconView({ className = 'h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" strokeLinecap="round" strokeLinejoin="round" />
@@ -14,7 +14,7 @@ function IconView({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5' }:
   );
 }
 
-function IconDownload({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
+function IconDownload({ className = 'h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M12 4v10" strokeLinecap="round" />
@@ -24,7 +24,7 @@ function IconDownload({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5
   );
 }
 
-function IconPrint({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
+function IconPrint({ className = 'h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
       <path d="M7 8V4h10v4" strokeLinecap="round" strokeLinejoin="round" />
@@ -38,7 +38,7 @@ function IconPrint({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5' }
   );
 }
 
-function IconSpinner({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
+function IconSpinner({ className = 'h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5' }: { className?: string }) {
   return (
     <svg className={`${className} animate-spin`} viewBox="0 0 24 24" fill="none" aria-hidden>
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
@@ -48,7 +48,7 @@ function IconSpinner({ className = 'h-1.5 w-1.5 sm:h-2 sm:w-2 lg:h-3.5 lg:w-3.5'
 }
 
 const iconBtnClass =
-  'inline-flex h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 lg:h-7 lg:w-7 shrink-0 items-center justify-center rounded-sm lg:rounded-md border border-corporate-border/80 bg-white text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/40 hover:text-corporate-black focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex h-[22px] w-[22px] sm:h-6 sm:w-6 md:h-6 md:w-6 lg:h-7 lg:w-7 shrink-0 items-center justify-center rounded-md border border-corporate-border/80 bg-white text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/40 hover:text-corporate-black focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed';
 
 function DocViewerModal({
   imageUrl,

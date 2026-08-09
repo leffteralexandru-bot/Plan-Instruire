@@ -1,8 +1,8 @@
-/** Icon-only toolbar — pe telefon/tabletă ~50% față de mărimea anterioară; desktop neschimbat */
+/** Icon-only toolbar — telefon/tabletă ~22–24px (ușor de apăsat); desktop ~36px */
 export const PDF_ICON_BTN =
-  '!h-4 !w-4 !min-h-[16px] !min-w-[16px] !px-0 !py-0 !gap-0 !rounded-md sm:!h-[17px] sm:!w-[17px] sm:!min-h-[17px] sm:!min-w-[17px] md:!h-[17px] md:!w-[17px] md:!min-h-[17px] md:!min-w-[17px] lg:!h-9 lg:!w-9 lg:!min-h-[36px] lg:!min-w-[36px] lg:!rounded-lg';
+  '!h-[22px] !w-[22px] !min-h-[22px] !min-w-[22px] !px-0 !py-0 !gap-0 !rounded-md sm:!h-6 sm:!w-6 sm:!min-h-6 sm:!min-w-6 md:!h-6 md:!w-6 md:!min-h-6 md:!min-w-6 lg:!h-9 lg:!w-9 lg:!min-h-[36px] lg:!min-w-[36px] lg:!rounded-lg';
 
-const PDF_ICON_SVG = 'h-2 w-2 sm:h-2.5 sm:w-2.5 lg:h-4 lg:w-4';
+const PDF_ICON_SVG = 'h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4';
 
 export function IconDownload({ className = PDF_ICON_SVG }: { className?: string }) {
   return (
