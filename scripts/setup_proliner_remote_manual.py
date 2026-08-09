@@ -20,7 +20,7 @@ SOURCE_PDF = Path(
 PDF_OUT = ROOT / "public/docs/equipment/proliner-remote-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/proliner-remote/pages"
 MANIFEST = ROOT / "src/data/proliner-remote-manifest.json"
-RENDER_SCALE = 4
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 
 def youtube_id(uri: str) -> str:

@@ -18,7 +18,7 @@ PDF_OUT = ROOT / "public/docs/repository/silestone/silestone-countertops-manual.
 PAGES_DIR = ROOT / "public/docs/repository/silestone/pages"
 MANIFEST = ROOT / "src/data/silestone-manifest.json"
 # 450 DPI — text vectorial clar pe desktop/tabletă (PDF A5/spread Cosentino).
-RENDER_DPI = 450
+RENDER_DPI = 500
 
 
 def copy_pdf() -> None:

@@ -17,7 +17,7 @@ PDF_OUT = ROOT / "public/docs/equipment/proliner-quick-start-ro.pdf"
 OUT_DIR = ROOT / "public/docs/equipment/proliner/pages"
 SVG = ROOT / "public/brand/artgranit-logo.svg"
 
-RENDER_SCALE = 4
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 LOGO_COLOR = "#B38F55"
 
 # Panou header din PDF

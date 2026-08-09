@@ -25,7 +25,7 @@ EN_PDF = Path(
 PDF_OUT = ROOT / "public/docs/equipment/factory-fabricator-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/factory-fabricator/pages"
 MANIFEST = ROOT / "src/data/factory-fabricator-manifest.json"
-RENDER_SCALE = 4
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 
 def youtube_id(uri: str) -> str:

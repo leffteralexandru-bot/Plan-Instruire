@@ -21,7 +21,7 @@ PDF_OUT = ROOT / "public/docs/equipment/prodim-ct-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/prodim-ct/pages"
 VIDEOS_DIR = ROOT / "public/docs/equipment/prodim-ct/videos"
 MANIFEST = ROOT / "src/data/prodim-ct-manifest.json"
-RENDER_SCALE = 4
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 
 def youtube_id(uri: str) -> str:

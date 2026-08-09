@@ -17,7 +17,7 @@ SOURCE_PDF = Path(
 PDF_OUT = ROOT / "public/docs/repository/dekton-kitchen/dekton-kitchen-countertops-manual.pdf"
 PAGES_DIR = ROOT / "public/docs/repository/dekton-kitchen/pages"
 MANIFEST = ROOT / "src/data/dekton-kitchen-manifest.json"
-RENDER_DPI = 450
+RENDER_DPI = 500
 
 
 def copy_pdf() -> None:

@@ -15,7 +15,7 @@ PDF_OUT = ROOT / "public/docs/equipment/bosch-glm-40/bosch-glm-40-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/bosch-glm-40/pages"
 MANIFEST = ROOT / "src/data/bosch-glm-40-manifest.json"
 ILLUSTRATION_PAGES = [2, 3, 4, 12, 14, 16, 17]
-RENDER_SCALE = 3
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 VIDEO_IDS = {
     "overview": "ck8hgxavkR4",

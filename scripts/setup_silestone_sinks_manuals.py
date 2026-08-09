@@ -11,7 +11,7 @@ from pathlib import Path
 import fitz
 
 ROOT = Path(__file__).resolve().parents[1]
-RENDER_DPI = 450
+RENDER_DPI = 500
 
 MANUALS = [
     {

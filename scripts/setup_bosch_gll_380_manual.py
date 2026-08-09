@@ -16,7 +16,7 @@ PAGES_DIR = ROOT / "public/docs/equipment/bosch-gll-3-80/pages"
 MANIFEST = ROOT / "src/data/bosch-gll-3-80-manifest.json"
 # Diagrame universale (început) + secțiunea Română (Pagina 133+)
 ILLUSTRATION_PAGES = [3, 4, 5, 133, 134, 135, 136, 137, 138]
-RENDER_SCALE = 3
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 VIDEO_IDS = {
     "overview": "qFUVfZ27hh0",

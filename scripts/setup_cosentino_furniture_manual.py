@@ -17,7 +17,7 @@ SOURCE_PDF = Path(
 PDF_OUT = ROOT / "public/docs/repository/cosentino-furniture/furniture-design-installation.pdf"
 PAGES_DIR = ROOT / "public/docs/repository/cosentino-furniture/pages"
 MANIFEST = ROOT / "src/data/cosentino-furniture-manifest.json"
-RENDER_DPI = 450
+RENDER_DPI = 500
 
 
 def copy_pdf() -> None:

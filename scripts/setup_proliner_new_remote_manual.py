@@ -24,7 +24,7 @@ SOURCE_PDF = Path(
 PDF_OUT = ROOT / "public/docs/equipment/proliner-new-remote-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/proliner-new-remote/pages"
 MANIFEST = ROOT / "src/data/proliner-new-remote-manifest.json"
-RENDER_SCALE = 4
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 
 def copy_pdf() -> None:

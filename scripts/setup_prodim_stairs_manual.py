@@ -17,7 +17,7 @@ SOURCE_PDF = Path(
 PDF_OUT = ROOT / "public/docs/equipment/prodim-stairs-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/prodim-stairs/pages"
 MANIFEST = ROOT / "src/data/prodim-stairs-manifest.json"
-RENDER_SCALE = 4
+RENDER_SCALE = 7  # ~450+ DPI (72*7)
 
 
 def youtube_id(uri: str) -> str:
