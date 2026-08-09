@@ -70,6 +70,8 @@ export function EquipmentManualOverlay({
   contextHint = 'Deschis din ghidul de pe site — după închidere rămâi în același ghid (poți continua citirea).',
   /** panel = în Mentenanță, meniul de sus rămâne vizibil; overlay = ecran plin */
   placement = 'panel',
+  /** Din ghid Utilaje teren: buton ← înapoi (nu doar X) */
+  showArrowBack = false,
 }: {
   device: EquipmentDevice;
   onClose: () => void;
@@ -77,6 +79,7 @@ export function EquipmentManualOverlay({
   returnLabel?: string;
   contextHint?: string;
   placement?: 'panel' | 'overlay';
+  showArrowBack?: boolean;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -202,12 +205,24 @@ export function EquipmentManualOverlay({
             type="button"
             variant="ghost"
             size="sm"
-            className={PDF_ICON_BTN}
+            className={
+              showArrowBack
+                ? '!min-h-0 gap-1 px-2 py-1 text-sm text-corporate-dark hover:bg-corporate-surface'
+                : PDF_ICON_BTN
+            }
             aria-label={returnLabel}
             title={returnLabel}
             onClick={onClose}
-            icon={<IconClose />}
-          />
+            data-testid={showArrowBack ? 'equipment-guide-back' : undefined}
+            icon={showArrowBack ? undefined : <IconClose />}
+          >
+            {showArrowBack ? (
+              <>
+                <span aria-hidden>←</span>
+                <span>înapoi</span>
+              </>
+            ) : null}
+          </Button>
         </div>
       </div>
       {shareHint ? (

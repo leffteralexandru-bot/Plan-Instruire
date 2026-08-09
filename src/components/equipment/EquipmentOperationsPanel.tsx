@@ -9,7 +9,6 @@ import {
   type EquipmentDevice,
   type EquipmentGuideSectionId,
 } from '@/data/equipmentOperations';
-import { OPERATIONAL_GUIDE_LABELS, type OperationalGuideTaskId } from '@/data/operationalGuide';
 import { useEquipmentOperations } from '@/hooks/useEquipmentOperations';
 import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import { EquipmentOperationsSectionView } from '@/components/equipment/EquipmentOperationsSectionView';
@@ -74,11 +73,6 @@ function EquipmentOperationsContent() {
   const fromGuide = searchParams.get('from') === 'guide';
   const ghidParam = searchParams.get('ghid');
   const tipParam = searchParams.get('tip');
-  const tipLabel =
-    tipParam && tipParam in OPERATIONAL_GUIDE_LABELS
-      ? OPERATIONAL_GUIDE_LABELS[tipParam as OperationalGuideTaskId]
-      : null;
-  const guideKind = ghidParam === 'proiectare' ? 'proiectare' : 'măsurare';
 
   const [deviceId, setDeviceId] = useState<string | null>(() => deviceFromUrl);
   const [sectionId, setSectionId] = useState<EquipmentGuideSectionId | null>(null);
@@ -139,9 +133,7 @@ function EquipmentOperationsContent() {
     ? EQUIPMENT_GUIDE_SECTIONS.find((s) => s.id === sectionId)
     : null;
 
-  const guideBackLabel = tipLabel
-    ? `Înapoi la ghid ${guideKind} · ${tipLabel}`
-    : `Înapoi la ghid ${guideKind}`;
+  const guideBackLabel = 'Înapoi';
 
   if (overlayDevice) {
     return (
@@ -149,9 +141,10 @@ function EquipmentOperationsContent() {
         device={overlayDevice}
         placement="panel"
         returnLabel={fromGuide ? guideBackLabel : 'Înapoi la Mentenanță'}
+        showArrowBack={fromGuide}
         contextHint={
           fromGuide
-            ? `Deschis din Ghid ${guideKind}${tipLabel ? ` (${tipLabel})` : ''}. Meniul de sus rămâne — poți reveni la ghid.`
+            ? 'Meniul de sus rămâne vizibil — poți reveni la ghid.'
             : 'Carte din Modul Mentenanță — Descarcă / Trimite PDF. Meniul de sus rămâne vizibil.'
         }
         onClose={() => {
@@ -172,16 +165,18 @@ function EquipmentOperationsContent() {
   return (
     <div className="space-y-4">
       {fromGuide ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-corporate-gold/30 bg-corporate-gold-light/20 px-3 py-2">
-          <p className="text-[11px] text-corporate-dark leading-snug">
-            Deschis din{' '}
-            <span className="font-semibold">
-              Ghid {guideKind}
-              {tipLabel ? ` · ${tipLabel}` : ''}
-            </span>
-          </p>
-          <Button type="button" variant="secondary" size="sm" onClick={returnToGuide}>
-            {guideBackLabel}
+        <div className="mb-1 flex items-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="!min-h-0 gap-1 px-2 py-1 text-sm text-corporate-dark hover:bg-corporate-surface"
+            onClick={returnToGuide}
+            aria-label="Înapoi"
+            data-testid="equipment-guide-back"
+          >
+            <span aria-hidden>←</span>
+            <span>înapoi</span>
           </Button>
         </div>
       ) : null}

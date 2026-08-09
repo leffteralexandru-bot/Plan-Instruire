@@ -52,7 +52,7 @@ test.describe('artGRANIT guide deep-link', () => {
     await expect(page.getByText(/Anexa 1/i).first()).toBeVisible({ timeout: 15000 });
   });
 
-  test('admin pe link Proliner → Mentenanță + carte + Înapoi la ghid', async ({ page }) => {
+  test('admin pe link Proliner → Mentenanță + carte + Înapoi', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Nume').fill('Lefter');
     await page.getByLabel('Parolă').fill('122312');
@@ -72,8 +72,9 @@ test.describe('artGRANIT guide deep-link', () => {
     const book = page.getByRole('region', { name: /Manual|Proliner|PROLINER/i });
     await expect(book.getByRole('button', { name: 'Descarcă' })).toBeVisible();
     await expect(book.getByRole('button', { name: 'Trimite' })).toBeVisible();
-    const back = book.getByRole('button', { name: /Înapoi la ghid măsurare/i });
+    const back = book.getByTestId('equipment-guide-back');
     await expect(back).toBeVisible();
+    await expect(back).toContainText(/înapoi/i);
     await back.click();
     await expect(page).toHaveURL(/ref=guide/);
     await expect(page).toHaveURL(/ghid=teren/);
