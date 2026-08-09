@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import {
@@ -78,12 +78,11 @@ export function EquipmentManualOverlay({
   const [shareHint, setShareHint] = useState<string | null>(null);
   const pdf = useMemo(() => devicePdf(device), [device]);
   const isOverlay = placement === 'overlay';
-  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOverlay) return;
-    // Aduce cartea sub meniul sticky de sus (fără a se lipi peste el)
-    panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // La deschidere: sus pe pagină ca să vezi meniul; „Am citit…” e mai jos — derulezi tu
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [device.id, isOverlay]);
 
   useEffect(() => {
@@ -147,11 +146,10 @@ export function EquipmentManualOverlay({
 
   return (
     <div
-      ref={panelRef}
       className={
         isOverlay
           ? 'fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm'
-          : 'flex scroll-mt-28 flex-col rounded-xl border border-corporate-border bg-white shadow-sm overflow-hidden @md:scroll-mt-32'
+          : 'flex flex-col rounded-xl border border-corporate-border bg-white shadow-sm overflow-hidden'
       }
       role={isOverlay ? 'dialog' : 'region'}
       aria-modal={isOverlay ? true : undefined}
