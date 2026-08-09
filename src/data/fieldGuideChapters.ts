@@ -320,7 +320,7 @@ function buildCommonChapters(prefix: string, taskId: OperationalGuideTaskId): Eq
       prefix,
       1,
       'Documentație completă',
-      'Descărcare PDF sau trimite cuiva — doar acest tip',
+      'Deschide · descarcă · trimite — doar acest tip',
       [],
       { includePdf: true },
     ),

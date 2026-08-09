@@ -32,6 +32,7 @@ export function EquipmentChapterView({
 }: EquipmentChapterViewProps) {
   const [downloading, setDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
 
@@ -79,17 +80,59 @@ export function EquipmentChapterView({
     }
   };
 
+  const iconBtn =
+    '!min-h-[44px] !min-w-[44px] !px-0 !py-0 @md:!min-h-[40px] @md:!min-w-[40px]';
+
   const pdfButton = showPdfButton && chapter.pdfUrl && (
     <div className="space-y-2 pt-1">
-      <div className={pdfButtonFullWidth ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'}>
+      <div className={pdfButtonFullWidth ? 'flex flex-col gap-2' : 'flex flex-wrap items-center gap-2'}>
+        <Button
+          type="button"
+          variant="ghost"
+          className={iconBtn}
+          disabled={downloading || sharing}
+          aria-label={previewOpen ? 'Închide documentul' : 'Deschide documentul'}
+          title={previewOpen ? 'Închide' : 'Deschide'}
+          onClick={() => setPreviewOpen((v) => !v)}
+          icon={
+            previewOpen ? (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+            )
+          }
+        />
         <Button
           type="button"
           variant="primary"
-          fullWidth={pdfButtonFullWidth}
+          className={iconBtn}
           disabled={downloading || sharing}
+          aria-label={
+            downloading
+              ? 'Se descarcă'
+              : pdfName.toLowerCase().endsWith('.zip')
+                ? 'Descarcă pachet ZIP'
+                : 'Descarcă PDF'
+          }
+          title="Descarcă"
           onClick={() => void handleDownload()}
           icon={
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -98,21 +141,17 @@ export function EquipmentChapterView({
               />
             </svg>
           }
-        >
-          {downloading
-            ? 'Se descarcă…'
-            : pdfName.toLowerCase().endsWith('.zip')
-              ? 'Descarcă pachet (ZIP)'
-              : 'Descarcă Manual (PDF)'}
-        </Button>
+        />
         <Button
           type="button"
           variant="secondary"
-          fullWidth={pdfButtonFullWidth}
+          className={iconBtn}
           disabled={downloading || sharing}
+          aria-label={sharing ? 'Se trimite' : 'Trimite'}
+          title="Trimite"
           onClick={() => void handleShare()}
           icon={
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -121,10 +160,17 @@ export function EquipmentChapterView({
               />
             </svg>
           }
-        >
-          {sharing ? 'Se trimite…' : 'Trimite'}
-        </Button>
+        />
       </div>
+      {previewOpen && pdfUrl ? (
+        <div className="overflow-hidden rounded-xl border border-corporate-gold/35 bg-corporate-surface/30 p-2 sm:p-3">
+          <iframe
+            title={chapter.title}
+            src={pdfUrl}
+            className="h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm"
+          />
+        </div>
+      ) : null}
       {shareHint && <p className="text-xs text-corporate-muted">{shareHint}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>

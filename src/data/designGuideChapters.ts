@@ -133,7 +133,7 @@ function buildDesignDevice(taskId: OperationalGuideTaskId): EquipmentDevice {
   const label = OPERATIONAL_GUIDE_LABELS[taskId];
 
   const chapters: EquipmentChapter[] = [
-    chapter(taskId, prefix, 1, 'Documentație completă', 'Descărcare PDF / trimite — ghid proiectare pe tip', [], {
+    chapter(taskId, prefix, 1, 'Documentație completă', 'Deschide · descarcă · trimite — ghid proiectare pe tip', [], {
       includePdf: true,
     }),
     chapter(taskId, prefix, 2, 'Cuprins — etape CAD', 'Resurse · import · schiță · legendă · Bitrix', [1]),
