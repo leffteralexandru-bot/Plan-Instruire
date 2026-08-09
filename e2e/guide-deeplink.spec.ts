@@ -4,6 +4,8 @@ const FIELD_DEEP =
   '/ingineri/panou-angajat?ref=guide&ghid=teren&tip=scara&doc=anexa1';
 const DESIGN_DEEP =
   '/ingineri/panou-angajat?ref=guide&ghid=proiectare&tip=blat&doc=anexa1';
+const PROLINER_DEEP =
+  '/ingineri/panou-angajat?ref=equipment&device=eq-proliner&from=guide&ghid=teren&tip=scara';
 
 test.describe('artGRANIT guide deep-link', () => {
   test('fără sesiune → login cu next → angajat → ghid măsurare + Anexa 1', async ({ page }) => {
@@ -14,6 +16,7 @@ test.describe('artGRANIT guide deep-link', () => {
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL(/\/ingineri\/panou-angajat\?.*doc=anexa1/);
     await expect(page.getByText(/Anexa 1/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('dialog').getByRole('button', { name: 'Închide', exact: true })).toBeVisible();
   });
 
   test('admin pe deep-link măsurare → preview ghid, nu cardul „doar Angajat”', async ({ page }) => {
@@ -45,26 +48,30 @@ test.describe('artGRANIT guide deep-link', () => {
     await expect(page.getByText(/Anexa 1/i).first()).toBeVisible({ timeout: 15000 });
   });
 
-  test('admin pe link Proliner → ghid măsurare + carte utilaj, Înapoi la ghid', async ({ page }) => {
+  test('admin pe link Proliner → Mentenanță + carte + Înapoi la ghid', async ({ page }) => {
     await page.goto('/login');
     await page.getByLabel('Nume').fill('Lefter');
     await page.getByLabel('Parolă').fill('122312');
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL('/ingineri/admin');
 
-    // Link vechi Mentenanță → redirecționat în Ghid pe site
-    await page.goto('/ingineri/panou-angajat?ref=equipment&device=eq-proliner&tip=scara');
+    await page.goto(PROLINER_DEEP);
+    await expect(page).toHaveURL(/ref=equipment/);
+    await expect(page).toHaveURL(/device=eq-proliner/);
+    await expect(page).toHaveURL(/from=guide/);
+    await expect(page.getByText(/carte utilaj|PROLINER|Proliner|Mentenanță/i).first()).toBeVisible({
+      timeout: 15000,
+    });
+    const overlay = page.getByRole('dialog', { name: /Manual|Proliner|PROLINER/i });
+    await expect(overlay.getByRole('button', { name: 'Descarcă', exact: true })).toBeVisible();
+    await expect(overlay.getByRole('button', { name: 'Trimite', exact: true })).toBeVisible();
+    const back = overlay.getByRole('button', { name: /Înapoi la ghid măsurare/i });
+    await expect(back).toBeVisible();
+    // Dialogul de siguranță din carte poate acoperi butonul — force pe headerul overlay
+    await back.click({ force: true });
     await expect(page).toHaveURL(/ref=guide/);
     await expect(page).toHaveURL(/ghid=teren/);
     await expect(page).toHaveURL(/tip=scara/);
-    await expect(page).toHaveURL(/doc=proliner/);
-    await expect(page.getByText(/carte utilaj|PROLINER|Proliner/i).first()).toBeVisible({
-      timeout: 15000,
-    });
-    // Overlay carte (dialog) — „Trimite” apare și pe carduri din ghidul de sub overlay
-    const overlay = page.getByRole('dialog');
-    await expect(overlay.getByRole('button', { name: 'Descarcă', exact: true })).toBeVisible();
-    await expect(overlay.getByRole('button', { name: 'Trimite', exact: true })).toBeVisible();
-    await expect(overlay.getByRole('button', { name: /Înapoi la ghid măsurare/i })).toBeVisible();
+    await expect(page).not.toHaveURL(/device=/);
   });
 });

@@ -4,6 +4,11 @@ import { ExpandableModuleRow } from '@/components/ui/ExpandableModuleRow';
 import { OperationalGuidePanel } from '@/components/operational/OperationalGuidePanel';
 import { TechnicalRepositoryPanel } from '@/components/technicalRepository/TechnicalRepositoryPanel';
 import { EquipmentOperationsPanel } from '@/components/equipment/EquipmentOperationsPanel';
+import {
+  EQUIPMENT_DEVICE_TO_FIELD_GUIDE_DOC,
+  FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE,
+  type FieldGuideLinkedDocId,
+} from '@/data/fieldGuideLinkedDocs';
 
 interface EmployeeReferenceModulesRowProps {
   userId: string;
@@ -11,13 +16,6 @@ interface EmployeeReferenceModulesRowProps {
 }
 
 type ActiveModule = 'guide' | 'repo' | 'equipment';
-
-/** Utilaje din ghidul de măsurare → deschise în Ghid (nu Mentenanță), ca să rămâi pe ghid */
-const GUIDE_EQUIPMENT_DEVICE_TO_DOC: Record<string, string> = {
-  'eq-proliner': 'proliner',
-  'eq-bosch-gll-3-80': 'gll',
-  'eq-bosch-tape-5m': 'ruleta',
-};
 
 const EXPAND_LABELS: Record<ActiveModule, string> = {
   guide: 'Ghid operațional · măsurători',
@@ -31,9 +29,11 @@ function moduleFromSearch(params: URLSearchParams): ActiveModule | null {
   const ghid = params.get('ghid');
   const device = params.get('device');
   if (ref === 'repo' || doc === 'doc-tehnica') return 'repo';
-  // Proliner/GLL/Ruletă din link → ghid (chiar dacă URL vechi are ref=equipment)
-  if (device && GUIDE_EQUIPMENT_DEVICE_TO_DOC[device]) return 'guide';
+  // Utilaje (Proliner/GLL/Ruletă) → Mentenanță, chiar dacă ghid/tip rămân ca origin
   if (ref === 'equipment' || device) return 'equipment';
+  if (doc && FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE[doc as FieldGuideLinkedDocId]) {
+    return 'equipment';
+  }
   if (ref === 'guide' || ghid === 'teren' || ghid === 'proiectare' || (doc && doc !== 'doc-tehnica')) {
     return 'guide';
   }
@@ -45,21 +45,34 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
   const [searchParams, setSearchParams] = useSearchParams();
   const [active, setActive] = useState<ActiveModule | null>(() => moduleFromSearch(searchParams));
 
-  // Linkuri vechi PDF (?ref=equipment&device=eq-proliner) → ghid pe site cu tip + carte
+  // doc=proliner|gll|ruleta (link vechi) → Mentenanță + device, păstrează ghid/tip pentru Înapoi
+  useEffect(() => {
+    const doc = searchParams.get('doc') as FieldGuideLinkedDocId | null;
+    const deviceFromDoc = doc ? FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE[doc] : undefined;
+    if (!deviceFromDoc) return;
+    if (searchParams.get('device') === deviceFromDoc && searchParams.get('ref') === 'equipment') {
+      return;
+    }
+    const next = new URLSearchParams(searchParams);
+    next.set('ref', 'equipment');
+    next.set('device', deviceFromDoc);
+    next.set('from', 'guide');
+    if (!next.get('ghid')) next.set('ghid', 'teren');
+    if (!next.get('tip')) next.set('tip', 'blat');
+    next.delete('doc');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // device fără from, dar cu tip/ghid din PDF → marchează origin ghid
   useEffect(() => {
     const device = searchParams.get('device');
-    const docId = device ? GUIDE_EQUIPMENT_DEVICE_TO_DOC[device] : null;
-    if (!docId) return;
-    if (searchParams.get('doc') === docId && !device) return;
-
-    const tip = searchParams.get('tip') || 'blat';
-    const ghid = searchParams.get('ghid') === 'proiectare' ? 'proiectare' : 'teren';
+    if (!device || !EQUIPMENT_DEVICE_TO_FIELD_GUIDE_DOC[device]) return;
+    if (searchParams.get('from') === 'guide') return;
+    if (!searchParams.get('tip') && !searchParams.get('ghid')) return;
     const next = new URLSearchParams(searchParams);
-    next.set('ref', 'guide');
-    next.set('ghid', ghid);
-    next.set('tip', tip);
-    next.set('doc', docId);
-    next.delete('device');
+    next.set('ref', 'equipment');
+    next.set('from', 'guide');
+    if (!next.get('ghid')) next.set('ghid', 'teren');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
@@ -73,18 +86,30 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
     const next = new URLSearchParams(searchParams);
     if (open) {
       next.set('ref', id === 'guide' ? 'guide' : id === 'repo' ? 'repo' : 'equipment');
-      if (id !== 'guide') {
-        next.delete('ghid');
-        next.delete('doc');
-      }
-      if (id !== 'equipment') {
+      if (id === 'guide') {
         next.delete('device');
+        next.delete('from');
+      } else if (id === 'repo') {
+        next.delete('ghid');
+        next.delete('tip');
+        next.delete('device');
+        next.delete('from');
+        next.delete('doc');
+      } else {
+        // Mentenanță: la deschidere manuală curățăm origin/doc; deep-link le pune singur
+        next.delete('doc');
+        if (!searchParams.get('device')) {
+          next.delete('from');
+          next.delete('ghid');
+          next.delete('tip');
+        }
       }
     } else {
       next.delete('ref');
       next.delete('ghid');
       next.delete('doc');
       next.delete('device');
+      next.delete('from');
     }
     setSearchParams(next, { replace: true });
   };

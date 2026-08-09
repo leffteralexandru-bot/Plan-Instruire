@@ -19,13 +19,9 @@ import {
   resolveFieldGuideLinkedDoc,
   type FieldGuideLinkedDocId,
 } from '@/data/fieldGuideLinkedDocs';
-import { EquipmentManualOverlay } from '@/components/operational/OperationalGuideEquipmentManualLinks';
 import { FieldGuideDocOverlay } from '@/components/operational/FieldGuideDocOverlay';
 import { OperationalGuideToggleTile } from '@/components/operational/OperationalGuideToggleTile';
-import {
-  DEFAULT_EQUIPMENT_OPERATIONS,
-  type EquipmentManualPageActionHotspot,
-} from '@/data/equipmentOperations';
+import { type EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -51,8 +47,10 @@ function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
 
   const syncDocToUrl = (docId: FieldGuideLinkedDocId | null, ghid: ActiveGuide) => {
     const next = new URLSearchParams(searchParams);
+    next.delete('doc');
+    next.delete('device');
+    next.delete('from');
     if (!docId) {
-      next.delete('doc');
       setSearchParams(next, { replace: true });
       return;
     }
@@ -62,7 +60,6 @@ function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
       ghid: ghid === 'design' ? 'proiectare' : 'teren',
     });
     built.forEach((value, key) => next.set(key, value));
-    // păstrează viewAs dacă există
     const viewAs = searchParams.get('viewAs');
     if (viewAs) next.set('viewAs', viewAs);
     setSearchParams(next, { replace: true });
@@ -89,24 +86,15 @@ function MeasurerGuideBody({
   const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
   const initialChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
   const { syncDocToUrl, openHref } = useGuideDeepLink(task.id);
-  const [openEquipmentId, setOpenEquipmentId] = useState<string | null>(null);
   const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
-
-  const openEquipment = useMemo(
-    () =>
-      openEquipmentId
-        ? DEFAULT_EQUIPMENT_OPERATIONS.devices.find((d) => d.id === openEquipmentId)
-        : undefined,
-    [openEquipmentId],
-  );
 
   useEffect(() => {
     if (!deepDocId || deepDocId === 'doc-tehnica') return;
     const resolved = resolveFieldGuideLinkedDoc(deepDocId, task.id);
     if (!resolved || resolved.openRepo) return;
+    // Utilaje → Mentenanță (URL); nu overlay pe ghid
     if (resolved.equipmentDeviceId) {
-      setOpenEquipmentId(resolved.equipmentDeviceId);
-      setOpenDoc(null);
+      syncDocToUrl(resolved.id, 'measurer');
       return;
     }
     if (!resolved.url) return;
@@ -116,6 +104,7 @@ function MeasurerGuideBody({
       title: resolved.title,
       eyebrow: resolved.eyebrow,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reopen when deepDocId/tip change
   }, [deepDocId, task.id]);
 
   const closeDoc = () => {
@@ -135,9 +124,8 @@ function MeasurerGuideBody({
         return;
       }
       if (resolved?.equipmentDeviceId) {
+        // Carte utilaj → Mentenanță + origin ghid
         syncDocToUrl(resolved.id, 'measurer');
-        setOpenEquipmentId(resolved.equipmentDeviceId);
-        setOpenDoc(null);
         return;
       }
       if (resolved?.url) {
@@ -152,7 +140,19 @@ function MeasurerGuideBody({
       }
     }
     if (spot.deviceId) {
-      setOpenEquipmentId(spot.deviceId);
+      const built = buildFieldGuideDocSearchParams({
+        tip: task.id,
+        doc:
+          spot.deviceId === 'eq-proliner'
+            ? 'proliner'
+            : spot.deviceId === 'eq-bosch-gll-3-80'
+              ? 'gll'
+              : spot.deviceId === 'eq-bosch-tape-5m'
+                ? 'ruleta'
+                : 'proliner',
+        ghid: 'teren',
+      });
+      openHref(`/ingineri/panou-angajat?${built.toString()}`);
       return;
     }
     if (spot.docUrl && spot.docFileName) {
@@ -177,32 +177,14 @@ function MeasurerGuideBody({
         onActionHotspot={handleActionHotspot}
       />
 
-      {openEquipment ? (
-        <EquipmentManualOverlay
-          device={openEquipment}
-          returnLabel={`Înapoi la ghid măsurare · ${OPERATIONAL_GUIDE_LABELS[task.id]}`}
-          contextHint={`Ești pe site, în Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Închide cartea ca să continui ghidul de unde ai deschis linkul.`}
-          onClose={() => {
-            setOpenEquipmentId(null);
-            if (
-              deepDocId === 'proliner' ||
-              deepDocId === 'gll' ||
-              deepDocId === 'ruleta'
-            ) {
-              onClearDeepDoc();
-            }
-          }}
-        />
-      ) : null}
-
       {openDoc ? (
         <FieldGuideDocOverlay
           pdfUrl={openDoc.url}
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
-          returnLabel={`Înapoi la ghid măsurare · ${OPERATIONAL_GUIDE_LABELS[task.id]}`}
-          contextHint={`Ești pe site, în Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Închide documentul ca să continui ghidul de unde ai deschis linkul.`}
+          returnLabel="Închide"
+          contextHint={`Document informativ peste site — Ghid măsurare (${OPERATIONAL_GUIDE_LABELS[task.id]}). Închide ca să continui ghidul.`}
           onClose={closeDoc}
         />
       ) : null}
@@ -285,8 +267,8 @@ function DesignGuideBody({
           pdfFileName={openDoc.fileName}
           title={openDoc.title}
           eyebrow={openDoc.eyebrow}
-          returnLabel={`Înapoi la ghid proiectare · ${label}`}
-          contextHint={`Ești pe site, în Ghid proiectare (${label}). Închide documentul ca să continui ghidul de unde ai deschis linkul.`}
+          returnLabel="Închide"
+          contextHint={`Document informativ peste site — Ghid proiectare (${label}). Închide ca să continui ghidul.`}
           onClose={closeDoc}
         />
       ) : null}

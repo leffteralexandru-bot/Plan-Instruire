@@ -9,6 +9,7 @@ import {
   type EquipmentDevice,
   type EquipmentGuideSectionId,
 } from '@/data/equipmentOperations';
+import { OPERATIONAL_GUIDE_LABELS, type OperationalGuideTaskId } from '@/data/operationalGuide';
 import { useEquipmentOperations } from '@/hooks/useEquipmentOperations';
 import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import { EquipmentOperationsSectionView } from '@/components/equipment/EquipmentOperationsSectionView';
@@ -70,22 +71,25 @@ function EquipmentOperationsContent() {
   const data = useEquipmentOperations();
   const [searchParams, setSearchParams] = useSearchParams();
   const deviceFromUrl = searchParams.get('device');
+  const fromGuide = searchParams.get('from') === 'guide';
+  const ghidParam = searchParams.get('ghid');
+  const tipParam = searchParams.get('tip');
+  const tipLabel =
+    tipParam && tipParam in OPERATIONAL_GUIDE_LABELS
+      ? OPERATIONAL_GUIDE_LABELS[tipParam as OperationalGuideTaskId]
+      : null;
+  const guideKind = ghidParam === 'proiectare' ? 'proiectare' : 'măsurare';
+
   const [deviceId, setDeviceId] = useState<string | null>(() => deviceFromUrl);
   const [sectionId, setSectionId] = useState<EquipmentGuideSectionId | null>(null);
-  const [overlayDeviceId, setOverlayDeviceId] = useState<string | null>(null);
+  const [overlayDeviceId, setOverlayDeviceId] = useState<string | null>(() => deviceFromUrl);
 
   useEffect(() => {
-    // Proliner / GLL / Ruletă din URL sunt redirecționate la ghid (EmployeeReferenceModulesRow).
-    // Aici rămân doar alte aparate Mentenanță cu ?device=
-    if (
-      deviceFromUrl &&
-      data.devices.some((d) => d.id === deviceFromUrl) &&
-      deviceFromUrl !== 'eq-proliner' &&
-      deviceFromUrl !== 'eq-bosch-gll-3-80' &&
-      deviceFromUrl !== 'eq-bosch-tape-5m'
-    ) {
+    if (deviceFromUrl && data.devices.some((d) => d.id === deviceFromUrl)) {
       setDeviceId(deviceFromUrl);
       setOverlayDeviceId(deviceFromUrl);
+    } else if (!deviceFromUrl) {
+      setOverlayDeviceId(null);
     }
   }, [deviceFromUrl, data.devices]);
 
@@ -95,14 +99,24 @@ function EquipmentOperationsContent() {
     setSearchParams(next, { replace: true });
   };
 
+  const returnToGuide = () => {
+    const next = new URLSearchParams(searchParams);
+    next.set('ref', 'guide');
+    next.set('ghid', ghidParam === 'proiectare' ? 'proiectare' : 'teren');
+    next.set('tip', tipParam || 'blat');
+    next.delete('device');
+    next.delete('from');
+    next.delete('doc');
+    setOverlayDeviceId(null);
+    setDeviceId(null);
+    setSectionId(null);
+    setSearchParams(next, { replace: true });
+  };
+
   const selectDevice = (id: string) => {
     setDeviceId(id);
     setSectionId(null);
-    // Utilaje din ghid: overlay local, fără ?device= (altfel te aruncă în Ghid operațional)
-    if (id === 'eq-proliner' || id === 'eq-bosch-gll-3-80' || id === 'eq-bosch-tape-5m') {
-      setOverlayDeviceId(id);
-      return;
-    }
+    setOverlayDeviceId(id);
     const next = new URLSearchParams(searchParams);
     next.set('ref', 'equipment');
     next.set('device', id);
@@ -116,13 +130,25 @@ function EquipmentOperationsContent() {
     ? EQUIPMENT_GUIDE_SECTIONS.find((s) => s.id === sectionId)
     : null;
 
+  const guideBackLabel = tipLabel
+    ? `Înapoi la ghid ${guideKind} · ${tipLabel}`
+    : `Înapoi la ghid ${guideKind}`;
+
   if (overlayDevice) {
     return (
       <EquipmentManualOverlay
         device={overlayDevice}
-        returnLabel="Înapoi la Mentenanță"
-        contextHint="Carte din Modul Mentenanță — Descarcă / Trimite PDF."
+        returnLabel={fromGuide ? guideBackLabel : 'Înapoi la Mentenanță'}
+        contextHint={
+          fromGuide
+            ? `Deschis din Ghid ${guideKind}${tipLabel ? ` (${tipLabel})` : ''}. Poți reveni la ghid sau rămâne în Mentenanță.`
+            : 'Carte din Modul Mentenanță — Descarcă / Trimite PDF.'
+        }
         onClose={() => {
+          if (fromGuide) {
+            returnToGuide();
+            return;
+          }
           setOverlayDeviceId(null);
           clearDeviceFromUrl();
         }}
@@ -130,109 +156,116 @@ function EquipmentOperationsContent() {
     );
   }
 
-  if (!device) {
-    return (
-      <div className="space-y-4">
-        {data.intro && <p className="text-sm text-corporate-muted leading-relaxed">{data.intro}</p>}
-        {data.devices.length === 0 ? (
-          <p className="text-sm text-corporate-muted italic">HR va adăuga aparatele de măsurat.</p>
-        ) : (
-          <div className="grid gap-2">
-            {data.devices.map((d, index) => (
-              <DeviceCard
-                key={d.id}
-                device={d}
-                number={index + 1}
-                onClick={() => selectDevice(d.id)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  return (
+    <div className="space-y-4">
+      {fromGuide ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-corporate-gold/30 bg-corporate-gold-light/20 px-3 py-2">
+          <p className="text-[11px] text-corporate-dark leading-snug">
+            Deschis din{' '}
+            <span className="font-semibold">
+              Ghid {guideKind}
+              {tipLabel ? ` · ${tipLabel}` : ''}
+            </span>
+          </p>
+          <Button type="button" variant="secondary" size="sm" onClick={returnToGuide}>
+            {guideBackLabel}
+          </Button>
+        </div>
+      ) : null}
 
-  if (!sectionId) {
-    if (isEquipmentChapterGuide(device)) {
-      return (
-        <EquipmentGuideDeviceView
-          device={device}
-          manualNumber={manualNumber}
-          onBack={() => {
-            setDeviceId(null);
-            clearDeviceFromUrl();
-          }}
-        />
-      );
-    }
-
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
-          <div className="flex items-start gap-3 min-w-0">
-            {manualNumber != null && (
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-corporate-surface text-corporate-dark"
-                aria-hidden
-              >
-                {manualNumber}
-              </span>
-            )}
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-corporate-muted">Aparat</p>
-              <p className="text-sm font-semibold text-corporate-dark">{device.name}</p>
+      {!device ? (
+        <>
+          {data.intro && <p className="text-sm text-corporate-muted leading-relaxed">{data.intro}</p>}
+          {data.devices.length === 0 ? (
+            <p className="text-sm text-corporate-muted italic">HR va adăuga aparatele de măsurat.</p>
+          ) : (
+            <div className="grid gap-2">
+              {data.devices.map((d, index) => (
+                <DeviceCard
+                  key={d.id}
+                  device={d}
+                  number={index + 1}
+                  onClick={() => selectDevice(d.id)}
+                />
+              ))}
             </div>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
+          )}
+        </>
+      ) : !sectionId ? (
+        isEquipmentChapterGuide(device) ? (
+          <EquipmentGuideDeviceView
+            device={device}
+            manualNumber={manualNumber}
+            onBack={() => {
               setDeviceId(null);
               clearDeviceFromUrl();
             }}
-          >
-            ← Înapoi la aparate
-          </Button>
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
+              <div className="flex items-start gap-3 min-w-0">
+                {manualNumber != null && (
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums bg-corporate-surface text-corporate-dark"
+                    aria-hidden
+                  >
+                    {manualNumber}
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-wide text-corporate-muted">Aparat</p>
+                  <p className="text-sm font-semibold text-corporate-dark">{device.name}</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDeviceId(null);
+                  clearDeviceFromUrl();
+                }}
+              >
+                ← Înapoi la aparate
+              </Button>
+            </div>
+
+            <div className="grid gap-2">
+              {EQUIPMENT_GUIDE_SECTIONS.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSectionId(s.id)}
+                  className="group w-full text-left rounded-xl border border-corporate-border bg-white px-4 py-3.5 hover:border-corporate-gold/50 hover:bg-corporate-gold-light/10 transition-all"
+                >
+                  <p className="text-sm font-semibold text-corporate-dark">{s.label}</p>
+                  <p className="text-xs text-corporate-muted mt-1">{s.description}</p>
+                  <span className="text-[10px] text-corporate-gold mt-2 inline-block opacity-0 group-hover:opacity-100 transition-opacity">
+                    Deschide →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-corporate-muted">
+                {device.name} · {sectionMeta?.label}
+              </p>
+              <p className="text-sm font-semibold text-corporate-dark">{sectionMeta?.description}</p>
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSectionId(null)}>
+              ← Înapoi la secțiuni
+            </Button>
+          </div>
+
+          <EquipmentOperationsSectionView section={device[sectionId]} />
         </div>
-
-        <div className="grid gap-2">
-          {EQUIPMENT_GUIDE_SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setSectionId(s.id)}
-              className="group w-full text-left rounded-xl border border-corporate-border bg-white px-4 py-3.5 hover:border-corporate-gold/50 hover:bg-corporate-gold-light/10 transition-all"
-            >
-              <p className="text-sm font-semibold text-corporate-dark">{s.label}</p>
-              <p className="text-xs text-corporate-muted mt-1">{s.description}</p>
-              <span className="text-[10px] text-corporate-gold mt-2 inline-block opacity-0 group-hover:opacity-100 transition-opacity">
-                Deschide →
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  const section = device[sectionId];
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-corporate-muted">
-            {device.name} · {sectionMeta?.label}
-          </p>
-          <p className="text-sm font-semibold text-corporate-dark">{sectionMeta?.description}</p>
-        </div>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setSectionId(null)}>
-          ← Înapoi la secțiuni
-        </Button>
-      </div>
-
-      <EquipmentOperationsSectionView section={section} />
+      )}
     </div>
   );
 }

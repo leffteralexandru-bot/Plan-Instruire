@@ -138,7 +138,7 @@ export function EquipmentManualOverlay({
       aria-modal="true"
       aria-label={`Manual ${device.name}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4">
+      <div className="relative z-[100] flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             Mentenanță & operare · carte utilaj

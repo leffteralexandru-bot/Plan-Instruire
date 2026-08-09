@@ -139,6 +139,21 @@ export function resolveFieldGuideLinkedDoc(
   return { id: docId as FieldGuideLinkedDocId, ...staticDoc };
 }
 
+/** Utilaje din ghid → Mentenanță (nu overlay pe ghid) */
+export const FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE: Partial<
+  Record<FieldGuideLinkedDocId, string>
+> = {
+  proliner: 'eq-proliner',
+  gll: 'eq-bosch-gll-3-80',
+  ruleta: 'eq-bosch-tape-5m',
+};
+
+export const EQUIPMENT_DEVICE_TO_FIELD_GUIDE_DOC: Record<string, FieldGuideLinkedDocId> = {
+  'eq-proliner': 'proliner',
+  'eq-bosch-gll-3-80': 'gll',
+  'eq-bosch-tape-5m': 'ruleta',
+};
+
 /** Query pe panou: același destinație din PDF descărcat și din poza de pe site. */
 export function buildFieldGuideDocSearchParams(input: {
   tip: OperationalGuideTaskId;
@@ -149,11 +164,21 @@ export function buildFieldGuideDocSearchParams(input: {
   if (input.doc === 'doc-tehnica') {
     params.set('ref', 'repo');
     params.set('doc', 'doc-tehnica');
-  } else {
-    params.set('ref', 'guide');
+    return params;
+  }
+  const device = FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE[input.doc];
+  if (device) {
+    // Carte utilaj → Mentenanță, cu origin ghid pentru „Înapoi la ghid”
+    params.set('ref', 'equipment');
+    params.set('device', device);
+    params.set('from', 'guide');
     params.set('ghid', input.ghid ?? 'teren');
     params.set('tip', input.tip);
-    params.set('doc', input.doc);
+    return params;
   }
+  params.set('ref', 'guide');
+  params.set('ghid', input.ghid ?? 'teren');
+  params.set('tip', input.tip);
+  params.set('doc', input.doc);
   return params;
 }

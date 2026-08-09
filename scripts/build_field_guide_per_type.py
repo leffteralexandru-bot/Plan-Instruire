@@ -157,9 +157,12 @@ p { margin: 0 0 6px 0; font-family: sans-serif; color: #1c1915; }
 
 def rewrite_links_to_panou(doc: fitz.Document, tip: str) -> int:
     """
-    Linkurile din PDF-ul descărcat duc pe panou la același document
-    ca butonul de pe poza din site (?ghid=teren&tip=&doc=).
+    Linkurile din PDF-ul descărcat duc pe panou:
+    - PDF informative → ghid + doc overlay
+    - utilaje → Mentenanță + device + from=guide
     """
+    from urllib.parse import urlparse, parse_qs
+
     changed = 0
     for page in doc:
         for link in list(page.get_links()):
@@ -167,20 +170,39 @@ def rewrite_links_to_panou(doc: fitz.Document, tip: str) -> int:
                 continue
             uri = link.get("uri") or ""
             new_uri = None
+            doc_id = None
+            device = None
+
             if "linked-manuals/" in uri:
                 name = uri.rsplit("/", 1)[-1].split("?")[0]
                 if name.startswith("Checklist_Client_ArtGranit"):
                     doc_id = "checklist"
                 else:
                     doc_id = FILENAME_TO_DOC_ID.get(name)
-                if doc_id:
-                    # Inclusiv Proliner/GLL/Ruletă: rămâi în ghid pe site; cartea se deschide peste
+            elif "/ingineri/panou-angajat" in uri:
+                q = parse_qs(urlparse(uri).query)
+                doc_id = (q.get("doc") or [None])[0]
+                device = (q.get("device") or [None])[0]
+                if not doc_id and not device:
+                    new_uri = f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}"
+
+            if device and device in DOC_ID_TO_EQUIPMENT_DEVICE.values():
+                new_uri = (
+                    f"{APP_PANOU}?ref=equipment&device={device}"
+                    f"&from=guide&ghid=teren&tip={tip}"
+                )
+            elif doc_id:
+                eq = DOC_ID_TO_EQUIPMENT_DEVICE.get(doc_id)
+                if eq:
+                    new_uri = (
+                        f"{APP_PANOU}?ref=equipment&device={eq}"
+                        f"&from=guide&ghid=teren&tip={tip}"
+                    )
+                else:
                     new_uri = (
                         f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}&doc={doc_id}"
                     )
-            elif "/ingineri/panou-angajat" in uri and "doc=" not in uri:
-                # Vanity / „deschide ghidul” → tipul curent, nu repository
-                new_uri = f"{APP_PANOU}?ref=guide&ghid=teren&tip={tip}"
+
             if new_uri and new_uri != uri:
                 page.delete_link(link)
                 link["uri"] = new_uri
