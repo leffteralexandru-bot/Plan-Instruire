@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { OperationalGuideVideoModal } from '@/components/operational/OperationalGuideVideo';
 import type {
   EquipmentManualPageActionHotspot,
@@ -6,6 +6,38 @@ import type {
   EquipmentManualPageVideoHotspot,
 } from '@/data/equipmentOperations';
 import { hasEquipmentVideo, isYoutubeVideo } from '@/lib/equipmentVideoUrl';
+
+/** Încarcă PNG-ul doar când pagina e aproape de viewport (economie pe net slab). */
+function useNearViewportLoad(enabled: boolean, rootMargin = '700px 0px') {
+  const ref = useRef<HTMLElement | null>(null);
+  const [shouldLoad, setShouldLoad] = useState(enabled);
+
+  useEffect(() => {
+    if (enabled) {
+      setShouldLoad(true);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setShouldLoad(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShouldLoad(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin, threshold: 0.01 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [enabled, rootMargin]);
+
+  return { ref, shouldLoad };
+}
 
 type PlayButtonSize = 'default' | 'small';
 
@@ -145,6 +177,8 @@ interface EquipmentManualPageProps {
   alt: string;
   /** Pentru restaurare scroll / Înapoi la ghid */
   pageId?: string;
+  /** Prima pagină / deep-link: încarcă imediat (fără așteptare viewport). */
+  priority?: boolean;
   videoUrl?: string;
   hotspot?: EquipmentManualPageHotspot;
   videoHotspots?: EquipmentManualPageVideoHotspot[];
@@ -162,6 +196,7 @@ export function EquipmentManualPage({
   imageUrl,
   alt,
   pageId,
+  priority = false,
   videoUrl,
   hotspot,
   videoHotspots,
@@ -172,6 +207,12 @@ export function EquipmentManualPage({
   playButtonSize = 'default',
 }: EquipmentManualPageProps) {
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const { ref: figureRef, shouldLoad } = useNearViewportLoad(priority);
+
+  useEffect(() => {
+    setImgLoaded(false);
+  }, [imageUrl]);
 
   const spots: EquipmentManualPageVideoHotspot[] =
     videoHotspots && videoHotspots.length > 0
@@ -183,18 +224,34 @@ export function EquipmentManualPage({
   return (
     <>
       <figure
+        ref={figureRef}
         id={pageId ? `guide-page-${pageId}` : undefined}
         className="overflow-hidden rounded-xl border border-corporate-border bg-white shadow-sm scroll-mt-28 @md:scroll-mt-32"
       >
         <div className="manual-page-canvas relative w-full bg-white">
-          <img
-            src={imageUrl}
-            alt={alt}
-            className="manual-page-img mx-auto block h-auto w-full max-w-none object-contain @min-[640px]:max-h-[min(96vh,1600px)] @lg:max-h-[min(98vh,1800px)]"
-            loading="lazy"
-            decoding="async"
-          />
-          {spots.map((spot, index) => {
+          {shouldLoad ? (
+            <img
+              src={imageUrl}
+              alt={alt}
+              className="manual-page-img mx-auto block h-auto w-full max-w-none object-contain @min-[640px]:max-h-[min(96vh,1600px)] @lg:max-h-[min(98vh,1800px)]"
+              loading={priority ? 'eager' : 'lazy'}
+              decoding="async"
+              fetchPriority={priority ? 'high' : 'auto'}
+              onLoad={() => setImgLoaded(true)}
+              ref={(el) => {
+                if (el?.complete && el.naturalWidth > 0) setImgLoaded(true);
+              }}
+            />
+          ) : (
+            <div
+              className="manual-page-img mx-auto w-full bg-corporate-surface/40"
+              style={{ aspectRatio: '1 / 1.414' }}
+              aria-hidden
+            />
+          )}
+          {shouldLoad &&
+            imgLoaded &&
+            spots.map((spot, index) => {
             const thumbnail = isThumbnailHotspot(spot);
             const compactIcon = compactPlayHotspots && !thumbnail;
             const compactPos = compactIcon
@@ -230,7 +287,9 @@ export function EquipmentManualPage({
             );
           })}
 
-          {(actionHotspots ?? []).map((spot, index) => {
+          {shouldLoad &&
+            imgLoaded &&
+            (actionHotspots ?? []).map((spot, index) => {
             const hitOnly = spot.hitOnly === true;
             const spotKey = spot.deviceId ?? spot.docUrl ?? spot.label;
             return (

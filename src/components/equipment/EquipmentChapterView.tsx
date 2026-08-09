@@ -12,6 +12,7 @@ import {
 } from '@/components/operational/PdfActionIcons';
 import type { EquipmentChapter, EquipmentDevice, EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
 import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
+import { shouldPrioritizeManualPage } from '@/lib/manualPageLoad';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
 import { PdfDocumentViewer } from '@/components/operational/PdfDocumentViewer';
 
@@ -176,12 +177,17 @@ export function EquipmentChapterView({
   );
 
   if (chapter.pages && chapter.pages.length > 0) {
+    const pageQuery =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('page')
+        : null;
     return (
       <div className="space-y-3">
-        {chapter.pages.map((page) => (
+        {chapter.pages.map((page, index) => (
           <EquipmentManualPage
             key={page.id}
             pageId={page.id}
+            priority={shouldPrioritizeManualPage(page.id, index, pageQuery)}
             imageUrl={page.imageUrl}
             alt={`Capitol ${chapter.number} — ${chapter.title}`}
             videoUrl={page.videoUrl}
