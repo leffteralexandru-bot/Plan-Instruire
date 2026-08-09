@@ -104,23 +104,28 @@ function MeasurerGuideBody({
   onCloseManual,
   deepDocId,
   onClearDeepDoc,
+  openSession,
 }: {
   task: OperationalGuideTask;
   onCloseManual: () => void;
   deepDocId: string | null;
   onClearDeepDoc: () => void;
+  /** Incrementează la fiecare (re)deschidere → remount pe Cuprins */
+  openSession: number;
 }) {
   const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
   const defaultChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
   const { syncDocToUrl, openHref, chapterParam, pageParam } = useGuideDeepLink(task.id);
   const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
 
+  // Fără ch/page în URL → mereu Cuprins (nu ultimul capitol din sesiunea anterioară)
   const initialChapterId = chapterParam || defaultChapterId;
 
   // După Înapoi din Mentenanță: același capitol + pagina + scroll
   useEffect(() => {
     // Cât timp e deschis un PDF (Anexa etc.), nu derula la pagina ghid — rămâi pe antetul documentului
-    if (deepDocId) return;
+    // openDoc acoperă frame-ul înainte ca `doc` din URL să ajungă în deepDocId
+    if (deepDocId || openDoc) return;
     if (!chapterParam && !pageParam) return;
     const snap = consumeGuideReturnSnapshot();
     const pageId = snap?.pageId || pageParam;
@@ -137,7 +142,7 @@ function MeasurerGuideBody({
     };
     const t = window.setTimeout(restore, 120);
     return () => window.clearTimeout(t);
-  }, [task.id, chapterParam, pageParam, deepDocId]);
+  }, [task.id, chapterParam, pageParam, deepDocId, openDoc]);
 
   useEffect(() => {
     if (!deepDocId || deepDocId === 'doc-tehnica') return;
@@ -253,7 +258,7 @@ function MeasurerGuideBody({
       ) : null}
       <div className={openDoc ? 'opacity-45 pointer-events-none select-none' : undefined} aria-hidden={openDoc ? true : undefined}>
         <EquipmentGuideDeviceView
-          key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
+          key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}-s${openSession}`}
           device={device}
           manualNumber={1}
           initialChapterId={initialChapterId}
@@ -270,11 +275,13 @@ function DesignGuideBody({
   onCloseManual,
   deepDocId,
   onClearDeepDoc,
+  openSession,
 }: {
   task: OperationalGuideTask;
   onCloseManual: () => void;
   deepDocId: string | null;
   onClearDeepDoc: () => void;
+  openSession: number;
 }) {
   const device = useMemo(() => getDesignGuideDevice(task.id), [task.id]);
   const defaultChapterId = useMemo(() => getDesignGuideStartChapterId(task.id), [task.id]);
@@ -346,7 +353,7 @@ function DesignGuideBody({
       ) : null}
       <div className={openDoc ? 'opacity-45 pointer-events-none select-none' : undefined} aria-hidden={openDoc ? true : undefined}>
         <EquipmentGuideDeviceView
-          key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}`}
+          key={`${device.id}-${task.id}-${initialChapterId ?? 'start'}-s${openSession}`}
           device={device}
           manualNumber={2}
           initialChapterId={initialChapterId}
@@ -385,6 +392,8 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
     if (docParam) return 'measurer';
     return null;
   });
+  /** Forțează remount pe Cuprins la fiecare deschidere / schimbare Măsurare↔Proiectare */
+  const [openSession, setOpenSession] = useState(0);
 
   useEffect(() => {
     if (ghidParam === 'proiectare') setActive('design');
@@ -412,21 +421,20 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
   };
 
   const toggle = (id: ActiveGuide) => {
-    setActive((current) => {
-      const next = current === id ? null : id;
-      const params = new URLSearchParams(searchParams);
-      if (next === 'measurer') params.set('ghid', 'teren');
-      else if (next === 'design') params.set('ghid', 'proiectare');
-      else params.delete('ghid');
-      // La închidere / redeschidere / schimbare Măsurare↔Proiectare: mereu Cuprins
-      params.delete('ch');
-      params.delete('page');
-      if (!next || current !== next) params.delete('doc');
-      params.set('tip', task.id);
-      params.set('ref', 'guide');
-      setSearchParams(params, { replace: true });
-      return next;
-    });
+    const next = active === id ? null : id;
+    const params = new URLSearchParams(searchParams);
+    if (next === 'measurer') params.set('ghid', 'teren');
+    else if (next === 'design') params.set('ghid', 'proiectare');
+    else params.delete('ghid');
+    // La închidere / redeschidere / schimbare Măsurare↔Proiectare: mereu Cuprins
+    params.delete('ch');
+    params.delete('page');
+    if (!next || active !== next) params.delete('doc');
+    params.set('tip', task.id);
+    params.set('ref', 'guide');
+    setSearchParams(params, { replace: true });
+    setActive(next);
+    if (next) setOpenSession((n) => n + 1);
   };
 
   const modules = useMemo(
@@ -450,6 +458,7 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
             onCloseManual={closeGuide}
             deepDocId={active === 'measurer' ? docParam : null}
             onClearDeepDoc={clearDeepDoc}
+            openSession={openSession}
           />
         ),
       },
@@ -472,13 +481,14 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
             onCloseManual={closeGuide}
             deepDocId={active === 'design' ? docParam : null}
             onClearDeepDoc={clearDeepDoc}
+            openSession={openSession}
           />
         ),
       },
     ],
     // toggle/clearDeepDoc are stable enough for this UI; params drive deep-link reopen
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [active, label, task, docParam],
+    [active, label, task, docParam, openSession],
   );
 
   const activeIndex = active !== null ? modules.findIndex((m) => m.id === active) : null;
