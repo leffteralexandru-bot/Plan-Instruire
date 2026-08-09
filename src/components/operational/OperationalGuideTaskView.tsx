@@ -374,21 +374,6 @@ function DesignGuideBody({
   );
 }
 
-function OperationalGuideTaskContextHeader({ task }: { task: OperationalGuideTask }) {
-  const label = OPERATIONAL_GUIDE_LABELS[task.id];
-
-  return (
-    <p className="text-[11px] sm:text-xs text-corporate-muted leading-snug">
-      Ghidurile <span className="font-medium text-corporate-dark">Măsurare</span> și{' '}
-      <span className="font-medium text-corporate-dark">Proiectare</span>:{' '}
-      <span className="font-semibold text-corporate-dark">{label}</span>
-      {task.categorySubtitle ? (
-        <span className="text-corporate-muted"> · {task.categorySubtitle}</span>
-      ) : null}
-    </p>
-  );
-}
-
 export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps) {
   const label = OPERATIONAL_GUIDE_LABELS[task.id];
   const [searchParams, setSearchParams] = useSearchParams();
@@ -515,7 +500,6 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
       <ExpandableModuleRow
         columnCount={2}
         activeColumnIndex={activeIndex !== null && activeIndex >= 0 ? activeIndex : null}
-        topHeader={<OperationalGuideTaskContextHeader task={task} />}
         headers={modules.map((m) => m.header)}
         expandedContent={activeModule?.body ?? null}
       />
