@@ -16,7 +16,9 @@ test.describe('artGRANIT guide deep-link', () => {
     await page.getByRole('button', { name: 'Conectare' }).click();
     await expect(page).toHaveURL(/\/ingineri\/panou-angajat\?.*doc=anexa1/);
     await expect(page.getByText(/Anexa 1/i).first()).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole('region').getByRole('button', { name: 'Închide', exact: true })).toBeVisible();
+    await expect(page.getByRole('region').getByRole('button', { name: 'Închide' })).toBeVisible();
+    await expect(page.getByRole('region').getByRole('button', { name: 'Descarcă' })).toBeVisible();
+    await expect(page.getByRole('region').getByRole('button', { name: 'Trimite' })).toBeVisible();
     await expect(page.getByText('artGRANIT').first()).toBeVisible();
     await expect(page.getByText('Panou Angajat').first()).toBeVisible();
   });
@@ -68,8 +70,8 @@ test.describe('artGRANIT guide deep-link', () => {
     await expect(page.getByText('artGRANIT').first()).toBeVisible();
     await expect(page.getByText('Panou Angajat').first()).toBeVisible();
     const book = page.getByRole('region', { name: /Manual|Proliner|PROLINER/i });
-    await expect(book.getByRole('button', { name: 'Descarcă', exact: true })).toBeVisible();
-    await expect(book.getByRole('button', { name: 'Trimite', exact: true })).toBeVisible();
+    await expect(book.getByRole('button', { name: 'Descarcă' })).toBeVisible();
+    await expect(book.getByRole('button', { name: 'Trimite' })).toBeVisible();
     const back = book.getByRole('button', { name: /Înapoi la ghid măsurare/i });
     await expect(back).toBeVisible();
     await back.click();

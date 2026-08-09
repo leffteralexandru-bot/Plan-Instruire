@@ -4,6 +4,12 @@ import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideD
 import {
   OperationalGuideCollapsibleShell,
 } from '@/components/operational/OperationalGuideDocActions';
+import {
+  IconClose,
+  IconDownload,
+  IconShare,
+  PDF_ICON_BTN,
+} from '@/components/operational/PdfActionIcons';
 import { DEFAULT_EQUIPMENT_OPERATIONS, type EquipmentDevice } from '@/data/equipmentOperations';
 import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 
@@ -161,7 +167,8 @@ export function EquipmentManualOverlay({
             ? 'relative z-[100] flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4'
             : 'flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/40 px-3 py-2.5 sm:px-4'
         }
-      >        <div className="min-w-0">
+      >
+        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             Mentenanță & operare · carte utilaj
           </p>
@@ -173,23 +180,34 @@ export function EquipmentManualOverlay({
             type="button"
             variant="secondary"
             size="sm"
+            className={PDF_ICON_BTN}
             disabled={!pdf || downloading || sharing}
+            aria-label={downloading ? 'Se descarcă' : 'Descarcă'}
+            title="Descarcă"
             onClick={() => void handleDownload()}
-          >
-            {downloading ? '…' : 'Descarcă'}
-          </Button>
+            icon={<IconDownload />}
+          />
           <Button
             type="button"
             variant="primary"
             size="sm"
+            className={PDF_ICON_BTN}
             disabled={!pdf || downloading || sharing}
+            aria-label={sharing ? 'Se trimite' : 'Trimite'}
+            title="Trimite"
             onClick={() => void handleShare()}
-          >
-            {sharing ? '…' : 'Trimite'}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-            {returnLabel}
-          </Button>
+            icon={<IconShare />}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={PDF_ICON_BTN}
+            aria-label={returnLabel}
+            title={returnLabel}
+            onClick={onClose}
+            icon={<IconClose />}
+          />
         </div>
       </div>
       {shareHint ? (

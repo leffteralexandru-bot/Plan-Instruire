@@ -3,6 +3,13 @@ import { Button } from '@/components/ui/Button';
 import { EquipmentChapterBlocks } from '@/components/equipment/EquipmentChapterBlocks';
 import { EquipmentChapterMedia } from '@/components/equipment/EquipmentChapterMedia';
 import { EquipmentManualPage } from '@/components/equipment/EquipmentManualPage';
+import {
+  IconClose,
+  IconDownload,
+  IconOpenEye,
+  IconShare,
+  PDF_ICON_BTN,
+} from '@/components/operational/PdfActionIcons';
 import type { EquipmentChapter, EquipmentDevice, EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
 import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
@@ -80,8 +87,7 @@ export function EquipmentChapterView({
     }
   };
 
-  const iconBtn =
-    '!min-h-[44px] !min-w-[44px] !px-0 !py-0 @md:!min-h-[40px] @md:!min-w-[40px]';
+  const iconBtn = PDF_ICON_BTN;
 
   const pdfButton = showPdfButton && chapter.pdfUrl && (
     <div className="space-y-2 pt-1">
@@ -94,28 +100,7 @@ export function EquipmentChapterView({
           aria-label={previewOpen ? 'Închide documentul' : 'Deschide documentul'}
           title={previewOpen ? 'Închide' : 'Deschide'}
           onClick={() => setPreviewOpen((v) => !v)}
-          icon={
-            previewOpen ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
-            )
-          }
+          icon={previewOpen ? <IconClose /> : <IconOpenEye />}
         />
         <Button
           type="button"
@@ -131,16 +116,7 @@ export function EquipmentChapterView({
           }
           title="Descarcă"
           onClick={() => void handleDownload()}
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-          }
+          icon={<IconDownload />}
         />
         <Button
           type="button"
@@ -150,16 +126,7 @@ export function EquipmentChapterView({
           aria-label={sharing ? 'Se trimite' : 'Trimite'}
           title="Trimite"
           onClick={() => void handleShare()}
-          icon={
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-          }
+          icon={<IconShare />}
         />
       </div>
       {previewOpen && pdfUrl ? (
