@@ -291,45 +291,32 @@ export function EquipmentManualPage({
             imgLoaded &&
             (actionHotspots ?? []).map((spot, index) => {
             const hitOnly = spot.hitOnly === true;
-            const isDocTehnica = spot.linkedDocId === 'doc-tehnica';
             const spotKey = spot.deviceId ?? spot.docUrl ?? spot.linkedDocId ?? spot.label;
             return (
               <button
                 key={`action-${spotKey}-${spot.y}-${index}`}
                 type="button"
                 className={
-                  isDocTehnica
-                    ? 'absolute z-30 flex items-center border-0 bg-white px-0.5 text-left leading-tight shadow-none cursor-pointer touch-manipulation focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/50'
-                    : hitOnly
-                      ? 'absolute z-30 border-0 bg-transparent p-0 text-transparent cursor-pointer touch-manipulation focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/45'
-                      : 'absolute z-30 flex items-center border-0 bg-white px-0 text-left font-medium leading-tight text-[#2f6fed]/90 shadow-none transition-colors hover:text-[#1a4fbf] hover:underline hover:underline-offset-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/50 touch-manipulation'
+                  hitOnly
+                    ? 'absolute z-30 border-0 bg-transparent p-0 text-transparent cursor-pointer touch-manipulation focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/45'
+                    : 'absolute z-30 flex items-center border-0 bg-white px-0 text-left font-medium leading-tight text-[#2f6fed]/90 shadow-none transition-colors hover:text-[#1a4fbf] hover:underline hover:underline-offset-2 focus:outline-none focus-visible:ring-1 focus-visible:ring-[#2f6fed]/50 touch-manipulation'
                 }
                 style={{
                   left: `${spot.x}%`,
                   top: `${spot.y}%`,
                   width: `${spot.w}%`,
-                  height: `${Math.max(spot.h, isDocTehnica ? 2.2 : 1.4)}%`,
-                  fontSize: hitOnly && !isDocTehnica ? undefined : 'clamp(0.55rem, 1.35vw, 0.78rem)',
+                  height: `${Math.max(spot.h, 1.4)}%`,
+                  fontSize: hitOnly ? undefined : 'clamp(0.55rem, 1.35vw, 0.78rem)',
                 }}
                 onClick={() => onActionHotspot?.(spot)}
-                aria-label="Deschide Documentație tehnică — Repository tehnic"
-                title="Documentație tehnică — panou angajat → Repository tehnic"
+                aria-label={`Deschide ${spot.label}`}
+                title={
+                  spot.linkedDocId === 'doc-tehnica'
+                    ? 'Documentație tehnică — panou angajat → Repository tehnic'
+                    : `Deschide — ${spot.label}`
+                }
               >
-                {isDocTehnica ? (
-                  <span className="inline whitespace-normal">
-                    <span className="font-medium text-[#2f6fed] underline-offset-2 hover:underline">
-                      Documentație tehnică:
-                    </span>
-                    <span className="font-normal text-corporate-dark">
-                      {' '}
-                      — panou angajat → Repository tehnic.
-                    </span>
-                  </span>
-                ) : hitOnly ? (
-                  <span className="sr-only">{spot.label}</span>
-                ) : (
-                  spot.label
-                )}
+                {hitOnly ? <span className="sr-only">{spot.label}</span> : spot.label}
               </button>
             );
           })}
