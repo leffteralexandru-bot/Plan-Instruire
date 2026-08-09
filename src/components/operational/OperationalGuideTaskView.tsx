@@ -119,6 +119,8 @@ function MeasurerGuideBody({
 
   // După Înapoi din Mentenanță: același capitol + pagina + scroll
   useEffect(() => {
+    // Cât timp e deschis un PDF (Anexa etc.), nu derula la pagina ghid — rămâi pe antetul documentului
+    if (deepDocId) return;
     if (!chapterParam && !pageParam) return;
     const snap = consumeGuideReturnSnapshot();
     const pageId = snap?.pageId || pageParam;
@@ -135,7 +137,7 @@ function MeasurerGuideBody({
     };
     const t = window.setTimeout(restore, 120);
     return () => window.clearTimeout(t);
-  }, [task.id, chapterParam, pageParam]);
+  }, [task.id, chapterParam, pageParam, deepDocId]);
 
   useEffect(() => {
     if (!deepDocId || deepDocId === 'doc-tehnica') return;

@@ -45,12 +45,14 @@ export function FieldGuideDocOverlay({
   const toolbarRef = useRef<HTMLDivElement>(null);
   const isOverlay = placement === 'overlay';
 
-  const scrollToolbarIntoView = () => {
-    const el = toolbarRef.current;
+  /** Aduce antetul panoului (titlu Anexa + buton Închide) imediat sub meniul sticky */
+  const scrollPanelHeaderIntoView = () => {
+    const el = toolbarRef.current ?? panelRef.current;
     if (!el) return;
-    const headerOffset = 120;
-    const top = el.getBoundingClientRect().top + window.scrollY - headerOffset;
-    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    const sticky = document.querySelector('header.sticky');
+    const chrome = sticky ? Math.ceil(sticky.getBoundingClientRect().height) : 160;
+    const y = el.getBoundingClientRect().top + window.scrollY - chrome - 8;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -59,13 +61,15 @@ export function FieldGuideDocOverlay({
     };
     document.addEventListener('keydown', onKey);
     if (!isOverlay) {
-      // Sus la butoane (Închide / Descarcă) — nu jos pe PDF
-      const t1 = window.setTimeout(scrollToolbarIntoView, 50);
-      const t2 = window.setTimeout(scrollToolbarIntoView, 350);
+      // Sus la titlu + Închide (Anexa 1 · șablon …), nu jos pe PDF
+      const t1 = window.setTimeout(scrollPanelHeaderIntoView, 0);
+      const t2 = window.setTimeout(scrollPanelHeaderIntoView, 100);
+      const t3 = window.setTimeout(scrollPanelHeaderIntoView, 400);
       return () => {
         document.removeEventListener('keydown', onKey);
         window.clearTimeout(t1);
         window.clearTimeout(t2);
+        window.clearTimeout(t3);
       };
     }
     const prev = document.body.style.overflow;
@@ -136,8 +140,9 @@ export function FieldGuideDocOverlay({
     >
       <div
         ref={toolbarRef}
-        className="flex scroll-mt-28 flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/50 px-3 py-2.5 sm:px-4 @md:scroll-mt-32"
-      >        <div className="min-w-0">
+        className="flex scroll-mt-[var(--guide-doc-scroll-mt,10.5rem)] flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/50 px-3 py-2.5 sm:px-4"
+      >
+        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             {eyebrow}
           </p>
@@ -211,7 +216,7 @@ export function FieldGuideDocOverlay({
           src={pdfUrl}
           tabIndex={-1}
           onLoad={() => {
-            if (!isOverlay) scrollToolbarIntoView();
+            if (!isOverlay) scrollPanelHeaderIntoView();
           }}
           className={
             isOverlay
