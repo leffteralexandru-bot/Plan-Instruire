@@ -90,6 +90,8 @@ function EquipmentOperationsContent() {
       setOverlayDeviceId(deviceFromUrl);
     } else if (!deviceFromUrl) {
       setOverlayDeviceId(null);
+      setDeviceId(null);
+      setSectionId(null);
     }
   }, [deviceFromUrl, data.devices]);
 
@@ -157,7 +159,10 @@ function EquipmentOperationsContent() {
             returnToGuide();
             return;
           }
+          // Închidere totală — fără remount pe același aparat (altfel reapare avertismentul)
           setOverlayDeviceId(null);
+          setDeviceId(null);
+          setSectionId(null);
           clearDeviceFromUrl();
         }}
       />

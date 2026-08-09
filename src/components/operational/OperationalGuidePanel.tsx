@@ -282,6 +282,9 @@ export function OperationalGuidePanel({
     const next = new URLSearchParams(searchParams);
     next.set('tip', id);
     next.set('ref', 'guide');
+    // Tip nou → Cuprins (nu rămâne capitolul tipului anterior)
+    next.delete('ch');
+    next.delete('page');
     setSearchParams(next, { replace: true });
   };
 

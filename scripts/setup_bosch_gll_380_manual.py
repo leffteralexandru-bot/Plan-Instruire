@@ -14,8 +14,8 @@ PDF_URL = "https://www.bosch-professional.com/binary/manualsmedia/o401920v21_160
 PDF_OUT = ROOT / "public/docs/equipment/bosch-gll-3-80/bosch-gll-3-80-manual-ro.pdf"
 PAGES_DIR = ROOT / "public/docs/equipment/bosch-gll-3-80/pages"
 MANIFEST = ROOT / "src/data/bosch-gll-3-80-manifest.json"
-# Pagini cu desene din manualul oficial (secțiune EN — ilustrații universale)
-ILLUSTRATION_PAGES = [13, 14, 15, 16, 17, 18]
+# Diagrame universale (început) + secțiunea Română (Pagina 133+)
+ILLUSTRATION_PAGES = [3, 4, 5, 133, 134, 135, 136, 137, 138]
 RENDER_SCALE = 3
 
 VIDEO_IDS = {

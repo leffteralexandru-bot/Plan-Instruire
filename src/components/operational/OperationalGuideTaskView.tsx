@@ -398,6 +398,19 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
     setSearchParams(next, { replace: true });
   };
 
+  /** Închide ghidul și uită capitolul — la redeschidere e mereu Cuprins. */
+  const closeGuide = () => {
+    setActive(null);
+    const params = new URLSearchParams(searchParams);
+    params.delete('ghid');
+    params.delete('doc');
+    params.delete('ch');
+    params.delete('page');
+    params.set('tip', task.id);
+    params.set('ref', 'guide');
+    setSearchParams(params, { replace: true });
+  };
+
   const toggle = (id: ActiveGuide) => {
     setActive((current) => {
       const next = current === id ? null : id;
@@ -405,7 +418,10 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
       if (next === 'measurer') params.set('ghid', 'teren');
       else if (next === 'design') params.set('ghid', 'proiectare');
       else params.delete('ghid');
-      if (!next) params.delete('doc');
+      // La închidere / redeschidere / schimbare Măsurare↔Proiectare: mereu Cuprins
+      params.delete('ch');
+      params.delete('page');
+      if (!next || current !== next) params.delete('doc');
       params.set('tip', task.id);
       params.set('ref', 'guide');
       setSearchParams(params, { replace: true });
@@ -431,7 +447,7 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
         body: (
           <MeasurerGuideBody
             task={task}
-            onCloseManual={() => setActive(null)}
+            onCloseManual={closeGuide}
             deepDocId={active === 'measurer' ? docParam : null}
             onClearDeepDoc={clearDeepDoc}
           />
@@ -453,7 +469,7 @@ export function OperationalGuideTaskView({ task }: OperationalGuideTaskViewProps
         body: (
           <DesignGuideBody
             task={task}
-            onCloseManual={() => setActive(null)}
+            onCloseManual={closeGuide}
             deepDocId={active === 'design' ? docParam : null}
             onClearDeepDoc={clearDeepDoc}
           />

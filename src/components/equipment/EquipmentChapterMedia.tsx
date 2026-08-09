@@ -1,4 +1,6 @@
-import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
+import { useState } from 'react';
+import { OperationalGuideVideoModal } from '@/components/operational/OperationalGuideVideo';
+import { hasEquipmentVideo, isYoutubeVideo } from '@/lib/equipmentVideoUrl';
 
 interface EquipmentChapterMediaProps {
   videoUrl?: string;
@@ -6,16 +8,30 @@ interface EquipmentChapterMediaProps {
   title?: string;
 }
 
-/** Imagini și video cu object-contain pe toate ecranele. */
+/** Imagini + Play care deschide playerul direct (fără etapă intermediară). */
 export function EquipmentChapterMedia({ videoUrl, images, title }: EquipmentChapterMediaProps) {
-  const hasVideo = !!videoUrl?.trim();
+  const [videoOpen, setVideoOpen] = useState(false);
+  const trimmed = videoUrl?.trim();
+  const hasVideo = !!trimmed && hasEquipmentVideo(trimmed);
   const hasImages = images.length > 0;
 
   if (!hasVideo && !hasImages) return null;
 
   return (
     <div className="space-y-4">
-      {hasVideo && <OperationalGuideVideo url={videoUrl} title={title} />}
+      {hasVideo && trimmed ? (
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-lg border border-corporate-border bg-white px-3 py-2 text-sm font-medium text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/30"
+          onClick={() => setVideoOpen(true)}
+          aria-label={`Redare video: ${title ?? 'Demonstrație'}`}
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          Redare video
+        </button>
+      ) : null}
 
       {hasImages && (
         <div className="grid gap-3 @min-[640px]:grid-cols-2">
@@ -41,6 +57,19 @@ export function EquipmentChapterMedia({ videoUrl, images, title }: EquipmentChap
           ))}
         </div>
       )}
+
+      {videoOpen && trimmed ? (
+        <OperationalGuideVideoModal
+          url={trimmed}
+          title={title ?? 'Video'}
+          onClose={() => setVideoOpen(false)}
+          hint={
+            isYoutubeVideo(trimmed)
+              ? 'Activați subtitrările pe YouTube pentru instrucțiuni în română sau altă limbă.'
+              : undefined
+          }
+        />
+      ) : null}
     </div>
   );
 }

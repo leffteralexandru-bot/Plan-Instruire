@@ -504,9 +504,9 @@ export function getFieldGuideDevice(taskId: OperationalGuideTaskId): EquipmentDe
   return FIELD_GUIDE_DEVICES[taskId];
 }
 
-/** Primul capitol specific tipului (după Etapa 1–2). */
+/** Capitol de start la (re)deschiderea ghidului măsurare — Cuprins. */
 export function getFieldGuideStartChapterId(taskId: OperationalGuideTaskId): string {
-  return `field-${taskId}-ch-6`;
+  return `field-${taskId}-ch-2`;
 }
 
 /** @deprecated — folosește getFieldGuideDevice(taskId) */

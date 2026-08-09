@@ -23,7 +23,7 @@ PAGES_DIR = OUT_DIR / "pages"
 BY_TYPE_DIR = OUT_DIR / "by-type"
 LINKED_DIR = ROOT / "public/docs/operational-guide/field-guide/linked-manuals"
 MANIFEST = ROOT / "src/data/design-guide-manifest.json"
-RENDER_DPI = 300
+RENDER_DPI = 450
 
 APP_PUBLIC_BASE = "https://argranit-instruire-adaptare.vercel.app"
 APP_GHID_URL = f"{APP_PUBLIC_BASE}/ingineri/panou-angajat"

@@ -23,26 +23,23 @@ function isDirectVideo(url: string): boolean {
   return /\.(mp4|webm|ogg)(\?|$)/i.test(url) || url.startsWith('blob:') || url.startsWith('data:video/');
 }
 
-function PlayIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M10 8.5v7L16.5 12 10 8.5Z" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function VideoModal({
+/** Player video imediat — fără etapă „Demonstrație video” + al doilea Play. */
+export function OperationalGuideVideoModal({
   url,
   title,
   onClose,
+  hint,
 }: {
   url: string;
   title: string;
   onClose: () => void;
+  hint?: string;
 }) {
   const embed = youtubeEmbedUrl(url);
   const direct = isDirectVideo(url) || url.startsWith('/') || url.startsWith('http');
+  const embedSrc = embed
+    ? `${embed}${embed.includes('?') ? '&' : '?'}autoplay=1&rel=0`
+    : null;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -72,7 +69,7 @@ function VideoModal({
       />
       <div className="relative z-10 flex w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-corporate-border bg-white shadow-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-corporate-border bg-corporate-black px-3 py-2.5 sm:px-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-corporate-gold">Video</p>
+          <p className="min-w-0 truncate text-sm font-semibold text-white">{title}</p>
           <Button
             type="button"
             variant="ghost"
@@ -84,10 +81,10 @@ function VideoModal({
           </Button>
         </div>
         <div className="bg-black">
-          {embed ? (
+          {embedSrc ? (
             <div className={`relative ${VIDEO_EMBED}`}>
               <iframe
-                src={embed}
+                src={embedSrc}
                 title={title}
                 className="absolute inset-0 h-full w-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -95,7 +92,13 @@ function VideoModal({
               />
             </div>
           ) : direct ? (
-            <video controls autoPlay className={`${VIDEO_EMBED} max-h-[min(70vh,520px)] w-full object-contain`} src={url}>
+            <video
+              controls
+              autoPlay
+              playsInline
+              className={`${VIDEO_EMBED} max-h-[min(70vh,520px)] w-full object-contain`}
+              src={url}
+            >
               Browserul nu suportă redarea video.
             </video>
           ) : (
@@ -111,6 +114,9 @@ function VideoModal({
             </div>
           )}
         </div>
+        {hint ? (
+          <p className="border-t border-corporate-border px-4 py-2 text-[11px] text-corporate-muted">{hint}</p>
+        ) : null}
       </div>
     </div>
   );
@@ -121,8 +127,11 @@ interface OperationalGuideVideoProps {
   title?: string;
 }
 
-/** Compact: doar buton de deschidere; playerul rulează în modal. */
-export function OperationalGuideVideo({ url }: OperationalGuideVideoProps) {
+/**
+ * Un singur click pe Play → playerul (fără card „Demonstrație video”).
+ * @deprecated Preferă OperationalGuideVideoModal din fluxurile utilaje.
+ */
+export function OperationalGuideVideo({ url, title = 'Video' }: OperationalGuideVideoProps) {
   const [open, setOpen] = useState(false);
   const trimmed = url?.trim();
 
@@ -132,27 +141,22 @@ export function OperationalGuideVideo({ url }: OperationalGuideVideoProps) {
 
   return (
     <>
-      <section
-        className="overflow-hidden rounded-xl border border-corporate-border/90 bg-white shadow-sm"
-        aria-label="Demonstrație video"
+      <button
+        type="button"
+        className="inline-flex items-center gap-2 rounded-lg border border-corporate-border bg-white px-3 py-2 text-sm font-medium text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/30"
+        onClick={() => setOpen(true)}
+        title="Redare video"
+        aria-label="Redare video"
       >
-        <div className="px-3 py-2.5 sm:px-3.5 space-y-2">
-          <p className="text-xs font-semibold text-corporate-dark">Demonstrație video</p>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-corporate-border/80 bg-white text-corporate-dark shadow-sm transition-colors hover:border-corporate-gold/50 hover:bg-corporate-gold-light/40 hover:text-corporate-black focus:outline-none focus-visible:ring-2 focus-visible:ring-corporate-gold focus-visible:ring-offset-1"
-              onClick={() => setOpen(true)}
-              title="Deschide video"
-              aria-label="Deschide demonstrație video"
-            >
-              <PlayIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </section>
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M8 5v14l11-7z" />
+        </svg>
+        Redare video
+      </button>
 
-      {open && <VideoModal url={trimmed} title="Demonstrație video" onClose={() => setOpen(false)} />}
+      {open && (
+        <OperationalGuideVideoModal url={trimmed} title={title} onClose={() => setOpen(false)} />
+      )}
     </>
   );
 }

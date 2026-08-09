@@ -107,7 +107,7 @@ function DocViewerModal({
           <img
             src={imageUrl}
             alt={title}
-            className="mx-auto w-full max-w-full h-auto rounded-lg border border-corporate-border/80 bg-white shadow-sm"
+            className="manual-page-img mx-auto w-full max-w-full h-auto rounded-lg border border-corporate-border/80 bg-white shadow-sm"
           />
         </div>
       </div>

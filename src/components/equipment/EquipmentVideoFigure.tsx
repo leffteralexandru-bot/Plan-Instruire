@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
-import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
-import { hasEquipmentVideo } from '@/lib/equipmentVideoUrl';
+import { OperationalGuideVideoModal } from '@/components/operational/OperationalGuideVideo';
+import { hasEquipmentVideo, isYoutubeVideo } from '@/lib/equipmentVideoUrl';
 
 interface EquipmentVideoFigureProps {
   imageUrl: string;
@@ -38,7 +38,7 @@ export function EquipmentVideoFigure({
           <img
             src={imageUrl}
             alt={alt}
-            className="max-h-[min(68vh,500px)] w-full object-contain"
+            className="manual-page-img max-h-[min(68vh,500px)] w-full object-contain"
             loading="lazy"
           />
         </div>
@@ -65,33 +65,16 @@ export function EquipmentVideoFigure({
       )}
 
       {videoOpen && videoUrl && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={videoLabel}
-          onClick={() => setVideoOpen(false)}
-        >
-          <div
-            className="w-full max-w-4xl overflow-hidden rounded-2xl border border-corporate-border bg-white shadow-neural-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-corporate-border px-4 py-3">
-              <p className="text-sm font-semibold text-corporate-dark">{alt}</p>
-              <button
-                type="button"
-                className="rounded-lg px-2 py-1 text-sm text-corporate-muted hover:bg-corporate-surface"
-                onClick={() => setVideoOpen(false)}
-              >
-                Închide
-              </button>
-            </div>
-            <OperationalGuideVideo url={videoUrl} title={alt} />
-            <p className="border-t border-corporate-border px-4 py-2 text-[11px] text-corporate-muted">
-              Activați subtitrările pe YouTube pentru instrucțiuni în română sau altă limbă.
-            </p>
-          </div>
-        </div>
+        <OperationalGuideVideoModal
+          url={videoUrl}
+          title={alt}
+          onClose={() => setVideoOpen(false)}
+          hint={
+            isYoutubeVideo(videoUrl)
+              ? 'Activați subtitrările pe YouTube pentru instrucțiuni în română sau altă limbă.'
+              : undefined
+          }
+        />
       )}
     </figure>
   );

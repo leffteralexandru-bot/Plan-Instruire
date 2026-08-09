@@ -206,7 +206,7 @@ export function getDesignGuideDevice(taskId: OperationalGuideTaskId): EquipmentD
   return DESIGN_GUIDE_DEVICES[taskId];
 }
 
-/** Primul capitol util (după Documentație / cuprins) — Etapa 1 compact. */
+/** Capitol de start la (re)deschiderea ghidului proiectare — Cuprins. */
 export function getDesignGuideStartChapterId(taskId: OperationalGuideTaskId): string {
-  return `design-${taskId}-ch-3`;
+  return `design-${taskId}-ch-2`;
 }

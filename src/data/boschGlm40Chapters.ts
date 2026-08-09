@@ -4,7 +4,7 @@ import type {
   EquipmentSafetyWarning,
 } from '@/data/equipmentOperations';
 
-const MANUAL_PDF = '/docs/equipment/bosch-glm-40/bosch-glm-40-manual-ro.pdf';
+const MANUAL_PDF = '/docs/equipment/bosch-glm-40/bosch-glm-40-manual-artgranit.pdf';
 const PAGE = (n: number) => `/docs/equipment/bosch-glm-40/pages/page-${String(n).padStart(2, '0')}.png`;
 const VIDEO = (id: string) => `/docs/equipment/bosch-glm-40/videos/${id}.mp4`;
 
@@ -53,9 +53,23 @@ function blocksChapter(
 }
 
 export const BOSCH_GLM_40_CHAPTERS: EquipmentChapter[] = [
-  blocksChapter(1, 'Manual de instruire', 'Descărcare manual complet Bosch PDF — offline', [], {
-    includePdf: true,
-  }),
+  blocksChapter(
+    1,
+    'Manual de instruire',
+    'PDF artGRANIT RO = aceleași capitole + video pe site',
+    [
+      {
+        id: 'b1-note',
+        type: 'markdown',
+        body: `## Ce descarci
+
+Manualul PDF artGRANIT (română) = **aceleași capitole** ca pe Mentenanță.
+
+**Cod produs UE:** 0 601 072 900. Diagramele din carte sunt din manualul tehnic GLM 40.`,
+      },
+    ],
+    { includePdf: true },
+  ),
   blocksChapter(
     2,
     'Prezentare produs',
@@ -68,7 +82,7 @@ export const BOSCH_GLM_40_CHAPTERS: EquipmentChapter[] = [
 
 Telemetru laser compact pentru **distanță, suprafață și volum** — display iluminat, memorie 10 măsurători.
 
-**Cod produs:** 0601072900 | **Set livrare:** geantă, 2× baterii AAA, manual`,
+**Cod produs:** 0 601 072 900 | **Set livrare:** geantă, 2× baterii AAA, manual`,
       },
       {
         id: 'b2-specs',

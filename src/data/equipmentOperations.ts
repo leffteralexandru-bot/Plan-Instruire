@@ -463,7 +463,7 @@ export const DEFAULT_EQUIPMENT_OPERATIONS: EquipmentOperationsData = {
       utilizare: section(
         '## Mod de lucru\n\nParcurgeți capitolele 2–7 pentru măsurare liniară, cârlig magnetic și verificare precizie.',
         [],
-        [{ type: 'pdf', label: 'BOSCH Ruletă 5 m — Declarație UE (PDF)', url: BOSCH_TAPE_5M_MANUAL_URL }],
+        [{ type: 'pdf', label: 'BOSCH Ruletă 5 m — Manual instruire (PDF)', url: BOSCH_TAPE_5M_MANUAL_URL }],
       ),
       cad: section(
         '## Integrare CAD\n\n- Transcrieți dimensiunile validate în schița CAD\n- Notați dacă măsurarea a fost interior sau exterior\n- Verificați diagonalele înainte de tăiere',

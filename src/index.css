@@ -178,9 +178,15 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* Manual Prodim CT — dimensiuni fixe per ecran (nu % din pagină, care ignora rem-urile) */
+  /* Manual ghid (măsurare / proiectare / utilaje) — pagini PNG */
   .manual-page-canvas {
     container-type: inline-size;
+  }
+
+  .manual-page-canvas img.manual-page-img {
+    /* Scalare blândă — fără optimize-contrast/filter (rup textul în dungi) */
+    image-rendering: auto;
+    -webkit-font-smoothing: antialiased;
   }
 
   .manual-play-hotspot--small {

@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import { OperationalGuideVideo } from '@/components/operational/OperationalGuideVideo';
+import { OperationalGuideVideoModal } from '@/components/operational/OperationalGuideVideo';
 import type {
   EquipmentManualPageActionHotspot,
   EquipmentManualPageHotspot,
@@ -190,7 +190,7 @@ export function EquipmentManualPage({
           <img
             src={imageUrl}
             alt={alt}
-            className="mx-auto block h-auto w-full max-w-none object-contain @min-[640px]:max-h-[min(92vh,1200px)] @lg:max-h-[min(94vh,1400px)]"
+            className="manual-page-img mx-auto block h-auto w-full max-w-none object-contain @min-[640px]:max-h-[min(96vh,1600px)] @lg:max-h-[min(98vh,1800px)]"
             loading="lazy"
             decoding="async"
           />
@@ -261,35 +261,16 @@ export function EquipmentManualPage({
       </figure>
 
       {activeVideo && hasEquipmentVideo(activeVideo) && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-3 @min-[640px]:p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Videoclip capitol"
-          onClick={() => setActiveVideo(null)}
-        >
-          <div
-            className="w-full max-w-4xl overflow-hidden rounded-2xl border border-corporate-border bg-white shadow-neural-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-corporate-border px-4 py-3">
-              <p className="text-sm font-semibold text-corporate-dark">{alt}</p>
-              <button
-                type="button"
-                className="rounded-lg px-2 py-1 text-sm text-corporate-muted hover:bg-corporate-surface"
-                onClick={() => setActiveVideo(null)}
-              >
-                Închide
-              </button>
-            </div>
-            <OperationalGuideVideo url={activeVideo} title={alt} />
-            {isYoutubeVideo(activeVideo) && (
-              <p className="border-t border-corporate-border px-4 py-2 text-[11px] text-corporate-muted">
-                Activați subtitrările pe YouTube pentru instrucțiuni în română sau altă limbă.
-              </p>
-            )}
-          </div>
-        </div>
+        <OperationalGuideVideoModal
+          url={activeVideo}
+          title={alt}
+          onClose={() => setActiveVideo(null)}
+          hint={
+            isYoutubeVideo(activeVideo)
+              ? 'Activați subtitrările pe YouTube pentru instrucțiuni în română sau altă limbă.'
+              : undefined
+          }
+        />
       )}
     </>
   );

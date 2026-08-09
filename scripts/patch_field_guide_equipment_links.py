@@ -21,7 +21,7 @@ EXISTING_PDF = ROOT / "public/docs/operational-guide/Ghid-teren-masurare.pdf"
 LINKED_DIR = ROOT / "public/docs/operational-guide/field-guide/linked-manuals"
 ZIP_OUT = ROOT / "public/docs/operational-guide/field-guide/Ghid-teren-masurare-cu-manuale.zip"
 PAGES_DIR = ROOT / "public/docs/operational-guide/field-guide/pages"
-RENDER_DPI = 300
+RENDER_DPI = 450
 DESKTOP_PDF = Path(r"c:\Users\AlioSol\Desktop\Ghid_Teren_Atentie_ArtGranit_163540.pdf")
 
 # URL public (PWA pe Vercel) — linkuri absolute ca să meargă pe telefon după descărcare

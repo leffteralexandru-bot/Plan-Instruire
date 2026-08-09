@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MASTER_PDF = ROOT / "public/docs/operational-guide/field-guide/Ghid-teren-masurare.pdf"
 LINKED_DIR = ROOT / "public/docs/operational-guide/field-guide/linked-manuals"
 BY_TYPE_DIR = ROOT / "public/docs/operational-guide/field-guide/by-type"
-RENDER_DPI = 300
+RENDER_DPI = 450
 
 APP_PUBLIC_BASE = "https://argranit-instruire-adaptare.vercel.app"
 APP_PANOU = f"{APP_PUBLIC_BASE}/ingineri/panou-angajat"

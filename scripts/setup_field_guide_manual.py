@@ -20,7 +20,7 @@ EXISTING_PDF = ROOT / "public/docs/operational-guide/Ghid-teren-masurare.pdf"
 PDF_OUT = ROOT / "public/docs/operational-guide/field-guide/Ghid-teren-masurare.pdf"
 PAGES_DIR = ROOT / "public/docs/operational-guide/field-guide/pages"
 MANIFEST = ROOT / "src/data/field-guide-manifest.json"
-RENDER_DPI = 300
+RENDER_DPI = 450
 
 
 def resolve_source() -> Path:

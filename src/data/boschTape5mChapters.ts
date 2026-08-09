@@ -4,7 +4,8 @@ import type {
   EquipmentSafetyWarning,
 } from '@/data/equipmentOperations';
 
-const MANUAL_PDF = '/docs/equipment/bosch-tape-5m/bosch-tape-5m-declaratie-ue.pdf';
+const MANUAL_PDF = '/docs/equipment/bosch-tape-5m/bosch-tape-5m-manual-artgranit.pdf';
+const OEM_DECLARATION_PDF = '/docs/equipment/bosch-tape-5m/bosch-tape-5m-declaratie-ue.pdf';
 const PAGE = (n: number) =>
   `/docs/equipment/bosch-tape-5m/pages/page-${String(n).padStart(2, '0')}.png`;
 const VIDEO = (id: string) => `/docs/equipment/bosch-tape-5m/videos/${id}.mp4`;
@@ -48,15 +49,29 @@ function blocksChapter(
     images: [],
     pdfUrl: options?.includePdf ? MANUAL_PDF : undefined,
     pdfFileName: options?.includePdf
-      ? 'BOSCH-Ruleta-5m-Declaratie-UE-artGRANIT.pdf'
+      ? 'BOSCH-Ruleta-5m-Manual-artGRANIT.pdf'
       : undefined,
   };
 }
 
 export const BOSCH_TAPE_5M_CHAPTERS: EquipmentChapter[] = [
-  blocksChapter(1, 'Manual de instruire', 'Document oficial Bosch + ghid video artGRANIT', [], {
-    includePdf: true,
-  }),
+  blocksChapter(
+    1,
+    'Manual de instruire',
+    'PDF artGRANIT = aceleași capitole + video pe site',
+    [
+      {
+        id: 'b1-note',
+        type: 'markdown',
+        body: `## Ce descarci
+
+Manualul PDF conține **aceleași capitole** ca pe Mentenanță. Butoanele ▶ Video din PDF deschid demonstrațiile pe panou.
+
+Declarația UE Bosch (\`${OEM_DECLARATION_PDF}\`) rămâne fișier separat — pentru audit, **nu** pentru instruire.`,
+      },
+    ],
+    { includePdf: true },
+  ),
   blocksChapter(
     2,
     'Prezentare produs',

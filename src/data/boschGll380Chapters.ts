@@ -4,7 +4,9 @@ import type {
   EquipmentSafetyWarning,
 } from '@/data/equipmentOperations';
 
-const MANUAL_PDF = '/docs/equipment/bosch-gll-3-80/bosch-gll-3-80-manual-ro.pdf';
+const MANUAL_PDF = '/docs/equipment/bosch-gll-3-80/bosch-gll-3-80-manual-artgranit.pdf';
+/** OEM multi-limbă — secțiunea Română e extrasă în *-manual-romana.pdf */
+const OEM_PDF = '/docs/equipment/bosch-gll-3-80/bosch-gll-3-80-manual-romana.pdf';
 const PAGE = (n: number) => `/docs/equipment/bosch-gll-3-80/pages/page-${String(n).padStart(2, '0')}.png`;
 const VIDEO = (id: string) => `/docs/equipment/bosch-gll-3-80/videos/${id}.mp4`;
 
@@ -53,9 +55,23 @@ function blocksChapter(
 }
 
 export const BOSCH_GLL_380_CHAPTERS: EquipmentChapter[] = [
-  blocksChapter(1, 'Manual de instruire', 'Descărcare manual complet Bosch PDF — offline', [], {
-    includePdf: true,
-  }),
+  blocksChapter(
+    1,
+    'Manual de instruire',
+    'PDF artGRANIT = aceleași capitole + video pe site (RO)',
+    [
+      {
+        id: 'b1-note',
+        type: 'markdown',
+        body: `## Ce descarci
+
+Manualul PDF artGRANIT conține **aceleași capitole** ca pe Mentenanță (română).
+
+Referință OEM (doar Română + diagrame): \`${OEM_PDF}\`.`,
+      },
+    ],
+    { includePdf: true },
+  ),
   blocksChapter(
     2,
     'Prezentare produs',
@@ -74,7 +90,7 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
         id: 'b2-specs',
         type: 'definitions',
         items: [
-          { term: 'Domeniu de lucru', definition: '30 m (fără receptor) / 80 m cu receptor LR 6 sau LR 7' },
+          { term: 'Domeniu de lucru', definition: '30 m (fără receptor) / 80–120 m cu receptor LR 6 sau LR 7' },
           { term: 'Precizie', definition: '± 0,2 mm/m (± 0,3 mm/m conform fișei Bosch)' },
           { term: 'Autonivelare', definition: '± 4° în 4 secunde' },
           { term: 'Protecție', definition: 'IP54 — praf și stropi de apă' },
@@ -85,9 +101,9 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
       {
         id: 'b2-video',
         type: 'figure',
-        imageUrl: PAGE(13),
+        imageUrl: PAGE(3),
         alt: 'Prezentare Bosch GLL 3-80 Professional',
-        caption: 'Vizibilitate la un nou nivel — 3 × 360°',
+        caption: 'Diagrame produs — 3 × 360°',
         videoUrl: BOSCH_GLL_380_VIDEOS.overview,
         videoLabel: 'Urmăriți videoclipul de prezentare',
       },
@@ -116,7 +132,7 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
     {
       id: 'b3-parts',
       type: 'figure',
-      imageUrl: PAGE(14),
+      imageUrl: PAGE(4),
       alt: 'Componente Bosch GLL 3-80',
       caption: 'Identificare butoane, pendul, filet stativ 1/4" și 5/8"',
     },
@@ -158,9 +174,9 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
       {
         id: 'b4-fig',
         type: 'figure',
-        imageUrl: PAGE(15),
+        imageUrl: PAGE(5),
         alt: 'Operare și autonivelare GLL 3-80',
-        caption: 'Indicatori LED și comutator mod linii',
+        caption: 'Accesorii trepied / receptor — montaj pe șantier',
         videoUrl: BOSCH_GLL_380_VIDEOS.operation,
         videoLabel: 'Demonstrație operare',
       },
@@ -192,17 +208,17 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
         'Activați modul receptor pe nivelă.',
         'Fixați receptorul pe riglă sau trepied la înălțimea dorită.',
         'Deplasați receptorul până la semnal (sunet + display).',
-        'Raza extinsă: până la **80 m** (cu receptor).',
+        'Raza extinsă: până la **80–120 m** (cu receptor).',
       ],
     },
     {
       id: 'b5-fig',
       type: 'figure',
-      imageUrl: PAGE(17),
-      alt: 'Verificare precizie și lucru cu receptor',
-      caption: 'Control precizie orizontală și verticală',
+      imageUrl: PAGE(134),
+      alt: 'Instrucțiuni Română — GLL 3-80',
+      caption: 'Secțiunea Română din manualul OEM Bosch',
       videoUrl: BOSCH_GLL_380_VIDEOS.crossline,
-        videoLabel: 'Linii încrucișate 360°',
+      videoLabel: 'Linii încrucișate 360°',
     },
   ]),
   blocksChapter(6, 'Verificare precizie', 'Control periodic înainte de măsurători critice', [
@@ -236,9 +252,9 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
     {
       id: 'b6-fig',
       type: 'figure',
-      imageUrl: PAGE(18),
-      alt: 'Procedură verificare precizie GLL 3-80',
-      caption: 'Schema verificare din manualul Bosch',
+      imageUrl: PAGE(137),
+      alt: 'Procedură verificare precizie GLL 3-80 (RO)',
+      caption: 'Schema verificare — text Română din OEM',
     },
   ]),
   blocksChapter(7, 'Întreținere și depozitare', 'Curățare, baterii și transport în valiză', [
@@ -267,9 +283,9 @@ Nivelă laser cu **3 linii la 360°** — nivelare orizontală și verticală si
     {
       id: 'b7-fig',
       type: 'figure',
-      imageUrl: PAGE(16),
+      imageUrl: PAGE(5),
       alt: 'Întreținere Bosch GLL 3-80',
-      caption: 'Zone de curățare și compartiment baterii',
+      caption: 'Accesorii și transport — valiză / trepied',
     },
   ]),
 ];

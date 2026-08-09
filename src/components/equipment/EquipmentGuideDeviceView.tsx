@@ -205,13 +205,13 @@ export function EquipmentGuideDeviceView({
 
   return (
     <div ref={containerRef} className={['@container equipment-guide', EQUIPMENT_PHONE_BOTTOM_PAD].join(' ')}>
-      {device.safetyWarning && (
+      {device.safetyWarning && !safetyReady ? (
         <EquipmentSafetyWarningCard
           warning={device.safetyWarning}
           placement={safetyPlacement}
           onAcknowledged={() => setSafetyReady(true)}
         />
-      )}
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
         <div className="min-w-0 flex items-start gap-3">
