@@ -12,6 +12,7 @@ import {
   IconShare,
   PDF_ICON_BTN,
 } from '@/components/operational/PdfActionIcons';
+import { PdfDocumentViewer } from '@/components/operational/PdfDocumentViewer';
 
 /**
  * Document din ghid (ex. Anexa 1): vizualizare PDF + acțiuni icon-only.
@@ -211,31 +212,18 @@ export function FieldGuideDocOverlay({
             : 'bg-corporate-surface/30 p-2 sm:p-3'
         }
       >
-        <iframe
+        <PdfDocumentViewer
+          pdfUrl={pdfUrl}
           title={title}
-          src={pdfUrl}
-          tabIndex={-1}
-          onLoad={() => {
-            if (!isOverlay) scrollPanelHeaderIntoView();
-          }}
-          className={
+          iframeClassName={
             isOverlay
               ? 'h-full min-h-[70vh] w-full rounded-lg border border-corporate-border bg-white shadow-sm'
               : 'h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm'
           }
+          onLoad={() => {
+            if (!isOverlay) scrollPanelHeaderIntoView();
+          }}
         />
-        <p className="mt-2 text-[11px] text-corporate-muted px-0.5">
-          Dacă vezi saitul în loc de PDF,{' '}
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-corporate-gold hover:underline"
-          >
-            deschide documentul într-un tab nou
-          </a>{' '}
-          (apoi reîncarcă pagina cu Ctrl+F5).
-        </p>
       </div>
     </div>
   );

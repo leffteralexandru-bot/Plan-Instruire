@@ -6,6 +6,7 @@ import { EquipmentSafetyWarningCard } from '@/components/equipment/EquipmentSafe
 import type { EquipmentChapter, EquipmentDevice } from '@/data/equipmentOperations';
 import { useEquipmentLayoutMode } from '@/hooks/useEquipmentLayoutMode';
 import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
+import { isPdfOnlyChapter, openPdfInNewTab, prefersExternalPdfOpen } from '@/lib/pdfViewer';
 import {
   EQUIPMENT_CHAPTER_GRID,
   EQUIPMENT_PHONE_BOTTOM_PAD,
@@ -121,11 +122,20 @@ export function EquipmentGuideDeviceView({
     } else {
       setPhoneExpandedId(chapter.id);
       setActiveChapterId(chapter.id);
+      // Pe telefon: PDF-only → deschide imediat viewer-ul nativ (din gestul de tap)
+      if (isPdfOnlyChapter(chapter) && chapter.pdfUrl && prefersExternalPdfOpen()) {
+        openPdfInNewTab(chapter.pdfUrl);
+      }
     }
   };
 
   const handleSidebarSelect = (chapterId: string) => {
     setActiveChapterId(chapterId);
+    const chapter = chapters.find((c) => c.id === chapterId);
+    // Tabletă / touch unde iframe-ul PDF nu merge
+    if (chapter && isPdfOnlyChapter(chapter) && chapter.pdfUrl && prefersExternalPdfOpen()) {
+      openPdfInNewTab(chapter.pdfUrl);
+    }
   };
 
   const handleDownloadActivePdf = async () => {

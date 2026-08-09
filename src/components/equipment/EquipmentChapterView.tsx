@@ -13,6 +13,7 @@ import {
 import type { EquipmentChapter, EquipmentDevice, EquipmentManualPageActionHotspot } from '@/data/equipmentOperations';
 import { downloadEquipmentPdf, shareEquipmentPdf } from '@/lib/downloadEquipmentPdf';
 import { SimpleMarkdown } from '@/lib/simpleMarkdown';
+import { PdfDocumentViewer } from '@/components/operational/PdfDocumentViewer';
 
 export type GuideActionHotspotContext = {
   chapterId: string;
@@ -162,25 +163,11 @@ export function EquipmentChapterView({
       </div>
       {previewOpen && pdfUrl ? (
         <div className="overflow-hidden rounded-xl border border-corporate-gold/35 bg-corporate-surface/30 p-2 sm:p-3">
-          <iframe
+          <PdfDocumentViewer
+            pdfUrl={pdfUrl}
             title={chapter.title}
-            src={pdfUrl}
-            tabIndex={-1}
             onLoad={scrollToolbarIntoView}
-            className="h-[min(70vh,860px)] w-full rounded-lg border border-corporate-border bg-white shadow-sm"
           />
-          <p className="mt-2 text-[11px] text-corporate-muted">
-            Dacă PDF-ul nu apare aici,{' '}
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-corporate-gold hover:underline"
-            >
-              deschide-l într-un tab nou
-            </a>
-            .
-          </p>
         </div>
       ) : null}
       {shareHint && <p className="text-xs text-corporate-muted">{shareHint}</p>}

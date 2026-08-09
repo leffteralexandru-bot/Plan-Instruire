@@ -27,6 +27,7 @@ import {
   guidePageDomId,
   saveGuideReturnSnapshot,
 } from '@/lib/guideReturnState';
+import { openPdfInNewTab, prefersExternalPdfOpen } from '@/lib/pdfViewer';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -42,6 +43,14 @@ type OpenDocState = {
   title: string;
   eyebrow: string;
 };
+
+/** Pe telefon: deschide PDF în tab nou din gestul de tap (iframe-ul mobil e gol). */
+function openDocPanel(setOpenDoc: (doc: OpenDocState) => void, doc: OpenDocState) {
+  if (prefersExternalPdfOpen()) {
+    openPdfInNewTab(doc.url);
+  }
+  setOpenDoc(doc);
+}
 
 type GuidePlace = {
   chapterId?: string | null;
@@ -207,7 +216,7 @@ function MeasurerGuideBody({
           chapterId: ctx?.chapterId,
           pageId: ctx?.pageId,
         });
-        setOpenDoc({
+        openDocPanel(setOpenDoc, {
           url: resolved.url,
           fileName: resolved.fileName,
           title: resolved.title,
@@ -232,7 +241,7 @@ function MeasurerGuideBody({
       return;
     }
     if (spot.docUrl && spot.docFileName) {
-      setOpenDoc({
+      openDocPanel(setOpenDoc, {
         url: spot.docUrl,
         fileName: spot.docFileName,
         title: spot.label,
@@ -318,7 +327,7 @@ function DesignGuideBody({
           chapterId: ctx?.chapterId,
           pageId: ctx?.pageId,
         });
-        setOpenDoc({
+        openDocPanel(setOpenDoc, {
           url: resolved.url,
           fileName: resolved.fileName,
           title: resolved.title,
@@ -328,7 +337,7 @@ function DesignGuideBody({
       }
     }
     if (spot.docUrl && spot.docFileName) {
-      setOpenDoc({
+      openDocPanel(setOpenDoc, {
         url: spot.docUrl,
         fileName: spot.docFileName,
         title: spot.label,
