@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { EquipmentGuideDeviceView } from '@/components/equipment/EquipmentGuideDeviceView';
 import {
@@ -78,6 +78,13 @@ export function EquipmentManualOverlay({
   const [shareHint, setShareHint] = useState<string | null>(null);
   const pdf = useMemo(() => devicePdf(device), [device]);
   const isOverlay = placement === 'overlay';
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOverlay) return;
+    // Aduce cartea sub meniul sticky de sus (fără a se lipi peste el)
+    panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [device.id, isOverlay]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -140,17 +147,23 @@ export function EquipmentManualOverlay({
 
   return (
     <div
+      ref={panelRef}
       className={
         isOverlay
           ? 'fixed inset-0 z-[90] flex flex-col bg-corporate-surface/95 backdrop-blur-sm'
-          : 'flex flex-col rounded-xl border border-corporate-border bg-white shadow-sm overflow-hidden'
+          : 'flex scroll-mt-28 flex-col rounded-xl border border-corporate-border bg-white shadow-sm overflow-hidden @md:scroll-mt-32'
       }
       role={isOverlay ? 'dialog' : 'region'}
       aria-modal={isOverlay ? true : undefined}
       aria-label={`Manual ${device.name}`}
     >
-      <div className="relative z-[100] flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4 sticky top-0">
-        <div className="min-w-0">
+      <div
+        className={
+          isOverlay
+            ? 'relative z-[100] flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-white px-3 py-2.5 sm:px-4'
+            : 'flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border bg-corporate-surface/40 px-3 py-2.5 sm:px-4'
+        }
+      >        <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-corporate-muted">
             Mentenanță & operare · carte utilaj
           </p>
