@@ -96,11 +96,16 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
         next.delete('device');
         next.delete('from');
       } else if (id === 'repo') {
-        next.delete('ghid');
-        next.delete('tip');
+        // Deschidere manuală hub — fără origin ghid (deep-link păstrează from/ghid/tip)
+        if (searchParams.get('from') !== 'guide') {
+          next.delete('ghid');
+          next.delete('tip');
+          next.delete('ch');
+          next.delete('page');
+          next.delete('from');
+          next.delete('doc');
+        }
         next.delete('device');
-        next.delete('from');
-        next.delete('doc');
         scrollReferenceModulesIntoView();
       } else {
         // Mentenanță: la deschidere manuală curățăm origin/doc; deep-link le pune singur

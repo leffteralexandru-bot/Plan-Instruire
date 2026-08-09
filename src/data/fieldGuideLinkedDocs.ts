@@ -165,8 +165,14 @@ export function buildFieldGuideDocSearchParams(input: {
 }): URLSearchParams {
   const params = new URLSearchParams();
   if (input.doc === 'doc-tehnica') {
+    // Repository tehnic — cu origin ghid pentru „Înapoi la ghid”
     params.set('ref', 'repo');
+    params.set('from', 'guide');
+    params.set('ghid', input.ghid ?? 'teren');
+    params.set('tip', input.tip);
     params.set('doc', 'doc-tehnica');
+    if (input.chapterId) params.set('ch', input.chapterId);
+    if (input.pageId) params.set('page', input.pageId);
     return params;
   }
   const device = FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE[input.doc];

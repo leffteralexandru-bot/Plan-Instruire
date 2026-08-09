@@ -247,7 +247,7 @@ export const FIELD_GUIDE_CTG_HOTSPOT: EquipmentManualPageActionHotspot = {
   hitOnly: true,
 };
 
-/** Etapa 1.7 — Documentație tehnică (Repository pe panou). */
+/** Etapa 1.7 — Documentație tehnică (Repository pe panou). Fără href fix — deep-link păstrează tip/capitol pentru Înapoi. */
 export const FIELD_GUIDE_DOC_TEHNICA_HOTSPOT: EquipmentManualPageActionHotspot = {
   x: 7.1,
   y: 52.74,
@@ -255,7 +255,6 @@ export const FIELD_GUIDE_DOC_TEHNICA_HOTSPOT: EquipmentManualPageActionHotspot =
   h: 3.4,
   label: 'Documentație tehnică',
   linkedDocId: 'doc-tehnica',
-  href: '/ingineri/panou-angajat?ref=repo&doc=doc-tehnica',
   hitOnly: true,
 };
 

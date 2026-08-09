@@ -1,13 +1,16 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { ProfessionalPanel } from '@/components/ui/ProfessionalPanel';
 import {
   TECH_REPO_SECTIONS,
   type TechnicalRepositorySection,
 } from '@/data/technicalRepository';
+import { OPERATIONAL_GUIDE_LABELS, type OperationalGuideTaskId } from '@/data/operationalGuide';
 import { useTechnicalRepository } from '@/hooks/useTechnicalRepository';
 import { TechnicalRepositoryProductsSection } from '@/components/technicalRepository/TechnicalRepositoryProductsSection';
 import { TechnicalRepositoryManualsSection } from '@/components/technicalRepository/TechnicalRepositoryManualsSection';
+import { scrollReferenceModulesIntoView } from '@/lib/scrollReferenceModules';
 
 type TechnicalRepositoryDisplay = 'inline' | 'header' | 'body';
 
@@ -54,6 +57,57 @@ function HubCard({
   );
 }
 
+function GuideReturnBar() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fromGuide = searchParams.get('from') === 'guide';
+  const ghidParam = searchParams.get('ghid');
+  const tipParam = searchParams.get('tip');
+  const tipLabel =
+    tipParam && tipParam in OPERATIONAL_GUIDE_LABELS
+      ? OPERATIONAL_GUIDE_LABELS[tipParam as OperationalGuideTaskId]
+      : null;
+  const guideKind = ghidParam === 'proiectare' ? 'proiectare' : 'măsurare';
+
+  if (!fromGuide) return null;
+
+  const guideBackLabel = tipLabel
+    ? `Înapoi la ghid ${guideKind} · ${tipLabel}`
+    : `Înapoi la ghid ${guideKind}`;
+
+  const returnToGuide = () => {
+    const next = new URLSearchParams(searchParams);
+    next.set('ref', 'guide');
+    next.set('ghid', ghidParam === 'proiectare' ? 'proiectare' : 'teren');
+    next.set('tip', tipParam || 'blat');
+    const ch = searchParams.get('ch');
+    const page = searchParams.get('page');
+    if (ch) next.set('ch', ch);
+    else next.delete('ch');
+    if (page) next.set('page', page);
+    else next.delete('page');
+    next.delete('from');
+    next.delete('doc');
+    next.delete('device');
+    setSearchParams(next, { replace: true });
+    scrollReferenceModulesIntoView();
+  };
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-corporate-gold/30 bg-corporate-gold-light/20 px-3 py-2 mb-4">
+      <p className="text-[11px] text-corporate-dark leading-snug">
+        Deschis din{' '}
+        <span className="font-semibold">
+          Ghid {guideKind}
+          {tipLabel ? ` · ${tipLabel}` : ''}
+        </span>
+      </p>
+      <Button type="button" variant="secondary" size="sm" onClick={returnToGuide}>
+        {guideBackLabel}
+      </Button>
+    </div>
+  );
+}
+
 function TechnicalRepositoryContent({
   section,
   onSectionChange,
@@ -75,6 +129,7 @@ function TechnicalRepositoryContent({
   if (section) {
     return (
       <div className="space-y-4">
+        <GuideReturnBar />
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-corporate-border/80 pb-3">
           <div>
             <p className="text-[10px] uppercase tracking-wide text-corporate-muted">Secțiune</p>
@@ -112,16 +167,19 @@ function TechnicalRepositoryContent({
   };
 
   return (
-    <div className="grid gap-2 sm:grid-cols-1">
-      {TECH_REPO_SECTIONS.map((s) => (
-        <HubCard
-          key={s.id}
-          label={s.label}
-          description={s.description}
-          count={sectionCounts[s.id]}
-          onClick={() => onSectionChange(s.id)}
-        />
-      ))}
+    <div className="space-y-4">
+      <GuideReturnBar />
+      <div className="grid gap-2 sm:grid-cols-1">
+        {TECH_REPO_SECTIONS.map((s) => (
+          <HubCard
+            key={s.id}
+            label={s.label}
+            description={s.description}
+            count={sectionCounts[s.id]}
+            onClick={() => onSectionChange(s.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

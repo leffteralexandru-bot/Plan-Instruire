@@ -63,6 +63,19 @@ test.describe('guide UX acceptance', () => {
     expect(pdfRes.headers()['content-type'] || '').toMatch(/pdf/i);
   });
 
+  test('Documentație tehnică → Repository cu Înapoi la ghid', async ({ page }) => {
+    await page.goto(
+      '/ingineri/panou-angajat?ref=repo&from=guide&ghid=teren&tip=blat&doc=doc-tehnica&ch=field-blat-ch-4',
+    );
+    await expect(page.getByText(/Deschis din/i).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: /Înapoi la ghid măsurare · Blat/i })).toBeVisible();
+    await page.getByRole('button', { name: /Înapoi la ghid măsurare · Blat/i }).click();
+    await expect(page).toHaveURL(/ref=guide/);
+    await expect(page).toHaveURL(/ghid=teren/);
+    await expect(page).toHaveURL(/tip=blat/);
+    await expect(page).not.toHaveURL(/from=guide/);
+  });
+
   test('utilaje GLL: avertisment doar la deschidere, nu după Închide', async ({ page }) => {
     await page.goto('/ingineri/panou-angajat?ref=equipment&device=eq-bosch-gll-3-80');
     await expect(page.getByText(/Avertisment Siguranță|Laser Clasa 2/i).first()).toBeVisible({

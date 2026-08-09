@@ -108,6 +108,7 @@ function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
     pageParam,
     syncDocToUrl,
     openHref,
+    navigate,
     searchParams,
     setSearchParams,
   };
@@ -129,7 +130,7 @@ function MeasurerGuideBody({
 }) {
   const device = useMemo(() => getFieldGuideDevice(task.id), [task.id]);
   const defaultChapterId = useMemo(() => getFieldGuideStartChapterId(task.id), [task.id]);
-  const { syncDocToUrl, openHref, chapterParam, pageParam } = useGuideDeepLink(task.id);
+  const { syncDocToUrl, openHref, chapterParam, pageParam, navigate } = useGuideDeepLink(task.id);
   const [openDoc, setOpenDoc] = useState<OpenDocState | null>(null);
 
   // Fără ch/page în URL → mereu Cuprins (nu ultimul capitol din sesiunea anterioară)
@@ -195,10 +196,41 @@ function MeasurerGuideBody({
     syncDocToUrl(docId, 'measurer', place);
   };
 
+  const openRepoFromGuide = (place?: GuidePlace) => {
+    const chapterId = place?.chapterId ?? chapterParam;
+    const pageId = place?.pageId ?? pageParam;
+    saveGuideReturnSnapshot({
+      ghid: 'teren',
+      tip: task.id,
+      chapterId,
+      pageId,
+      scrollY: window.scrollY,
+    });
+    const built = buildFieldGuideDocSearchParams({
+      tip: task.id,
+      doc: 'doc-tehnica',
+      ghid: 'teren',
+      chapterId,
+      pageId,
+    });
+    const next = new URLSearchParams(built);
+    const viewAs = new URLSearchParams(window.location.search).get('viewAs');
+    if (viewAs) next.set('viewAs', viewAs);
+    navigate(`/ingineri/panou-angajat?${next.toString()}`);
+    scrollReferenceModulesIntoView();
+  };
+
   const handleActionHotspot = (
     spot: EquipmentManualPageActionHotspot,
     ctx?: { chapterId: string; pageId?: string },
   ) => {
+    if (spot.linkedDocId === 'doc-tehnica' || spot.href?.includes('doc-tehnica') || spot.href?.includes('ref=repo')) {
+      openRepoFromGuide({
+        chapterId: ctx?.chapterId,
+        pageId: ctx?.pageId,
+      });
+      return;
+    }
     if (spot.href) {
       openHref(spot.href);
       return;
@@ -206,7 +238,10 @@ function MeasurerGuideBody({
     if (spot.linkedDocId) {
       const resolved = resolveFieldGuideLinkedDoc(spot.linkedDocId, task.id);
       if (resolved?.openRepo) {
-        openHref('/ingineri/panou-angajat?ref=repo&doc=doc-tehnica');
+        openRepoFromGuide({
+          chapterId: ctx?.chapterId,
+          pageId: ctx?.pageId,
+        });
         return;
       }
       if (resolved?.equipmentDeviceId) {
