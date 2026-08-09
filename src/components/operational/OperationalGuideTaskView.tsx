@@ -28,6 +28,7 @@ import {
   saveGuideReturnSnapshot,
 } from '@/lib/guideReturnState';
 import { openPdfInNewTab, prefersExternalPdfOpen } from '@/lib/pdfViewer';
+import { scrollReferenceModulesIntoView } from '@/lib/scrollReferenceModules';
 
 interface OperationalGuideTaskViewProps {
   task: OperationalGuideTask;
@@ -94,6 +95,10 @@ function useGuideDeepLink(taskId: OperationalGuideTask['id']) {
 
   const openHref = (href: string) => {
     navigate(href);
+    // Documentație tehnică → Repository (sau Mentenanță): ridică viewport-ul
+    if (/[?&]ref=(repo|equipment)/.test(href) || /[?&]doc=doc-tehnica/.test(href)) {
+      scrollReferenceModulesIntoView();
+    }
   };
 
   return {

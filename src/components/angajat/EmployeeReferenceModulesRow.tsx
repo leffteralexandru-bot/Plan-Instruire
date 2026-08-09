@@ -9,6 +9,7 @@ import {
   FIELD_GUIDE_DOC_TO_EQUIPMENT_DEVICE,
   type FieldGuideLinkedDocId,
 } from '@/data/fieldGuideLinkedDocs';
+import { scrollReferenceModulesIntoView } from '@/lib/scrollReferenceModules';
 
 interface EmployeeReferenceModulesRowProps {
   userId: string;
@@ -80,6 +81,10 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
   useEffect(() => {
     const fromUrl = moduleFromSearch(searchParams);
     if (fromUrl) setActive(fromUrl);
+    // Documentație tehnică / Mentenanță din ghid: ridică pagina la module (nu rămâi jos)
+    if (fromUrl === 'repo' || fromUrl === 'equipment') {
+      scrollReferenceModulesIntoView();
+    }
   }, [searchParams]);
 
   const toggle = (id: ActiveModule) => (open: boolean) => {
@@ -96,6 +101,7 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
         next.delete('device');
         next.delete('from');
         next.delete('doc');
+        scrollReferenceModulesIntoView();
       } else {
         // Mentenanță: la deschidere manuală curățăm origin/doc; deep-link le pune singur
         next.delete('doc');
@@ -104,6 +110,7 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
           next.delete('ghid');
           next.delete('tip');
         }
+        scrollReferenceModulesIntoView();
       }
     } else {
       next.delete('ref');
@@ -165,12 +172,14 @@ export function EmployeeReferenceModulesRow({ userId, readOnly = false }: Employ
   const activeModule = active !== null ? modules.find((m) => m.id === active) : null;
 
   return (
-    <ExpandableModuleRow
-      columnCount={3}
-      activeColumnIndex={activeIndex !== null && activeIndex >= 0 ? activeIndex : null}
-      headers={modules.map((m) => m.header)}
-      expandedContent={activeModule?.body ?? null}
-      expandLabel={active ? EXPAND_LABELS[active] : undefined}
-    />
+    <div id="employee-reference-modules" data-reference-modules>
+      <ExpandableModuleRow
+        columnCount={3}
+        activeColumnIndex={activeIndex !== null && activeIndex >= 0 ? activeIndex : null}
+        headers={modules.map((m) => m.header)}
+        expandedContent={activeModule?.body ?? null}
+        expandLabel={active ? EXPAND_LABELS[active] : undefined}
+      />
+    </div>
   );
 }
