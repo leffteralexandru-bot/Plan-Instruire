@@ -25,6 +25,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Dacă există mașină de vase, este solicitabil să fie montată înainte de măsurare.',
       'Prezența obligatorie a accesoriilor pe loc: baterie, chiuvetă, aragaz/plită, dozator, filtru, buton mărunțitor etc. — fără ele nu poți verifica golurile reale.',
       'Acces liber pentru măsurare: fără obstacole care să blocheze Prolinerul, ruletă sau verificarea fronturilor.',
+      'Poze cu mobilierul montat — înainte de măsurare (documentare stare pe loc).',
     ],
     fieldObligations: [
       'Mobila este completă sau mai așteptați ceva? — Verifici fizic: deschizi fronturile, mașina de vase, cuptorul, frigiderul și confirmi cu clientul. Evită: măsurare pe mobilă incompletă.',
@@ -66,7 +67,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Semnătură + reverificare pe loc: Anexa 1 semnată; set complet (poze, video, Proliner, fișe). Predarea formală după proiectare — pe teren nu pleci cu date incomplete.',
     ],
     finalChecklist: [
-      'Condiții client — bifațe / semnate (mobilă, mașină de vase, accesorii, acces).',
+      'Condiții client — bifațe / semnate (mobilă, mașină de vase, accesorii, acces, poze mobilier).',
       'Mobilă + mașină de vase + fronturi verificate fizic; nimic „după măsurare”.',
       'Chiuvetă / plită / golă / ieșire peste front min. 2 mm / dilatare / FAȚĂ VĂZUTĂ — clarificate pe Anexa 1.',
       'Proliner complet pe blat (fără șorț în acest tip — șorțul = placare).',
@@ -84,6 +85,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Dacă scările sunt cu LED — să existe mostră de profilul în care va fi instalat LED-ul.',
       'Pe suprafața scărilor care urmează a fi măsurate să nu fie montată schelă.',
       'Să fie stabilit tipul treptelor (ex. secțiune).',
+      'Poze cu scările / zona de măsurat — înainte de măsurare.',
     ],
     fieldObligations: [
       'Confirmi tipul treptelor / secțiunea pe Anexa 1 înainte de Proliner.',
@@ -124,6 +126,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Să fie montate toate prizele și conexiunile (apă, canalizare).',
       'Suportul TV montat în perete (dacă e cazul).',
       'Prezența grilei de ventilare (dacă e cazul).',
+      'Poze cu peretele / zona de placare — înainte de măsurare.',
     ],
     fieldObligations: [
       'Verifici planeitatea / verticalitatea cu laser — nu doar pe ochi.',
@@ -164,6 +167,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Termoizolarea trebuie să fie executată.',
       'Grila de ventilare prezentă.',
       'Trebuie să avem schiță conceptuală / proiectul căminului.',
+      'Poze cu căminul / zona de măsurat — înainte de măsurare.',
     ],
     fieldObligations: [
       'Ai la tine schița / proiectul căminului și compari măsurătoarea cu proiectul pe loc.',
@@ -197,6 +201,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Prezență schele în cazul măsurărilor la înălțime.',
       'În caz că este placare existentă — demontată până la măsurare pentru acces la bază.',
       'În caz de ploaie sau ninsoare, măsurarea se reprogramează.',
+      'Poze cu scările exterioare / zona de măsurat — înainte de măsurare.',
     ],
     fieldObligations: [
       'Nu măsori fără schele sigure la înălțime.',
@@ -233,6 +238,7 @@ export const MEASURER_TYPE_CONTENT = {
       'Recomandat: baza pregătită 30 mm sub tocul ferestrei.',
       'Să fie executat stratul final de tencuială sau termoizolare.',
       'La exterior: elemente decorative de subpervaz și/sau împrejurul acestuia prezente.',
+      'Poze cu pervazurile / zona de măsurat — înainte de măsurare.',
     ],
     fieldObligations: [
       'Măsori fiecare gol individual — nu din serie.',
@@ -270,6 +276,7 @@ export const MEASURER_TYPE_CONTENT = {
       'În caz de ploaie sau ninsoare, măsurarea se reprogramează.',
       'În caz că este placare existentă — demontată până la măsurare pentru acces la bază.',
       'Aceste tipuri de lucrări necesită prindere mecanică.',
+      'Poze cu zona de placare exterioară — înainte de măsurare.',
     ],
     fieldObligations: [
       'Nu măsori fără schele sigure; la ploaie/ninsoare reprogramezi.',

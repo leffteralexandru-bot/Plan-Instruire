@@ -11,8 +11,9 @@ import fitz
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PDF = Path(r"c:\Users\AlioSol\Desktop\Checklist_Client_ArtGranit.pdf")
-# fallback vechi (dacă e redenumit pe Desktop)
+# fallback — fișierul nou Blat (nume cu „..”) sau denumiri vechi
 FALLBACK_SOURCES = [
+    Path(r"c:\Users\AlioSol\Desktop\Checklist_Client_ArtGranit..pdf"),
     Path(r"c:\Users\AlioSol\Desktop\Chek list masuratori.pdf"),
 ]
 OUT_DIR = ROOT / "public/docs/operational-guide/checklists"

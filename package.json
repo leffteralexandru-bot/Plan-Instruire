@@ -49,6 +49,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "manual-page-sm": "python scripts/generate_manual_page_sm.py",
+    "checklist-client-update": "python scripts/update_checklist_client_from_desktop.py",
     "field-guide-equipment-photos": "python scripts/extract_field_guide_equipment_photos.py"
   },
   "dependencies": {
