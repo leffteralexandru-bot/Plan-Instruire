@@ -46,3 +46,5 @@ vitest-*.txt
 public/docs/operational-guide/field-guide/**/*.zip
 public/docs/operational-guide/field-guide/*.zip
 public/docs/operational-guide/field-guide/fise-tehnice-exemple/_source/
+.vercel
+.env*

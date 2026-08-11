@@ -3,7 +3,7 @@
 Păstrează formatul PDF vechi (7 tipuri) și adaugă doar textul lipsă:
 - punct Poze (unde lipsește)
 - nota despre întârzieri
-- fără redesign HTML
+- tipografie ca originalul verificat: Arial 9.5 (corp), Confirmare 11/8.5
 """
 
 from __future__ import annotations
@@ -16,7 +16,6 @@ import fitz
 
 ROOT = Path(__file__).resolve().parents[1]
 DESKTOP = Path(r"c:\Users\AlioSol\Desktop")
-# Formatul original (7 pagini)
 SOURCE_FULL = DESKTOP / "Checklist_Client_ArtGranit.pdf"
 
 OUT_DIR = ROOT / "public/docs/operational-guide/checklists"
@@ -25,13 +24,22 @@ FULL_PDF = ROOT / "public/docs/operational-guide/Checklist_Client_ArtGranit.pdf"
 LEGACY_MIRROR = ROOT / "public/docs/operational-guide/checklist-masuratori-full.pdf"
 LINKED_DIR = ROOT / "public/docs/operational-guide/field-guide/linked-manuals"
 RENDER_DPI = 300
-FONT_PATH = ROOT / "node_modules/dejavu-fonts-ttf/ttf/DejaVuSans.ttf"
-FONT_NAME = "dejavu"
+
+# Tipografie ca generatorul verificat (generate_client_checklist_pdf.py → font AG = Arial)
+FONT_REG = Path(r"C:\Windows\Fonts\arial.ttf")
+FONT_BOLD = Path(r"C:\Windows\Fonts\arialbd.ttf")
+FONT_NAME = "ag"
+FONT_BOLD_NAME = "agb"
 
 NOTE = (
     "Vă rog să luați în calcul toate aceste detalii pentru a putea efectua o "
     "măsurătoare corectă și pentru un proces de producție și, mai apoi, de montare optimă. "
     "Orice element lipsă sau informație necorespunzătoare vor duce la întârzieri ale proiectului."
+)
+
+CONFIRM = (
+    "Am luat cunoștință cu conținutul checklist-ului și confirm asigurarea "
+    "punctelor enumerate mai sus la efectuarea măsurărilor."
 )
 
 # page index 0-based → (slug, app_name, art_name, photo_line)
@@ -55,10 +63,19 @@ PAGES: list[tuple[str, str, str, str]] = [
     ),
 ]
 
-BODY_COLOR = (0.12, 0.12, 0.12)
-LEFT = 50.0
+# Culori ca originalul (0–1 pentru PyMuPDF)
+BODY_COLOR = (28 / 255, 25 / 255, 21 / 255)
+BRAND_BLUE = (15 / 255, 55 / 255, 95 / 255)
+SOFT = (92 / 255, 83 / 255, 72 / 255)
+
+LEFT = 50.0  # ~14mm @ 72dpi ≈ 39.7; păstrăm alinierea PDF sursă
 RIGHT_MARGIN = 50.0
-FONTSIZE = 9.5
+# Mărimi verificate din generatorul Arial
+SIZE_ITEM = 9.5
+SIZE_CONFIRM_TITLE = 11.0
+SIZE_CONFIRM_BODY = 8.5
+SIZE_CONFIRM_FIELDS = 9.0
+SIZE_CONFIRM_LOC = 8.0
 LINE_H = 12.5
 
 
@@ -67,7 +84,7 @@ def find_markers(page: fitz.Page) -> tuple[float, float, float, float]:
     confirm_top = None
     footer_top = None
     last_before = 0.0
-    size = FONTSIZE
+    size = SIZE_ITEM
     for block in page.get_text("dict")["blocks"]:
         if block.get("type") != 0:
             continue
@@ -94,69 +111,122 @@ def find_markers(page: fitz.Page) -> tuple[float, float, float, float]:
     return last_before, confirm_top, footer_top, size
 
 
-def extract_confirm_block(page: fitz.Page, confirm_top: float, footer_top: float) -> str:
-    lines: list[str] = []
-    for block in page.get_text("dict")["blocks"]:
-        if block.get("type") != 0:
-            continue
-        for line in block.get("lines", []):
-            y0 = line["bbox"][1]
-            if y0 < confirm_top - 1 or y0 >= footer_top - 1:
-                continue
-            text = "".join(s["text"] for s in line["spans"]).rstrip()
-            if text:
-                lines.append(text)
-    return "\n".join(lines)
+def put_text(
+    page: fitz.Page,
+    rect: fitz.Rect,
+    text: str,
+    *,
+    bold: bool = False,
+    fontsize: float,
+    color: tuple[float, float, float],
+) -> float:
+    """Inserează text Arial; returnează rc din insert_textbox."""
+    fontfile = str(FONT_BOLD if bold else FONT_REG)
+    fontname = FONT_BOLD_NAME if bold else FONT_NAME
+    return page.insert_textbox(
+        rect,
+        text,
+        fontname=fontname,
+        fontfile=fontfile,
+        fontsize=fontsize,
+        color=color,
+        align=fitz.TEXT_ALIGN_LEFT,
+    )
 
 
 def patch_page(page: fitz.Page, photo_line: str) -> None:
-    if not FONT_PATH.exists():
-        raise FileNotFoundError(f"Lipsește fontul RO: {FONT_PATH}")
-    last_before, confirm_top, footer_top, size = find_markers(page)
-    confirm_text = extract_confirm_block(page, confirm_top, footer_top)
+    if not FONT_REG.exists():
+        raise FileNotFoundError(f"Lipsește Arial: {FONT_REG}")
+    if not FONT_BOLD.exists():
+        raise FileNotFoundError(f"Lipsește Arial Bold: {FONT_BOLD}")
 
-    # Șterge zona dintre ultimul punct și footer (reinserăm conținutul completat)
+    last_before, confirm_top, footer_top, detected_size = find_markers(page)
+    # Folosim mărimea detectată pe listă dacă e aproape de 9.5, altfel 9.5 verificat
+    item_size = detected_size if 8.8 <= detected_size <= 10.2 else SIZE_ITEM
+
     wipe = fitz.Rect(36, last_before + 2, page.rect.width - 36, footer_top - 4)
     page.add_redact_annot(wipe, fill=(1, 1, 1))
     page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE)
 
     width = page.rect.width - LEFT - RIGHT_MARGIN
     y = last_before + 8
-    fontsize = size
-    page.insert_font(fontname=FONT_NAME, fontfile=str(FONT_PATH))
 
-    # punct Poze
-    rc = page.insert_textbox(
+    # punct Poze — același tip + mărime ca lista (Arial 9.5)
+    rc = put_text(
+        page,
         fitz.Rect(LEFT, y, LEFT + width, y + LINE_H * 2.2),
         photo_line,
-        fontname=FONT_NAME,
-        fontsize=fontsize,
+        fontsize=item_size,
         color=BODY_COLOR,
-        align=fitz.TEXT_ALIGN_LEFT,
     )
     y += LINE_H * (2.0 if rc < 0 else 1.35)
 
-    # notă
-    note_box = fitz.Rect(LEFT, y, LEFT + width, y + LINE_H * 5.5)
-    page.insert_textbox(
-        note_box,
+    # notă — același tip + mărime ca lista (nu mai mic)
+    put_text(
+        page,
+        fitz.Rect(LEFT, y, LEFT + width, y + LINE_H * 5.5),
         NOTE,
-        fontname=FONT_NAME,
-        fontsize=max(fontsize - 0.3, 8.8),
+        fontsize=item_size,
         color=BODY_COLOR,
-        align=fitz.TEXT_ALIGN_LEFT,
     )
-    y += LINE_H * 4.6
+    y += LINE_H * 4.8
 
-    # Confirmare (textul original, pe formatul vechi)
-    conf_box = fitz.Rect(LEFT, y, LEFT + width, footer_top - 6)
-    page.insert_textbox(
-        conf_box,
-        confirm_text,
-        fontname=FONT_NAME,
-        fontsize=fontsize,
+    # Confirmare — ierarhia originală verificată
+    put_text(
+        page,
+        fitz.Rect(LEFT, y, LEFT + width, y + 18),
+        "Confirmare client",
+        bold=True,
+        fontsize=SIZE_CONFIRM_TITLE,
+        color=BRAND_BLUE,
+    )
+    y += 16
+
+    put_text(
+        page,
+        fitz.Rect(LEFT, y, LEFT + width, y + 42),
+        CONFIRM,
+        fontsize=SIZE_CONFIRM_BODY,
         color=BODY_COLOR,
-        align=fitz.TEXT_ALIGN_LEFT,
+    )
+    y += 38
+
+    put_text(
+        page,
+        fitz.Rect(LEFT, y, LEFT + width * 0.52, y + 16),
+        "Prenume: ____________________",
+        fontsize=SIZE_CONFIRM_FIELDS,
+        color=BODY_COLOR,
+    )
+    put_text(
+        page,
+        fitz.Rect(LEFT + width * 0.48, y, LEFT + width, y + 16),
+        "Nume: ____________________",
+        fontsize=SIZE_CONFIRM_FIELDS,
+        color=BODY_COLOR,
+    )
+    y += 16
+    put_text(
+        page,
+        fitz.Rect(LEFT, y, LEFT + width * 0.52, y + 16),
+        "Semnătură: __________________",
+        fontsize=SIZE_CONFIRM_FIELDS,
+        color=BODY_COLOR,
+    )
+    put_text(
+        page,
+        fitz.Rect(LEFT + width * 0.48, y, LEFT + width, y + 16),
+        "Data: ____ / ____ / ________",
+        fontsize=SIZE_CONFIRM_FIELDS,
+        color=BODY_COLOR,
+    )
+    y += 18
+    put_text(
+        page,
+        fitz.Rect(LEFT, y, LEFT + width, min(y + 16, footer_top - 4)),
+        "Locație exactă: _______________________________________________________",
+        fontsize=SIZE_CONFIRM_LOC,
+        color=SOFT,
     )
 
 
@@ -182,6 +252,7 @@ def main() -> None:
         raise FileNotFoundError(f"Lipsește formatul vechi: {SOURCE_FULL}")
 
     print(f"Format sursă ← {SOURCE_FULL.name}")
+    print(f"Font ← Arial (AG) {SIZE_ITEM}pt corp · Confirmare {SIZE_CONFIRM_TITLE}/{SIZE_CONFIRM_BODY}")
     doc = fitz.open(SOURCE_FULL)
     if len(doc) != 7:
         raise RuntimeError(f"Aștept 7 pagini, am {len(doc)}")
